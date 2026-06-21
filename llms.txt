@@ -1,0 +1,24 @@
+# Bowerbird
+
+> Personal, LLM-compiled markdown knowledge base (Karpathy-style — NO RAG, no embeddings) fed by declared raw markdown namespaces. It starts with X bookmarks and account mirrors; the same raw-source contract covers notes, clips, and books. Ingest pipelines deposit verbatim raw snapshots into sacred append-only directories; a pluggable compile step (claude | codex | gemini) turns them into a two-layer wiki (`sources/` + `concepts/`) where every claim is cited. The wiki is a native **Open Knowledge Format (OKF) v0.1 bundle** (markdown + YAML frontmatter, a `type` on every note, a markdown-link graph), with Bowerbird's stricter provenance lint as a floor on top. A daily recap feed drives one Slack message via the self-hosted web app. Pipeline: Python 3.11+, stdlib-only runtime, pytest. Web app: Next.js/TypeScript, vitest.
+
+This is the **agent-facing knowledge base** for the *repository pipeline* — dense, factual, optimized for coding agents that need to navigate and safely modify the code. It is NOT a guide to the topic content of the wiki (the bookmarks themselves). Each file documents one slice of the plumbing with exact file paths and identifiers. If a fact here disagrees with the code, the code wins — fix the doc.
+
+## Knowledge base
+
+- [Setup guide](docs/setup.md): Fork → `bowerbird init` → green workflows → web app, with troubleshooting.
+- [AI-guided setup](docs/setup-prompt.md): The copy-paste prompt that has a coding agent run the whole setup interactively with the user.
+- [How it works](docs/how-it-works.md): Public-facing architecture and data-flow guide for humans onboarding to the repo.
+- [Importing from X](docs/importing-x.md): X OAuth, bookmark folder imports, account mirror setup, pay-as-you-go cost table, and GitHub Actions secrets.
+- [Compile runners](docs/compile-runners.md): The pluggable compile seam — choosing claude/codex/gemini, credentials per runner, adding a runner.
+- [Daily recap](docs/slack-recap.md): `compile/recap-feed.json` contract field-by-field and the one-message daily delivery model.
+- [Upgrading](docs/upgrading.md): Fork upgrade path (`git merge upstream/main`), path-disjointness rule, repo variables, the cron exception.
+- [Web app](web/README.md): Deploying the self-hosted management + recap UI (Vercel/Railway), every env var.
+- [Open-source checklist](docs/open-source.md): What to keep, redact, replace, or generalize before making a personal instance public.
+- [Overview](docs/agent/overview.md): What the repo is, the Karpathy-style philosophy, the raw-source pipeline at 10,000 feet, key identifiers and where to look first.
+- [Pipeline](docs/agent/pipeline.md): End-to-end flow of `bin/pull.py`, `bin/dump_account.py`, the compile step, `bin/recap_feed.py`, and `bin/lint.py` — with the exact responsibilities of each `src/kb/` module.
+- [Repo layout](docs/agent/repo-layout.md): Every top-level directory and the `raw/<namespace>/<bucket>/` layout. Where new content lands and where it must never land.
+- [GitHub Actions](docs/agent/github-actions.md): The five workflows in `.github/workflows/`, their crons, how they chain via `workflow_run`, the `GITHUB_TOKEN` / `GH_PAT` / `X_TOKENS` secret model, and the recap feed hand-off.
+- [Provenance](docs/agent/provenance.md): The append-only invariant on `raw/`, the linter's enforced rules, the compile contract from `compile/INSTRUCTIONS.md`, deterministic filename rules.
+- [Conventions](docs/agent/conventions.md): Stdlib-only constraint, Python 3.11+ requirement, token rotation gotcha, path-disjointness rule, no-RAG / no-embeddings stance, do/don't rules for agents editing this repo.
+- [My knowledge skill](skill/my-knowledge/SKILL.md): Downstream Karpathy-style wiki-use instructions for agents consuming the compiled knowledge base with navigation-first retrieval and source citations.

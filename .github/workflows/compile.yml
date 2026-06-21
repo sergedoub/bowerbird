@@ -1,0 +1,79 @@
+name: compile-wiki
+
+# LLM compile: new raw bookmarks + account mirrors -> two-layer wiki (sources + cited
+# concepts), per compile/INSTRUCTIONS.md, with bin/lint.py as the provenance guardrail.
+#
+# The agent invocation is pluggable: bin/compile.sh installs and runs the agent CLI
+# selected by config/models.toml or the COMPILE_RUNNER repository variable
+# (codex | claude | gemini). The lint gate and the commit step below are shared and runner-independent.
+# See docs/compile-runners.md for each runner's credential requirements.
+#
+# Triggers:
+#   - workflow_run: chains automatically after EITHER the bookmarks pull OR the account
+#     dump completes (native, no PAT — GITHUB_TOKEN commits don't fire push/dispatch
+#     events, so workflow_run is the way to chain). Both raw roots feed the same wiki,
+#     so either trigger is sufficient to warrant a compile.
+#   - push: compiles raw files added outside the two X workflows, such as local notes
+#     or clips pushed by a human/PAT. GITHUB_TOKEN commits from upstream workflows still
+#     rely on workflow_run.
+#   - workflow_dispatch: manual (also the escape hatch for raw added by a human/PAT push).
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "raw/**"
+  workflow_run:
+    workflows: ["pull-bookmarks", "account-dump"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compile-wiki
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    # manual/push always; for the chained workflow_run, only when the pull succeeded
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Compile raw -> wiki
+        env:
+          COMPILE_RUNNER: ${{ vars.COMPILE_RUNNER }}
+          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CODEX_ACCESS_TOKEN: ${{ secrets.CODEX_ACCESS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: bash bin/compile.sh
+
+      - name: Lint (guardrail)
+        run: python3 bin/lint.py
+
+      - name: Commit wiki changes
+        env:
+          PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(git status --porcelain wiki)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add wiki
+            git commit -m "compile: update wiki from new raw"
+            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          else
+            echo "No wiki changes."
+          fi

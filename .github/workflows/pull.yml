@@ -1,0 +1,86 @@
+name: pull-bookmarks
+
+# Forward-only daily pull of new bookmarks in allowlisted folders -> raw/bookmarks/<topic>/.
+# Token model: the rotating X user-context token lives in the X_TOKENS repo secret. Each run
+# materializes it to a file, pull.py refreshes it (rotating the refresh token), and we write
+# the new value back to X_TOKENS via a fine-grained PAT (GH_PAT). raw/ is committed via the
+# default GITHUB_TOKEN.
+#
+# Customization: set the X_USER_ID repository variable to skip the /users/me lookup
+# (optional). Cron schedules cannot read repository variables — edit the cron line below
+# to match your timezone; this is the one accepted fork divergence (see docs/upgrading.md).
+
+on:
+  schedule:
+    - cron: "0 23 * * *"   # daily; adjust to land while you sleep in your timezone
+  workflow_dispatch:
+    inputs:
+      limit_per_folder:
+        description: "Optional cap per watched folder for setup smoke imports"
+        required: false
+        type: number
+      import_all:
+        description: "Import full folder history instead of forward-only mode"
+        required: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pull-bookmarks
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Materialize token from secret
+        env:
+          X_TOKENS: ${{ secrets.X_TOKENS }}
+        run: |
+          mkdir -p bin
+          printf '%s' "$X_TOKENS" > bin/.x_tokens.json
+
+      - name: Pull new bookmarks (all configured topics)
+        env:
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_CLIENT_SECRET: ${{ secrets.X_CLIENT_SECRET }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_USER_ID: ${{ vars.X_USER_ID }}
+          LIMIT_PER_FOLDER: ${{ github.event.inputs.limit_per_folder }}
+          IMPORT_ALL: ${{ github.event.inputs.import_all }}
+        run: |
+          args=()
+          if [ "$IMPORT_ALL" != "true" ]; then
+            args+=(--stop-at-existing)
+          fi
+          if [ -n "$LIMIT_PER_FOLDER" ] && [ "$IMPORT_ALL" != "true" ]; then
+            args+=(--limit-per-folder "$LIMIT_PER_FOLDER")
+          fi
+          python3 bin/pull.py "${args[@]}"
+
+      - name: Persist rotated token back to the secret
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh secret set X_TOKENS --repo "${{ github.repository }}" < bin/.x_tokens.json
+
+      - name: Commit any new raw files
+        run: |
+          rm -f bin/.x_tokens.json
+          if [ -n "$(git status --porcelain raw/bookmarks)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add raw/bookmarks
+            git commit -m "chore: pull new bookmarks"
+            git push
+          else
+            echo "No new bookmarks."
+          fi
+      # compile is chained via workflow_run in compile.yml (no PAT/dispatch needed).

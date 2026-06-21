@@ -1,0 +1,34 @@
+name: slack-recap
+
+# Delivery consumer for compile/recap-feed.json. The feed workflow owns "what is
+# new"; this workflow owns posting one recap to Slack when a webhook is configured.
+
+on:
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["kb-recap-feed"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slack-recap
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Post recap to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RECAP_QUIET_MESSAGE: ${{ vars.RECAP_QUIET_MESSAGE || 'false' }}
+        run: python3 bin/slack_recap.py

@@ -1,0 +1,75 @@
+name: account-dump
+
+# Daily dump of each configured account's posts + replies over a trailing window ->
+# raw/accounts/<handle>/ (dedup makes the overlap a no-op; the walk stops early once a
+# page is entirely already-seen, so quiet days cost one page of reads). Unlike pull.yml
+# this needs no rotating user-context token: the timeline endpoint accepts the app-only
+# Bearer (X_BEARER_TOKEN). New raw files are committed via the default GITHUB_TOKEN.
+#
+# Customization: set the DUMP_WINDOW_DAYS repository variable (default 3). Cron schedules
+# cannot read repository variables — edit the cron line below for your timezone; this is
+# the one accepted fork divergence (see docs/upgrading.md).
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # daily, an hour before pull-bookmarks
+  workflow_dispatch:
+    inputs:
+      handle:
+        description: "Optional single X handle to import"
+        required: false
+        type: string
+      days:
+        description: "Trailing window in days"
+        required: false
+        default: "3"
+        type: string
+      max_posts:
+        description: "Optional cap for a cheap sample import"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: account-dump
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Dump configured accounts (trailing window)
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          HANDLE: ${{ github.event.inputs.handle || '' }}
+          DAYS: ${{ github.event.inputs.days || vars.DUMP_WINDOW_DAYS || '3' }}
+          MAX_POSTS: ${{ github.event.inputs.max_posts || '' }}
+        run: |
+          args=(--days "${DAYS:-3}")
+          if [ -n "$HANDLE" ]; then
+            args+=(--handle "$HANDLE")
+          fi
+          if [ -n "$MAX_POSTS" ]; then
+            args+=(--max-posts "$MAX_POSTS")
+          fi
+          python3 bin/dump_account.py "${args[@]}"
+
+      - name: Commit any new raw files
+        run: |
+          if [ -n "$(git status --porcelain raw/accounts)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add raw/accounts
+            git commit -m "chore: dump new account posts"
+            git push
+          else
+            echo "No new posts."
+          fi

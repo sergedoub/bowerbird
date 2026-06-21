@@ -1,0 +1,15 @@
+# Secrets & tokens — never commit
+bin/.env
+.env
+*.x_tokens.json
+bin/.x_tokens.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+*.egg-info/

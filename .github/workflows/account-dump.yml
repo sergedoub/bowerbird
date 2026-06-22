@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   dump:
-    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_DAILY_IMPORTS == 'true' }}
+    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -6,8 +6,8 @@ Six workflows live in `.github/workflows/`. Two are cron-triggered content pipel
 
 | File | Trigger | Job |
 |------|---------|-----|
-| `pull.yml` | Daily cron `0 23 * * *` + manual | Runs `bin/pull.py` (all configured topics), persists rotated token to `X_TOKENS` via `GH_PAT`, commits new `raw/bookmarks/` files with `GITHUB_TOKEN`. Manual setup dispatch accepts `limit_per_folder=3`; full history requires explicit `import_all=true`. Scheduled runs require `BOWERBIRD_DAILY_IMPORTS=true` and use forward-only stop-at-existing behavior. |
-| `account-dump.yml` | Daily cron `0 22 * * *` + manual | Runs `bin/dump_account.py --days ${DUMP_WINDOW_DAYS:-3}` for all configured accounts, or a targeted manual import with `handle`/`days` inputs. Scheduled runs require `BOWERBIRD_DAILY_IMPORTS=true`. Commits new `raw/accounts/` files with `GITHUB_TOKEN`. |
+| `pull.yml` | Daily cron `0 23 * * *` + manual | Runs `bin/pull.py` (all configured topics), persists rotated token to `X_TOKENS` via `GH_PAT`, commits new `raw/bookmarks/` files with `GITHUB_TOKEN`. Manual setup dispatch accepts `limit_per_folder=3`; full history requires explicit `import_all=true`. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true` and use forward-only stop-at-existing behavior. |
+| `account-dump.yml` | Daily cron `0 22 * * *` + manual | Runs `bin/dump_account.py --days ${DUMP_WINDOW_DAYS:-3}` for all configured accounts, or a targeted manual import with `handle`/`days` inputs. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. Commits new `raw/accounts/` files with `GITHUB_TOKEN`. |
 | `compile.yml` | `workflow_run` chained from **either** `pull-bookmarks` or `account-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — installs and invokes the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md`, per the contract in `compile/INSTRUCTIONS.md`. Processes declared auto-compile raw namespaces. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
 | `kb-recap-feed.yml` | Daily cron `30 0 * * *` + manual | Runs `bin/recap_feed.py`: writes `compile/recap-feed.json` from source notes added under `wiki/*/sources/` in the last 24 hours, grouped into account lanes and topic lanes. |
 | `slack-recap.yml` | `workflow_run` chained from `kb-recap-feed` (on success) + manual | Runs `bin/slack_recap.py`: posts the fresh recap feed to Slack when `SLACK_WEBHOOK_URL` is configured; exits quietly when Slack is not connected. |
@@ -27,11 +27,11 @@ Either upstream pipeline completing successfully triggers `compile-wiki`. `kb-re
 
 The compile job filters with `if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}` — manual runs always fire; chained runs only fire on a green upstream.
 
-The two scheduled import workflows also filter with `BOWERBIRD_DAILY_IMPORTS=true`.
-That keeps the public source repo and unfinished forks from running personal
-ingest jobs before setup secrets exist. `bowerbird push-secrets`, `bowerbird init`,
-and the dashboard X sign-in path enable the variable once the required X/GitHub
-secrets are present.
+The two scheduled import workflows also filter with `BOWERBIRD_LIVE_INSTANCE=true`.
+Source repos carry the automation as product code, but only a live instance repo
+should run paid, personal ingest jobs on a schedule. `bowerbird push-secrets`,
+`bowerbird init`, and the dashboard X sign-in path enable the variable once the
+required X/GitHub secrets are present.
 
 ## Recap feed lane grouping
 
@@ -73,7 +73,7 @@ Each workflow uses a named concurrency group (`pull-bookmarks`, `account-dump`, 
 
 | Variable | Used by | Notes |
 |----------|---------|-------|
-| `BOWERBIRD_DAILY_IMPORTS` | `pull.yml`, `account-dump.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means scheduled imports are skipped; manual dispatch still works and fails clearly if secrets are absent. |
+| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: scheduled personal ingest jobs are skipped, while manual dispatch still works and fails clearly if secrets are absent. |
 | `DUMP_WINDOW_DAYS` | `account-dump.yml` | Optional trailing window override; default is 3. |
 | `X_USER_ID` | `pull.yml` | Optional numeric X user id; skips a `/users/me` lookup per pull run. |
 | `COMPILE_RUNNER` / `COMPILE_MODEL` | `compile.yml` | Optional compile runner/model override; `config/models.toml` is preferred for fresh setup. |

@@ -92,7 +92,7 @@ def test_happy_path_writes_configs_and_secrets():
     assert set(world.secrets) == {"X_CLIENT_ID", "X_CLIENT_SECRET", "X_BEARER_TOKEN",
                                   "X_TOKENS", "GH_PAT", "OPENAI_API_KEY"}
     assert world.secrets["X_TOKENS"] == world.tokens
-    assert world.variables == {"BOWERBIRD_DAILY_IMPORTS": "true"}
+    assert world.variables == {"BOWERBIRD_LIVE_INSTANCE": "true"}
     assert result.remaining == []
 
 

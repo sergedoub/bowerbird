@@ -22,8 +22,8 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from kb.secrets_push import (                             # noqa: E402
-    SCHEDULED_IMPORT_SECRET_NAMES,
-    SCHEDULED_IMPORTS_VARIABLE,
+    LIVE_INSTANCE_SECRET_NAMES,
+    LIVE_INSTANCE_VARIABLE,
     push_secrets,
 )
 
@@ -107,11 +107,11 @@ def main() -> None:
         sys.exit(f"failed: {', '.join(result['failed'])}")
     staged = read_env()
     staged["X_TOKENS"] = read_tokens().strip()
-    if all(staged.get(name, "").strip() for name in SCHEDULED_IMPORT_SECRET_NAMES):
-        if set_variable(repo, SCHEDULED_IMPORTS_VARIABLE, "true"):
-            print(f"  set variable {SCHEDULED_IMPORTS_VARIABLE}")
+    if all(staged.get(name, "").strip() for name in LIVE_INSTANCE_SECRET_NAMES):
+        if set_variable(repo, LIVE_INSTANCE_VARIABLE, "true"):
+            print(f"  set variable {LIVE_INSTANCE_VARIABLE}")
         else:
-            sys.exit(f"failed: variable {SCHEDULED_IMPORTS_VARIABLE}")
+            sys.exit(f"failed: variable {LIVE_INSTANCE_VARIABLE}")
     print(f"--- push-secrets: {len(result['set'])} set, {len(result['skipped'])} skipped ---")
 
 

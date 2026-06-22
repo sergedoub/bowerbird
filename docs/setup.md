@@ -77,9 +77,10 @@ runs need the matching API key secret.
 
 Use `bowerbird models` any time to inspect or change `config/models.toml`.
 After `bin/.env` is staged, run `bowerbird push-secrets`. `X_TOKENS` will be
-missing at this point; the local dashboard sign-in seeds it next. Scheduled
-daily imports stay off until setup has the required ingest secrets and sets
-`BOWERBIRD_DAILY_IMPORTS=true`.
+missing at this point; the local dashboard sign-in seeds it next. The workflows
+live in every checkout as product code, but scheduled personal ingest stays off
+until setup has the required ingest secrets and marks the repo live with
+`BOWERBIRD_LIVE_INSTANCE=true`.
 
 After `bowerbird push-secrets`, verify secret storage by name only: local
 presence checks such as `grep -c '^X_CLIENT_ID=' bin/.env`, and
@@ -177,7 +178,7 @@ the current recap/test message immediately and stores the webhook as the
 The local web app is the setup/control surface. It gives you:
 
 - **Sign in with X** — which also (re)seeds the pipeline's `X_TOKENS` secret
-  and enables scheduled daily imports when the other required secrets exist;
+  and marks the repo as a live instance when the other required secrets exist;
   this is the recovery path when the refresh token expires after long
   inactivity.
 - **Folders** — map bookmark folders to topics by name.
@@ -195,7 +196,7 @@ The local web app is the setup/control surface. It gives you:
 | --- | --- |
 | Compile and recap provider/model override | `config/models.toml`, `bowerbird models`, or the dashboard Models section |
 | Compile agent (codex / claude / gemini) | `COMPILE_RUNNER` repository variable |
-| Scheduled daily imports | `BOWERBIRD_DAILY_IMPORTS=true`, set by setup after required ingest secrets exist |
+| Live-instance scheduled ingest | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
 | Account-mirror window | `DUMP_WINDOW_DAYS` repository variable |
 | Cron times | Workflow files — the one accepted fork edit, see [upgrading](upgrading.md) |
 | Recap labels per account | `label` field in `config/accounts.toml` |

@@ -164,9 +164,10 @@ The journey:
       Actions; hosted automation needs this API key secret.
    c. Run `bowerbird push-secrets` — pushes everything staged to the
       repo's Actions secrets without printing a value (X_TOKENS will show
-      as skipped; the web sign-in seeds it next). Scheduled daily imports
-      stay off until setup has X_TOKENS too and sets
-      BOWERBIRD_DAILY_IMPORTS=true. Verify names with
+      as skipped; the web sign-in seeds it next). The workflows live in the
+      repo as product code, but scheduled personal ingest stays off until
+      setup has X_TOKENS too and marks the repo live with
+      BOWERBIRD_LIVE_INSTANCE=true. Verify names with
       `gh secret list`; verify `config/models.toml` contains the selected
       provider. You can close the GitHub PAT and model-provider key tabs
       after this verification.
@@ -183,7 +184,7 @@ The journey:
    from the upstream demo snapshot; that's useful for understanding the value,
    but my setup is not complete until I connect X. In the browser I:
    - Sign in with X (one click; this ALSO seeds the pipeline's X_TOKENS
-     Actions secret automatically and enables BOWERBIRD_DAILY_IMPORTS when
+     Actions secret automatically and sets BOWERBIRD_LIVE_INSTANCE when
      the other required secrets exist — that's the web app's job, not yours);
    - manage monitored accounts on the homepage, keeping or replacing the four
      starter AI accounts;

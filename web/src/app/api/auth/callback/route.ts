@@ -4,7 +4,7 @@ import { setActionsSecret } from "@/lib/secrets";
 import { sealSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 import { exchangeCode, fetchMe, isOwner, xAppForRequest } from "@/lib/xAuth";
 
-const DAILY_IMPORT_SECRET_NAMES = ["X_CLIENT_ID", "X_BEARER_TOKEN", "X_TOKENS", "GH_PAT"];
+const LIVE_INSTANCE_SECRET_NAMES = ["X_CLIENT_ID", "X_BEARER_TOKEN", "X_TOKENS", "GH_PAT"];
 
 // OAuth callback: verify state, exchange the code, enforce the owner gate, seed the
 // pipeline's X_TOKENS secret with the captured token, and establish the session.
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
       await setActionsSecret(repo, "X_TOKENS", JSON.stringify(tokens));
       const secretNames = new Set(await repo.listActionSecretNames());
       secretNames.add("X_TOKENS");
-      if (DAILY_IMPORT_SECRET_NAMES.every((name) => secretNames.has(name))) {
-        await repo.putActionVariable("BOWERBIRD_DAILY_IMPORTS", "true");
+      if (LIVE_INSTANCE_SECRET_NAMES.every((name) => secretNames.has(name))) {
+        await repo.putActionVariable("BOWERBIRD_LIVE_INSTANCE", "true");
       }
     } catch {
       seeded = false; // session still proceeds; /health surfaces the gap

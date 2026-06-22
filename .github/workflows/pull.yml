@@ -33,6 +33,7 @@ concurrency:
 
 jobs:
   pull:
+    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_DAILY_IMPORTS == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +41,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Check bookmark pull setup
+        env:
+          X_TOKENS: ${{ secrets.X_TOKENS }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          missing=()
+          for name in X_TOKENS X_CLIENT_ID X_BEARER_TOKEN GH_PAT; do
+            if [ -z "${!name}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required setup secret(s): ${missing[*]}." >&2
+            echo "Finish setup before running pull-bookmarks." >&2
+            exit 1
+          fi
 
       - name: Materialize token from secret
         env:

@@ -20,6 +20,7 @@ from .model_config import (
     model_config_toml,
     provider_for,
 )
+from .secrets_push import SCHEDULED_IMPORT_SECRET_NAMES, SCHEDULED_IMPORTS_VARIABLE
 
 X_APP_URL = "https://developer.x.com/en/portal/dashboard"
 PAT_URL = "https://github.com/settings/personal-access-tokens/new"
@@ -52,7 +53,7 @@ class WizardDeps:
     make_folder_client():    client with .folders() using the saved tokens.
     gh_available():          is the GitHub CLI installed and authenticated?
     set_secret(name, value): push one Actions secret; returns True on success.
-    set_variable(name, value): legacy seam for repo variables; config/models.toml is preferred.
+    set_variable(name, value): set repo variables such as scheduled import enablement.
     read_env()/write_env():  the gitignored credentials file (KEY=VALUE dict).
     read_config(name)/write_config(name, text): config/<name> contents.
     """
@@ -279,6 +280,12 @@ def _push_secrets(io: WizardIO, deps: WizardDeps, env: dict, result: WizardResul
             result.remaining.append(f"set the {name} repo secret")
     for name in missing:
         result.remaining.append(f"obtain and set the {name} secret")
+    if all(values.get(name) for name in SCHEDULED_IMPORT_SECRET_NAMES):
+        if deps.set_variable(SCHEDULED_IMPORTS_VARIABLE, "true"):
+            result.variables_set.append(SCHEDULED_IMPORTS_VARIABLE)
+            io.say(f"  set {SCHEDULED_IMPORTS_VARIABLE}")
+        else:
+            result.remaining.append(f"set the {SCHEDULED_IMPORTS_VARIABLE} repo variable to true")
 
 
 def run_wizard(io: WizardIO, deps: WizardDeps) -> WizardResult:

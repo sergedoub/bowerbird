@@ -21,7 +21,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.secrets_push import push_secrets                  # noqa: E402
+from kb.secrets_push import (                             # noqa: E402
+    SCHEDULED_IMPORT_SECRET_NAMES,
+    SCHEDULED_IMPORTS_VARIABLE,
+    push_secrets,
+)
 
 
 def read_env() -> dict:
@@ -62,6 +66,16 @@ def set_secret(repo: str, name: str, value: str) -> bool:
     return proc.returncode == 0
 
 
+def set_variable(repo: str, name: str, value: str) -> bool:
+    cmd = ["gh", "variable", "set", name, "--body", value]
+    if repo:
+        cmd += ["--repo", repo]
+    proc = subprocess.run(cmd, cwd=ROOT, capture_output=True)
+    if proc.returncode != 0:
+        sys.stderr.write(f"  gh failed for variable {name}: {proc.stderr.decode().strip()}\n")
+    return proc.returncode == 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog=os.environ.get("BOWERBIRD_PROG", "bowerbird push-secrets"),
@@ -91,6 +105,13 @@ def main() -> None:
               f"{' / no token file — run `bowerbird auth`' if name == 'X_TOKENS' else ''})")
     if result["failed"]:
         sys.exit(f"failed: {', '.join(result['failed'])}")
+    staged = read_env()
+    staged["X_TOKENS"] = read_tokens().strip()
+    if all(staged.get(name, "").strip() for name in SCHEDULED_IMPORT_SECRET_NAMES):
+        if set_variable(repo, SCHEDULED_IMPORTS_VARIABLE, "true"):
+            print(f"  set variable {SCHEDULED_IMPORTS_VARIABLE}")
+        else:
+            sys.exit(f"failed: variable {SCHEDULED_IMPORTS_VARIABLE}")
     print(f"--- push-secrets: {len(result['set'])} set, {len(result['skipped'])} skipped ---")
 
 

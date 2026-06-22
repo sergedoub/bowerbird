@@ -32,6 +32,7 @@ Secrets and variables → Actions → Variables), not in workflow files:
 
 | Variable | Default | Effect |
 | --- | --- | --- |
+| `BOWERBIRD_DAILY_IMPORTS` | unset / false | Scheduled `pull-bookmarks` and `account-dump` run only when this is `true`. Setup sets it after required ingest secrets exist. |
 | `COMPILE_RUNNER` | `claude` | Which agent CLI performs the compile (`claude` \| `codex` \| `gemini`). |
 | `DUMP_WINDOW_DAYS` | `3` | Trailing window for the daily account mirror. |
 | `X_USER_ID` | (empty) | Your numeric X user id; skips a `/users/me` lookup per pull run. |

@@ -169,6 +169,18 @@ export class RepoClient {
     const body = (await res.json()) as { secrets?: Array<{ name: string }> };
     return (body.secrets ?? []).map((secret) => secret.name);
   }
+
+  /** Create or update a GitHub Actions repository variable. */
+  async putActionVariable(name: string, value: string): Promise<void> {
+    const path = `/actions/variables/${encodeURIComponent(name)}`;
+    const body = JSON.stringify({ name, value });
+    try {
+      await this.api(path, { method: "PATCH", body });
+    } catch (e) {
+      if (!(e instanceof RepoClientError) || e.status !== 404) throw e;
+      await this.api("/actions/variables", { method: "POST", body });
+    }
+  }
 }
 
 function encodePath(path: string): string {

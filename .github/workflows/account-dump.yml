@@ -38,6 +38,7 @@ concurrency:
 
 jobs:
   dump:
+    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_DAILY_IMPORTS == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +46,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Check account dump setup
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ -z "$X_BEARER_TOKEN" ]; then
+            echo "X_BEARER_TOKEN is not configured. Finish setup or set the repository secret before running account-dump." >&2
+            exit 1
+          fi
 
       - name: Dump configured accounts (trailing window)
         env:

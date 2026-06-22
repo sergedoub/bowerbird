@@ -178,4 +178,31 @@ describe("secrets primitives", () => {
     });
     expect(await repo.listActionSecretNames()).toEqual(["X_TOKENS", "SLACK_WEBHOOK_URL"]);
   });
+
+  it("updates an existing Actions variable", async () => {
+    const { repo, calls } = client((url, init) => {
+      if (url.endsWith("/actions/variables/BOWERBIRD_DAILY_IMPORTS") && init?.method === "PATCH") {
+        return new Response(null, { status: 204 });
+      }
+    });
+    await repo.putActionVariable("BOWERBIRD_DAILY_IMPORTS", "true");
+    expect(calls[0].init?.method).toBe("PATCH");
+    expect(JSON.parse(String(calls[0].init?.body))).toEqual({
+      name: "BOWERBIRD_DAILY_IMPORTS",
+      value: "true",
+    });
+  });
+
+  it("creates an Actions variable when update returns 404", async () => {
+    const { repo, calls } = client((url, init) => {
+      if (url.endsWith("/actions/variables/BOWERBIRD_DAILY_IMPORTS") && init?.method === "PATCH") {
+        return new Response("missing", { status: 404 });
+      }
+      if (url.endsWith("/actions/variables") && init?.method === "POST") {
+        return new Response(null, { status: 201 });
+      }
+    });
+    await repo.putActionVariable("BOWERBIRD_DAILY_IMPORTS", "true");
+    expect(calls.map((call) => call.init?.method)).toEqual(["PATCH", "POST"]);
+  });
 });

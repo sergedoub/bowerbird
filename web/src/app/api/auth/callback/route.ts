@@ -4,6 +4,8 @@ import { setActionsSecret } from "@/lib/secrets";
 import { sealSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 import { exchangeCode, fetchMe, isOwner, xAppForRequest } from "@/lib/xAuth";
 
+const DAILY_IMPORT_SECRET_NAMES = ["X_CLIENT_ID", "X_BEARER_TOKEN", "X_TOKENS", "GH_PAT"];
+
 // OAuth callback: verify state, exchange the code, enforce the owner gate, seed the
 // pipeline's X_TOKENS secret with the captured token, and establish the session.
 // Logging in IS the pipeline auth setup — no manual token pasting.
@@ -39,7 +41,13 @@ export async function GET(req: NextRequest) {
     // Seed the pipeline: the token JSON (TokenStore shape) goes into X_TOKENS.
     let seeded = true;
     try {
-      await setActionsSecret(repoClientFromEnv(), "X_TOKENS", JSON.stringify(tokens));
+      const repo = repoClientFromEnv();
+      await setActionsSecret(repo, "X_TOKENS", JSON.stringify(tokens));
+      const secretNames = new Set(await repo.listActionSecretNames());
+      secretNames.add("X_TOKENS");
+      if (DAILY_IMPORT_SECRET_NAMES.every((name) => secretNames.has(name))) {
+        await repo.putActionVariable("BOWERBIRD_DAILY_IMPORTS", "true");
+      }
     } catch {
       seeded = false; // session still proceeds; /health surfaces the gap
     }

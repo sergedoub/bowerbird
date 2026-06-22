@@ -108,7 +108,7 @@ bowerbird models     # choose compile + recap provider/model
 bowerbird lint       # provenance guardrail
 
 # advanced / optional
-bowerbird push-secrets # push credentials staged in bin/.env to GitHub Actions secrets (non-interactive)
+bowerbird push-secrets # push staged credentials; enables scheduled imports when ingest secrets are complete
 bowerbird dump-all     # archive ALL bookmarks (every folder + unsorted) outside the pipeline
 bowerbird ingest-book  # split a Markdown book (config/books.toml) into raw chapter inputs
 ```

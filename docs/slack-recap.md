@@ -22,8 +22,7 @@ wiki/*/sources/*.md
 It then groups them into two lane types:
 
 - `accounts`: compiled notes that came from `raw/accounts/<handle>/`.
-- `topics`: compiled notes grouped by wiki topic, regardless of whether the origin was
-  bookmarks, notes, clips, books, or another compile-eligible topic input.
+- `topics`: compiled notes that came from bookmark folders or other topic input.
 
 The feed is based on the wiki-add date from Git history, not the original X post
 date. This prevents stale source posts from being repeated day after day when the
@@ -45,10 +44,7 @@ The feed has this shape:
         {
           "date": "2026-06-08",
           "file": "wiki/claude-code/sources/2026-06-08-example-handle-note.md",
-          "text": "Short source note body...",
-          "origin": "bookmarks",
-          "source_type": "x-post",
-          "raw_path": "raw/bookmarks/marketing/2026-06-08__123.md"
+          "text": "Short source note body..."
         }
       ]
     }
@@ -68,35 +64,15 @@ The feed has this shape:
 }
 ```
 
-Slack delivery code should treat the feed as the only input it needs. It should
-not rescan the repo, infer freshness from source filenames, or post importer
-status as a substitute for the recap.
+Slack connector agents should treat the feed as the only input they need. They
+should not rescan the repo, infer freshness from source filenames, or post
+importer status as a substitute for the recap.
 
-## Built-In Slack Connector
+## Delivery Contract
 
-The dashboard includes a Slack recap connector. Create or open a Slack app with
-incoming webhooks enabled, choose the channel, paste the webhook URL into the
-dashboard's **Slack recap** section, and click **Save and send test recap**.
-
-That does two things:
-
-1. Sends the current recap, or a setup test message if there is no fresh recap.
-2. Stores the webhook as the `SLACK_WEBHOOK_URL` GitHub Actions secret.
-
-The `slack-recap` workflow consumes that secret after `kb-recap-feed` succeeds
-and posts the daily recap from `compile/recap-feed.json`. If the secret is not
-configured, the workflow exits quietly without posting.
-
-## Delivery Options
-
-The bundled product path is the dashboard connector plus `slack-recap`
-workflow. The web app cron (`/api/cron/recap`) remains available for hosted app
-deployments that set `SLACK_WEBHOOK_URL` in the web runtime; it reads
-`compile/recap-feed.json`, synthesizes the lanes with an LLM (mechanical
-summary fallback), and posts one Slack message via an incoming webhook. See
-[web/README.md](../web/README.md).
-
-Any other delivery mechanism is fine as long as it keeps the same contract:
+The reference path is an external connector agent, configured from
+[`connectors/slack/`](../connectors/slack/README.md). Any delivery mechanism is
+fine as long as it keeps the same contract:
 
 1. Run after `kb-recap-feed` has had time to complete.
 2. Fetch `compile/recap-feed.json` from the default branch.
@@ -108,11 +84,11 @@ Any other delivery mechanism is fine as long as it keeps the same contract:
 
 Possible implementations:
 
-- The bundled `slack-recap` workflow configured by the dashboard Slack connector.
-- The bundled web app's cron; Slack adapter built in, other adapters implement
-  the same `DeliveryAdapter` interface in `web/src/lib/deliver.ts`.
-- A small cron job using Slack's `chat.postMessage` API, a Telegram bot, an
-  email digest — anything that reads one JSON file.
+- A Slack connector agent with its own schedule and service credentials.
+- A GitHub Action using Slack's official GitHub Action, if the user explicitly
+  wants delivery to live in Actions.
+- Another connector such as email, Telegram, or Discord, as long as it reads
+  one JSON file and posts at most one recap per day.
 
 ## Recommended Message Structure
 
@@ -125,12 +101,12 @@ Accounts
 - Example Handle: 18 new source notes
   - concise synthesis of the important themes
 
-Topics
+Bookmark Topics
 - Marketing: 3 new source notes
   - concise synthesis of the important themes
 ```
 
-The message should be a synthesis, not a raw dump of every note body. The
+The Slack message should be a synthesis, not a raw dump of every note body. The
 feed already includes note text so the delivery agent does not need to fetch each
 source file separately.
 

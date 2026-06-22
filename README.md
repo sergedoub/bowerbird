@@ -1,36 +1,5 @@
 # Bowerbird
 
-## Start Here: Paste This Into Codex
-
-Open Codex in any folder and paste:
-
-```text
-Set up Bowerbird for me, end to end.
-
-Use https://github.com/sergedoub/bowerbird as the upstream repo. First read
-the full guided setup prompt at:
-https://github.com/sergedoub/bowerbird/blob/main/docs/setup-prompt.md
-
-Follow that setup flow one step at a time: ask me where the repo should live,
-fork and clone it, verify prerequisites, keep secrets out of chat, use
-the Codex Chrome extension for credential pages, launch the local dashboard,
-run the first import, and show evidence before moving to each next step. If
-the Chrome extension is not attached, pause and tell me how to connect it; do
-not silently fall back to macOS System Events or desktop UI automation for
-credential pages. If browser overlays like 1Password, autofill, cookies, or
-save-password prompts block progress, first try Escape, clicking outside, or a
-visible close/cancel/not-now control; do not inspect or fill stored secrets.
-After verifying stored secret names, close setup-only developer portal,
-GitHub PAT/secrets, model-provider key, OAuth leftover, and setup-doc tabs;
-keep the Bowerbird dashboard/recap/health tabs open.
-```
-
-The full agent prompt lives in [docs/setup-prompt.md](docs/setup-prompt.md).
-Manual setup is still supported below, but the intended first-run path is to
-have Codex drive the setup with you present for credentials and browser steps.
-
-## What It Is
-
 Collect, arrange, display: Bowerbird turns what you save into a personal,
 LLM-compiled markdown knowledge base — and a daily recap so you actually
 revisit it. It starts with X bookmarks and account mirrors, and its raw-source
@@ -47,22 +16,22 @@ contract also fits local notes, web clips, and long-form material.
   linter enforces that mechanically. The wiki is a native **Open Knowledge
   Format (OKF) v0.1 bundle**, so any OKF-aware tool can read it — with
   Bowerbird's stricter provenance lint as a floor on top.
-- **Display** — a daily recap feed of what's new, delivered to Slack by the
-  bundled self-hosted web app (or any consumer you build on the feed contract).
+- **Display** — a daily recap feed of what's new, delivered by connector
+  agents such as Slack.
 
 The design is deliberately simple: Python 3.11+ with a stdlib-only runtime,
 markdown files as the database, your GitHub fork as the storage and compute
 (GitHub Actions), no RAG, no embeddings, no vector store. Everything runs on
-credentials you own — your X developer app, your LLM key, and a local
-dashboard.
+credentials you own — your X developer app, your LLM key, and your connector
+services.
 
-The public repo is also a living demo instance. It ships with four starter
-AI-account lanes (`thsottiaux`, `bcherny`, `OfficialLoganK`, and
-`santiagomed`) plus generated wiki/recap output so you can see the shape of a
-working knowledge base before connecting your own X account. Your fork starts
-with that demo snapshot; setup turns it into your running instance.
+## Quick start
 
-## Manual Setup
+> **Using Codex, Claude Code, or another coding agent?** Skip every manual
+> step. Already cloned? Run the repo's guided setup skill. Not cloned yet?
+> Paste the one prompt in [docs/setup-prompt.md](docs/setup-prompt.md) into
+> your agent from anywhere; it forks, clones, and walks you through the entire
+> setup, end to end.
 
 1. **Fork this repository and clone your fork** — the fork is your knowledge
    base; the pipeline commits your data into it daily.
@@ -86,9 +55,11 @@ with that demo snapshot; setup turns it into your running instance.
    `limit_per_folder=3`, then run `account-dump` once manually. Later account
    adds use `bowerbird accounts add <handle> --topic <topic>` plus a targeted
    `account-dump` dispatch with `handle=<handle>`, `days=3`. The compile chains
-   automatically; `bowerbird lint` must print `provenance OK`.
-4. **Run the local dashboard** for X sign-in, account management, bookmark
-   mapping, pipeline health, and recap preview. See [web/README.md](web/README.md).
+   automatically; `bowerbird lint` must print `provenance OK` and `bowerbird
+   doctor` should report healthy config/feed/lint status.
+4. **Configure a connector agent** for delivery. Start with the
+   [Slack connector](connectors/slack/README.md), which sends one daily recap
+   from `compile/recap-feed.json`.
 
 Full walkthrough: [docs/setup.md](docs/setup.md).
 
@@ -102,10 +73,12 @@ bowerbird folders    # list your bookmark folders (names + ids)
 bowerbird folders --counts # explicit count/cost estimate before importing all
 bowerbird pull       # pull new bookmarks into raw/bookmarks/
 bowerbird pull --limit-per-folder 3 # setup smoke import
+bowerbird accounts add <handle> --topic <topic>
 bowerbird dump-account --handle <h> --days 3
 bowerbird backfill --topic <t> --no-threads
 bowerbird models     # choose compile + recap provider/model
 bowerbird lint       # provenance guardrail
+bowerbird doctor     # config, recap feed freshness, and lint status
 
 # advanced / optional
 bowerbird push-secrets # push staged credentials; marks the repo live when ingest secrets are complete
@@ -131,7 +104,7 @@ subscription.
 | [Importing from X](docs/importing-x.md) | Credentials, folder discovery, cost table, Actions secrets. |
 | [Compile runners](docs/compile-runners.md) | Choosing Codex / Claude / Gemini; adding a runner. |
 | [Daily recap](docs/slack-recap.md) | The feed contract and delivery options. |
-| [Web app](web/README.md) | Running the local management + recap UI. |
+| [Connectors](connectors/README.md) | Agent playbooks for delivery services, starting with Slack. |
 | [Upgrading your fork](docs/upgrading.md) | `git merge upstream/main` and why it never conflicts. |
 | [`llms.txt`](llms.txt) | Dense agent-facing docset for coding agents working on this repo. |
 

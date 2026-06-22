@@ -15,7 +15,7 @@
 | `config/` | TOML configuration. Extensibility seam for topics, accounts, and book ingest. |
 | `compile/` | `INSTRUCTIONS.md` (the LLM compile contract), `PROMPT.md` (the shared runner prompt), and the generated `recap-feed.json`. |
 | `skill/` | The my-knowledge retrieval skill for downstream coding agents. |
-| `web/` | Next.js self-hosted web app (management UI + recap delivery). Own README, tests (`npm test`), deploys to the user's Vercel/Railway. |
+| `connectors/` | Agent-facing playbooks for service delivery, starting with Slack recap delivery. |
 | `samples/` | Template demo content (synthetic raw + lint-passing wiki + configs + feed). Copied into place during launch assembly; never read by the pipeline. |
 | `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/kb/raw_sources.py`. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
@@ -23,7 +23,6 @@
 | `.github/workflows/` | Five workflows (four pipeline + ci) — see [github-actions](github-actions.md). |
 | `docs/*.md` | Public human-facing docs: setup, architecture, X imports, compile runners, recap, upgrading. |
 | `docs/agent/` | This agent-facing documentation set (you are here). |
-| `docs/reviews/` | Tracked local review/visualization artifacts. Useful historical context, but not canonical operating docs. |
 | `llms.txt` | Index for the agent-facing docs. |
 
 ## Raw and wiki layout
@@ -78,7 +77,7 @@ folder_ids = ["2057603076853547356"]
 # folder_ids = ["..."]
 ```
 
-**Adding a topic:** add one `[topics.<name>]` table with the X bookmark `folder_ids` it should ingest from. No other code changes required — the pipeline auto-routes. Discover folder IDs with `bowerbird folders` (or interactively via `bowerbird init` / the web app's Folders page).
+**Adding a topic:** add one `[topics.<name>]` table with the X bookmark `folder_ids` it should ingest from. No other code changes required — the pipeline auto-routes. Discover folder IDs with `bowerbird folders` or interactively via `bowerbird init`.
 
 ### `config/accounts.toml`
 
@@ -118,20 +117,6 @@ provenance = "external-expert"
 ```
 
 **Adding a book:** add a `[[books]]` table, then run `python3 bin/ingest_book.py --book <book_id>` to split the Markdown source into `raw/books/<topic>/` chapter files. Book ingest is manual/local; compile distills those chapter files into the normal `wiki/<topic>/sources/` and `wiki/<topic>/concepts/` layers.
-
-## Raw namespace registry
-
-`src/kb/raw_sources.py` is the source of truth for origin abstraction. When adding a new raw origin, update the registry and tests first, then add the writer/importer. Do not make compile or lint infer semantics from an arbitrary directory name under `raw/`.
-
-| Namespace | Bucket means | Compile state | Default source type |
-|-----------|--------------|---------------|---------------------|
-| `bookmarks` | topic | auto | `x-post` |
-| `accounts` | account handle, mapped through `config/accounts.toml` | auto | `x-post` |
-| `books` | topic | auto | `book-chapter` |
-| `notes` | topic | auto | `markdown-note` |
-| `clips` | topic | auto | `web-clip` |
-| `pdfs` | topic | review-gated | `pdf-extract` |
-| `chats` | mapped bucket | snapshot-only | `chat-export` |
 
 ## Tests (`tests/`)
 

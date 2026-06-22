@@ -136,7 +136,7 @@ def model_config_toml(config: ModelConfig) -> str:
     recap_model = config.recap_model.strip()
     lines = [
         "# Model provider selection. Managed by `bowerbird models`, `bowerbird init`,",
-        "# or the Bowerbird web dashboard.",
+        "# or by editing this file directly.",
         "",
         "[model]",
         f'provider = "{provider.key}"',

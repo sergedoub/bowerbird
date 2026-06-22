@@ -31,7 +31,7 @@ The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.m
 ## Key identifiers
 
 - **Project:** Bowerbird. Each user's fork is their instance; default branch `main` carries both code and the user's data commits.
-- **Language:** Pipeline is Python 3.11+ (CI runs 3.13), stdlib-only runtime (`urllib`, `tomllib`); dev-only dep is `pytest`. The web app (`web/`) is Next.js/TypeScript with its own test suite (vitest). See `pyproject.toml` / `web/package.json`.
+- **Language:** Pipeline is Python 3.11+ (CI runs 3.13), stdlib-only runtime (`urllib`, `tomllib`); dev-only dep is `pytest`. Connector agents are external consumers of `compile/recap-feed.json`, starting with Slack. See `pyproject.toml`.
 - **Knowledge format:** `wiki/` is a native **Open Knowledge Format (OKF) v0.1 bundle** — markdown + YAML frontmatter, a `type` on every note, a markdown-link graph. OKF is a conformance floor; Bowerbird's stricter provenance lint governs above it. See [provenance.md](provenance.md).
 - **Enabled topics/accounts:** whatever the instance's `config/topics.toml` and `config/accounts.toml` declare — read the configs, don't assume.
 - **CI secrets:** `X_TOKENS` (rotating user-context token), `X_BEARER_TOKEN` (app-only), `GH_PAT` (fine-grained PAT to write back to `X_TOKENS`), plus compile-runner credentials (see [github-actions](github-actions.md)).

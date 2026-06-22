@@ -50,7 +50,7 @@ raw/bookmarks/<topic>/  raw/accounts/<handle>/   raw/<namespace>/<bucket>/
         compile/recap-feed.json
                  |
                  v
-        one daily recap (slack-recap workflow, web app cron, or any feed consumer)
+        one daily recap (connector agent -> Slack, or any feed consumer)
 ```
 
 The repository uses Git history as part of the workflow. The daily recap feed is
@@ -78,10 +78,11 @@ raw/accounts/<handle>/<YYYY-MM-DD>__<tweet-id>.md
 ```
 
 Both importers are idempotent because the tweet ID is in the filename. Newer
-non-X importers use the same storage shape: `raw/<namespace>/<bucket>/<date>__<id>.md`.
-Namespaces such as `notes` and `clips` can compile automatically when their bucket is a
-topic. Review-gated namespaces such as `pdfs` can store snapshots without being compiled
-until their locator/provenance contract is strong enough.
+non-X importers use the same storage shape:
+`raw/<namespace>/<bucket>/<date>__<id>.md`. Namespaces such as `notes` and
+`clips` can compile automatically when their bucket is a topic. Review-gated
+namespaces such as `pdfs` can store snapshots without being compiled until
+their locator/provenance contract is strong enough.
 
 ## Compile
 
@@ -104,9 +105,8 @@ committed.
 
 The recap is not another importer and should not be a separate status stream.
 It is a view over newly added wiki source notes. The feed generator
-(`bin/recap_feed.py`) groups new sources into account lanes and topic
-lanes and writes `compile/recap-feed.json`; the built-in Slack connector's
-`slack-recap` workflow, the web app's daily cron, or any consumer of the feed
-contract turns that into one daily message.
+(`bin/recap_feed.py`) groups new sources into account lanes and bookmark-topic
+lanes and writes `compile/recap-feed.json`; a connector agent (or any consumer
+of the feed contract) turns that into one daily message.
 
 See [Daily Slack recap](slack-recap.md) for the feed format and delivery options.

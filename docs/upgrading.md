@@ -15,8 +15,8 @@ git push
 
 The repo enforces a path-disjointness rule:
 
-- **Code paths** — `src/`, `bin/`, `web/`, `tests/`, `compile/INSTRUCTIONS.md`,
-  `compile/PROMPT.md`, `.github/`, `docs/`, `skill/` — are only ever changed by
+- **Code paths** — `src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`,
+  `compile/PROMPT.md`, `.github/`, `docs/`, `connectors/`, `skill/` — are only ever changed by
   upstream. Your instance's automation never writes here.
 - **Data paths** — `raw/`, `wiki/`, `config/`, `compile/recap-feed.json` — are
   only ever written by your instance (your imports, your compile, your config).
@@ -33,7 +33,7 @@ Secrets and variables → Actions → Variables), not in workflow files:
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `BOWERBIRD_LIVE_INSTANCE` | unset / false | Treats the repo as an active personal instance. Scheduled `pull-bookmarks` and `account-dump` run only when this is `true`; setup sets it after required ingest secrets exist. |
-| `COMPILE_RUNNER` | `claude` | Which agent CLI performs the compile (`claude` \| `codex` \| `gemini`). |
+| `COMPILE_RUNNER` | from `config/models.toml`, fallback `codex` | Which agent CLI performs the compile (`codex` \| `claude` \| `gemini`). |
 | `DUMP_WINDOW_DAYS` | `3` | Trailing window for the daily account mirror. |
 | `X_USER_ID` | (empty) | Your numeric X user id; skips a `/users/me` lookup per pull run. |
 

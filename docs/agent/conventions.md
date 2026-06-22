@@ -27,11 +27,11 @@ This is a deliberate choice — the pipelines must work in any Python 3.11+ envi
 
 ### Sacred `raw/` directories
 
-See [provenance](provenance.md). Never edit/delete/rename files under `raw/*/`.
+See [provenance](provenance.md). Never edit/delete/rename files under `raw/`.
 
 ### Path disjointness (fork upgrade contract)
 
-Forks upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `web/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `.github/`, `docs/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `compile/recap-feed.json`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
+Forks upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `.github/`, `docs/`, `connectors/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `compile/recap-feed.json`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
 
 ### No RAG, no embeddings, no Postgres-backed content
 
@@ -62,10 +62,7 @@ By design — prevents recursive CI. That's why `compile.yml` chains via `workfl
 ### Adding a topic or account
 
 - Topic: add `[topics.<name>]` block in `config/topics.toml` with X folder `folder_ids`. No other code changes.
-- Account: use `bowerbird accounts add <handle> --topic <topic>`, then dispatch
-  `gh workflow run account-dump.yml -f handle=<handle> -f days=3` for the first
-  trailing-window import. No hand-editing required.
-- New raw origin: declare the namespace in `src/kb/raw_sources.py` and add lint/compile tests before adding importer code. Unknown `raw/*` directories must fail closed.
+- Account: prefer `bowerbird accounts add <handle> --topic <topic>`, then commit config and run a targeted `account-dump` dispatch.
 
 ### `bin/x_auth_spike.py` is not part of cron
 
@@ -89,7 +86,6 @@ It's an interactive helper to discover bookmark folder IDs. Don't wire it into a
 |---------------------|----------|
 | Bookmark ingest | `bin/pull.py`, `src/kb/pull.py`, `src/kb/search.py`, `src/kb/threads.py` |
 | Account-mirror ingest | `bin/dump_account.py`, `src/kb/account_dump.py`, `src/kb/timeline.py` |
-| Raw source abstraction | `src/kb/raw_sources.py`, `src/kb/raw_writer.py`, `src/kb/linter.py` |
 | Token storage / refresh | `src/kb/tokens.py` |
 | Wiki provenance rules | `src/kb/linter.py`, `bin/lint.py`, `compile/INSTRUCTIONS.md` |
 | Topic / account routing | `src/kb/routing.py`, `src/kb/config.py`, `config/*.toml` |

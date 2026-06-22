@@ -13,8 +13,8 @@ pluggable. The job it performs is agent-agnostic:
 
 ## Choosing a runner
 
-Use `bowerbird models` or the dashboard Models section to write
-`config/models.toml`, then push the matching API key as a repository secret.
+Use `bowerbird models` or edit `config/models.toml` to write the provider
+selection, then push the matching API key as a repository secret.
 Setup should pick the provider that matches the active setup agent unless the
 user chooses otherwise. No workflow edit is needed.
 

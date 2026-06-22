@@ -28,7 +28,6 @@ These may be personal, sensitive, or too specific for a reusable public repo:
 | `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with `samples/wiki/`. |
 | `compile/recap-feed.json` | Safe only if its note text and paths are safe. Otherwise replace with `samples/recap-feed.json`. |
 | `config/*.toml` | Replace personal folder IDs and handles with `samples/config/` if needed. |
-| `docs/reviews/` | Review for personal operational history before publishing. |
 | Personal automation docs | Remove or generalize anything referencing private workspaces, trigger IDs, or Slack channel IDs. |
 
 ## Secrets
@@ -41,8 +40,7 @@ Do not publish any of these values:
 - `X_BEARER_TOKEN`
 - `GH_PAT`
 - `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`
-- Slack bot tokens or webhook URLs
-- Web app deploy secrets (`SESSION_SECRET`, `CRON_SECRET`, `GITHUB_TOKEN`)
+- Slack bot tokens, webhook URLs, or connector-runtime service credentials
 
 The repo ignores the local secret files:
 
@@ -67,13 +65,12 @@ repository intentionally includes your live personal knowledge base.
 Document the required setup in the repository settings:
 
 1. Enable GitHub Actions write permissions for commits.
-2. Add the X and Claude secrets listed in [Importing from X](importing-x.md).
+2. Add the X and compile-runner secrets listed in [Importing from X](importing-x.md).
 3. Adjust cron times in `.github/workflows/`.
-4. Manually run `pull-bookmarks` with `limit_per_folder=3`, then run `account-dump`.
-   For a single account smoke, dispatch `account-dump` with `handle=<handle>` and `days=3`.
+4. Manually run `pull-bookmarks` and `account-dump`.
 5. Confirm `compile-wiki` runs and `python3 bin/lint.py` passes.
 6. Confirm `kb-recap-feed` writes a fresh `compile/recap-feed.json`.
-7. Configure exactly one Slack delivery path from [Daily Slack recap](slack-recap.md).
+7. Configure exactly one Slack connector from [connectors/slack](../connectors/slack/README.md).
 
 ## Public Positioning
 

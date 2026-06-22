@@ -2,7 +2,7 @@ name: kb-recap-feed
 
 # Writes compile/recap-feed.json: the source notes ADDED under wiki/*/sources/ in the
 # last day, grouped into account lanes and topic lanes. This is the
-# hand-off to whatever posts your daily recap (Slack agent, web app cron, etc.).
+# hand-off to whatever posts your daily recap (Slack connector agent, etc.).
 #
 # Why a CI-computed feed instead of letting a recap agent guess: "new since last recap"
 # is a git fact (what the compile ADDED), not encodable in the notes — a note's filename

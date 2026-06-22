@@ -1,20 +1,12 @@
 # Setup Guide
 
 From fork to a working instance: bookmarks flowing in daily, a compiled wiki,
-and a local dashboard for setup, health, and recap preview. Expect 30–45
-minutes, most of it on the X developer portal.
+and a recap in Slack. Expect 30–45 minutes, most of it on the X developer
+portal.
 
-> Using a coding agent? Start with Codex if you have it. The intended browser
-> path is the Codex Chrome extension, not macOS System Events/Desktop UI
-> fallback. Already cloned — ask the agent to run Bowerbird setup from this
-> repo. Not cloned yet — paste the prompt from
+> Using a coding agent? Two zero-effort paths: already cloned — run the
+> repo's guided setup skill; not cloned yet — paste the prompt from
 > [docs/setup-prompt.md](setup-prompt.md) into an agent session anywhere.
-
-The public repo is not empty. It ships as a living demo snapshot with four
-starter AI accounts (`thsottiaux`, `bcherny`, `OfficialLoganK`, and
-`santiagomed`) and generated wiki/recap output. Your fork inherits that sample
-content; connecting X and enabling workflows turns the fork into your own
-running instance.
 
 ## 0. Prerequisites
 
@@ -28,17 +20,16 @@ running instance.
   click-by-click. Create a **new app dedicated to Bowerbird** (even if you
   have others): separate credentials you can revoke independently, and its
   own usage line on your X bill. You need:
-  - OAuth 2.0 user authentication set up with only these local redirect URIs:
-    `http://bowerbird.localhost:8080/callback` and
-    `http://bowerbird.localhost:3000/api/auth/callback`, scopes
+  - OAuth 2.0 user authentication set up, redirect URI
+    `http://bowerbird.localhost:8080/callback`, scopes
     `bookmark.read tweet.read users.read offline.access`;
   - the OAuth2 **client id** (and secret, for confidential clients);
   - the app-only **bearer token**.
-- LLM credentials for hosted automation. Setup should default to the model
-  provider of the agent doing the setup: Codex uses `OPENAI_API_KEY` from
-  <https://platform.openai.com/api-keys>, Claude Code uses
-  `ANTHROPIC_API_KEY`, and Gemini uses `GEMINI_API_KEY`. See
-  [compile runners](compile-runners.md).
+- LLM credentials for the compile. Setup should default to the active setup
+  agent's provider: OpenAI/Codex when setup is run from Codex,
+  Anthropic/Claude when setup is run from Claude, or Gemini if selected. Hosted
+  GitHub Actions need a provider API key; a local app subscription is not enough
+  for CI. See [compile runners](compile-runners.md).
 - Optional but recommended: the [`gh` CLI](https://cli.github.com), logged in —
   the wizard then sets your Actions secrets for you.
 
@@ -54,160 +45,94 @@ bowerbird init
 (The virtualenv matters: modern macOS/Linux Pythons are "externally managed"
 and reject bare `pip install` outside one.)
 
-The recommended agent path is slightly different from the old terminal-only
-wizard: the agent stages secrets, launches the local dashboard, and lets the
-dashboard handle X sign-in and source choices.
+The wizard collects credentials into a gitignored `bin/.env`, opens the X
+OAuth flow in your browser, lists your bookmark folders so you can choose
+which ones Bowerbird watches (anything you bookmark into a watched folder
+becomes part of your knowledge base), asks which accounts to follow, writes
+`config/topics.toml` and `config/accounts.toml`, and pushes the GitHub
+Actions secrets. If `gh` is absent, it prints the secret names you still need
+to set manually; values stay in `bin/.env` and `bin/.x_tokens.json`. It ends
+with a checklist of anything left.
 
-Secrets stay out of chat. With extension-backed browser control, the agent
-should click portal Copy buttons and pipe clipboard values directly into the
-gitignored `bin/.env` under the right key names. It must not read secret
-fields from the DOM, take screenshots while secrets are visible, `cat` secret
-files, echo values, or ask you to paste credentials into chat. Verification is
-by key presence only, for example `grep -c '^X_CLIENT_ID=' bin/.env`.
-
-The first secret you must mint by hand is `GH_PAT`: a fine-grained personal
+The one secret you must mint by hand is `GH_PAT`: a fine-grained personal
 access token that can write this repo's secrets
 (<https://github.com/settings/personal-access-tokens/new>; repository
 permission "Secrets: read and write"). The pipeline uses it to persist the
 rotating X token after each run.
 
-The second is the model-provider key selected during setup. A local app
-subscription does not automatically authenticate GitHub Actions, so hosted
-runs need the matching API key secret.
+Agent-native alternative to the wizard: each wizard sub-step also exists as
+its own non-interactive command, so a coding agent can run the whole setup
+from chat — `bowerbird auth` (browser OAuth, no terminal input),
+`bowerbird folders` (list folders for mapping), write the config TOMLs
+directly, then `bowerbird push-secrets` (pushes everything staged in
+`bin/.env` plus the token file to Actions secrets without printing a value).
+Stage one compile credential for the provider you plan to use:
+`OPENAI_API_KEY` for `codex`, `ANTHROPIC_API_KEY` for `claude`, or
+`GEMINI_API_KEY` for `gemini`. `bowerbird models --provider <provider> --write`
+records the provider in `config/models.toml`; no workflow edit is needed.
 
-Use `bowerbird models` any time to inspect or change `config/models.toml`.
-After `bin/.env` is staged, run `bowerbird push-secrets`. `X_TOKENS` will be
-missing at this point; the local dashboard sign-in seeds it next. The workflows
-live in every checkout as product code, but scheduled personal ingest stays off
-until setup has the required ingest secrets and marks the repo live with
-`BOWERBIRD_LIVE_INSTANCE=true`.
-
-After `bowerbird push-secrets`, verify secret storage by name only: local
-presence checks such as `grep -c '^X_CLIENT_ID=' bin/.env`, and
-`gh secret list` for Actions secret names. Do not print or inspect values.
-Once names are verified, close credential tabs opened just for setup: X
-developer portal/console tabs, GitHub PAT or repo-secret pages, model-provider
-API-key pages, OAuth callback leftovers, and setup docs/search tabs. Leave
-unrelated browsing alone, and keep Bowerbird dashboard/recap/health tabs open.
-
-## 2. Local dashboard
-
-Create `web/.env.local` without printing secret values:
-
-```bash
-grep '^X_CLIENT_ID=' bin/.env >> web/.env.local
-grep '^X_CLIENT_SECRET=' bin/.env >> web/.env.local
-printf 'GITHUB_REPO=%s\n' '<your-fork-owner/name>' >> web/.env.local
-printf 'GITHUB_TOKEN=%s\n' "$(gh auth token)" >> web/.env.local
-printf 'APP_URL=http://bowerbird.localhost:3000\n' >> web/.env.local
-printf 'OWNER_X_USERNAME=%s\n' '<your-x-handle>' >> web/.env.local
-printf 'SESSION_SECRET=%s\n' "$(openssl rand -hex 32)" >> web/.env.local
-```
-
-Then run the dashboard:
-
-```bash
-cd web
-npm install
-npm test
-npm run dev
-```
-
-Open <http://bowerbird.localhost:3000>. Browsers resolve `*.localhost` to your
-own machine, so this gives Bowerbird a nicer local URL without any OS changes.
-The homepage shows the starter demo recap when a feed exists, but setup is not
-complete until you connect X. Click **Connect X** to seed `X_TOKENS`, then
-manage monitored accounts and bookmark mappings from the homepage. Saves are
-commits to your repo; run `git pull` afterwards so the clone has the dashboard
-commits. After X sign-in, verify `gh secret list` includes `X_TOKENS`, then
-close any remaining setup-only credential or OAuth tabs while leaving the
-dashboard open.
-
-## 3. Commit config and enable Actions
+## 2. Commit config and enable Actions
 
 ```bash
 git add config && git commit -m "config: my topics and accounts" && git push
 ```
 
 On GitHub: **Actions tab → enable workflows**. Then dispatch `pull-bookmarks`
-once with `limit_per_folder` set to `3`, and dispatch `account-dump` once
-manually (Run workflow). The setup bookmark import reads only the latest three
-items from each selected folder. To import full folder history instead, first
-run `bowerbird folders --counts` for a count/cost estimate, then dispatch
-`pull-bookmarks` with `import_all` set to `true`. Scheduled runs use
-forward-only stop-at-existing behavior, so they pick up newer items without
-draining old folder history. Green runs mean raw posts are landing in `raw/`;
-the `compile-wiki` workflow chains automatically and writes `wiki/`, gated by
-the provenance linter.
+once with `limit_per_folder=3` and `account-dump` once manually (Run workflow).
+Green runs mean raw posts are landing in `raw/`; the `compile-wiki` workflow
+chains automatically and writes `wiki/`, gated by the provenance linter.
+
+That first bookmark import is intentionally capped. Normal scheduled bookmark
+pulls are forward-only: they read newest-first and stop when they hit an
+already-ingested bookmark. If you explicitly want full folder history later,
+first run `bowerbird folders --counts` for a count/cost estimate, then dispatch
+`pull-bookmarks` with `import_all=true`.
 
 Verify locally any time:
 
 ```bash
 bowerbird pull          # should print written/skipped counts and search_mode
 bowerbird lint          # must print: provenance OK
+bowerbird doctor        # config, recap feed, and lint health
 ```
 
-To add one account after setup, use the fast path:
-
-```bash
-bowerbird accounts add guinnesschen --topic codex
-git add config/accounts.toml && git commit -m "config: follow guinnesschen" && git push
-gh workflow run account-dump.yml -f handle=guinnesschen -f days=3
-```
-
-When the three-day import finishes, use the cost printed by the run log and
-keep the user-facing update short: "Account added. Last 3 days of posts
-imported. Cost $0.011. Recap of posts will be available shortly." Compile and
-recap can continue in the background; Health is the status surface.
-
-## 4. Recap feed and Slack
+## 3. Recap delivery
 
 The `kb-recap-feed` workflow writes `compile/recap-feed.json` daily — the
-machine-readable "what's new" feed. The local dashboard previews it and uses
-Health to show freshness and workflow status. Any other local consumer of the
-[feed contract](slack-recap.md) can send the recap elsewhere.
+machine-readable "what's new" feed. To get it in Slack, configure the
+[Slack connector](../connectors/slack/README.md). The connector agent reads
+that feed, checks freshness, synthesizes one recap, and sends it to the
+channel or DM you choose.
 
-To post the daily recap to Slack, use the dashboard's **Slack recap** section:
-create or open a Slack app with incoming webhooks enabled, choose a channel,
-paste the webhook URL, and click **Save and send test recap**. Bowerbird posts
-the current recap/test message immediately and stores the webhook as the
-`SLACK_WEBHOOK_URL` repo secret for the `slack-recap` workflow.
+## 4. Check health
 
-## 5. Local web app
+Run the text-first health command any time:
 
-The local web app is the setup/control surface. It gives you:
+```bash
+bowerbird doctor
+bowerbird doctor --json
+```
 
-- **Sign in with X** — which also (re)seeds the pipeline's `X_TOKENS` secret
-  and marks the repo as a live instance when the other required secrets exist;
-  this is the recovery path when the refresh token expires after long
-  inactivity.
-- **Folders** — map bookmark folders to topics by name.
-- **Homepage** — manage monitored accounts and bookmark folder mappings; saves
-  are commits.
-- **Slack recap** — connect a Slack incoming webhook and send a test/current
-  recap to the chosen channel.
-- **Health** — feed freshness and per-workflow status; the page that catches
-  silent failures.
-- **Recap** — preview today's feed.
+It reports config presence, recap-feed validity and freshness, and the local
+provenance lint result. For X token recovery, run `bowerbird auth`, then
+`bowerbird push-secrets` to update the `X_TOKENS` Actions secret.
 
-## 6. Customization
+## 5. Customization
 
 | What | Where |
 | --- | --- |
-| Compile and recap provider/model override | `config/models.toml`, `bowerbird models`, or the dashboard Models section |
-| Compile agent (codex / claude / gemini) | `COMPILE_RUNNER` repository variable |
-| Live-instance scheduled ingest | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
+| Compile agent (claude / codex / gemini) | `COMPILE_RUNNER` repository variable |
 | Account-mirror window | `DUMP_WINDOW_DAYS` repository variable |
+| Live-instance scheduled ingest | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
 | Cron times | Workflow files — the one accepted fork edit, see [upgrading](upgrading.md) |
 | Recap labels per account | `label` field in `config/accounts.toml` |
-| Slack delivery | `SLACK_WEBHOOK_URL` GitHub Actions secret, set by the dashboard |
-| Recap provider/model / quiet days | `RECAP_PROVIDER`, `RECAP_MODEL`, `RECAP_QUIET_MESSAGE` in local web env / repo variables |
+| Recap delivery | Connector agent configuration, starting with `connectors/slack/` |
 
 ## Troubleshooting
 
 - **`pull-bookmarks` fails with 401 after weeks of inactivity** — the X
-  refresh token expired. Sign in with X on the web app (or run
-  `bowerbird auth` locally and update the `X_TOKENS` secret).
+  refresh token expired. Run `bowerbird auth` locally, then
+  `bowerbird push-secrets` to update the `X_TOKENS` secret.
 - **Threads stop reconstructing** — check the run log's `search_mode`; if your
   API plan rejects full-archive search the pull automatically falls back to
   the 7-day recent search.
@@ -215,33 +140,16 @@ The local web app is the setup/control surface. It gives you:
   the compile agent is required to fix violations before committing, so
   repeated failures usually mean a malformed raw file or an interrupted run.
   Re-dispatch `compile-wiki`.
-- **Recap silent** — the web app's Health page shows feed freshness and which
-  workflow broke.
+- **Recap silent** — run `bowerbird doctor`, inspect the `kb-recap-feed`
+  workflow run, and check the connector agent's last run/logs.
 
 ## Appendix: the X developer app, click by click
 
 X has no API for creating developer apps, so this is the one manual stretch.
-Use extension-backed browser control if your agent has it. In Codex, first
-attach to the Chrome extension bridge and verify Chrome shows it is being
-controlled/debugged by Codex. If extension attach fails, or macOS asks for
-System Events/Desktop UI control, pause and ask the user to reconnect/restart
-the extension instead of silently falling back. In Claude Code, use
-`claude --chrome` or `/chrome` with the Chrome extension. The user handles
-login and any payment step. The portal UI shifts occasionally; if a button has
-moved, the *values* below are what matter.
-
-If ordinary browser UI blocks the setup, the agent should try the normal
-browser escape hatches before pausing: press Escape, click outside the overlay,
-or click a visible close/cancel/not-now control. This covers 1Password,
-autofill, cookie, save-password, and help/chat overlays. The agent must not
-inspect 1Password item contents, choose/fill stored secrets, or use desktop
-automation for credential values; native 1Password unlock and OS prompts stay
-with the user.
-
-After the agent has verified local key names and Actions secret names, it
-should close any setup-only X console, GitHub PAT/secrets, model-provider
-key, OAuth leftover, and setup-doc tabs it opened. It should keep Bowerbird
-dashboard, recap, and health tabs open, and leave unrelated user tabs alone.
+(If your coding agent has browser control, it can drive these pages with you
+while you stay logged in; you handle login and any payment step.) The portal UI
+shifts occasionally; if a button has moved, the
+*values* below are what matter.
 
 Create a **new app dedicated to Bowerbird** even if you already have X apps —
 keeping it separate means its credentials revoke independently and its API
@@ -270,11 +178,8 @@ personal pipeline). The values below are what matter in both.
    - Type of app: **Web App, Automated App or Bot** (confidential client) —
      this gives you a client *secret*; the **Native/Public** option works too
      but has no secret (leave `X_CLIENT_SECRET` empty then).
-   - Callback / Redirect URIs — register only these local values:
-     `http://bowerbird.localhost:8080/callback` (CLI fallback auth) and
-     `http://bowerbird.localhost:3000/api/auth/callback` (the local web app's
-     sign-in). Do not add plain `localhost` callbacks; `bowerbird.localhost`
-     is the canonical local dashboard URL.
+   - Callback / Redirect URI — register `http://bowerbird.localhost:8080/callback`
+     for CLI auth.
    - Website URL: anything real (your GitHub fork's URL is fine).
 4. **Collect the three values** (the wizard asks for them; don't paste them
    into chats — though an agent with browser control may pipe a Copy-button

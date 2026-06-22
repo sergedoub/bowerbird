@@ -25,7 +25,7 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 | `local.py` | Shared local-run wiring for bin scripts: `.env` loading, token store, user-id resolution. |
 | `indexer.py` | Regenerates per-topic `wiki/index.md`. |
 | `linter.py` | `lint(wiki_dir, repo_root=None)` returns `Violation[]`. When `repo_root` is provided, also checks that each source note's `raw_path` resolves to a declared, compile-eligible raw file; legacy notes without `raw_path` fall back to `raw_id` resolution. Companion `okf_conformance(wiki_dir)` adds the OKF `type`-presence floor. See [provenance](provenance.md). |
-| `health.py` | Misc preflight checks. |
+| `health.py` | Text-first doctor checks for config, recap-feed freshness, and lint status. |
 
 ## Entry points (`bin/`)
 
@@ -40,6 +40,7 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `backfill.py` | One-off backfill — pulls historical bookmarks past the daily window. |
 | `lint.py` | Walks every `wiki/<topic>/` and runs `kb.linter.lint(wiki, repo_root=ROOT)` plus `kb.linter.okf_conformance(wiki)` (the OKF `type` floor). Exits 0 (prints `provenance OK`) or 1 (prints `N provenance violation(s) — fix before shipping.`). |
 | `recap_feed.py` | Writes `compile/recap-feed.json` from source notes git-added in the window (default 24h). Labels from `config/accounts.toml`. |
+| `doctor.py` | Checks config, recap-feed validity/freshness, and provenance lint status. Supports `--json` for agents. |
 | `folders.py` | Lists the authenticated user's bookmark folders (names + ids). |
 | `init_wizard.py` | Real-world wiring for the `bowerbird init` wizard (terminal I/O, OAuth subprocess, gh CLI secrets). |
 | `compile.sh` | The pluggable compile runner seam — installs and invokes the agent CLI selected by `COMPILE_RUNNER`. See `docs/compile-runners.md`. |
@@ -82,8 +83,8 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
           compile/recap-feed.json
               │
               ▼
-          slack-recap workflow / web app cron / any feed consumer
-          (daily: one Slack recap via the delivery adapter)
+          connector agent (or any feed consumer)
+          (daily: one Slack recap via Slack or another connector)
 ```
 
 ## Filename invariants
@@ -139,7 +140,7 @@ source with strict provenance.
 
 Every step is restartable:
 - `raw_writer` checks file existence by deterministic name before writing.
-- `compile` scans declared auto-compile raw namespaces, then skips any raw path already referenced as `raw_path` in a `wiki/sources/*.md` (legacy fallback: `raw_id`).
+- `compile` scans declared auto-compile raw namespaces, then skips any path already referenced as `raw_path` in a `wiki/sources/*.md`.
 - `ingest_book` writes deterministic chapter ids, so re-running the same book skips existing raw chapter files.
 - `lint` is a pure function over the filesystem state.
 

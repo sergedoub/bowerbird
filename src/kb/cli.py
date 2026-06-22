@@ -32,13 +32,14 @@ VERBS: dict[str, tuple[str, str]] = {
     "models": ("models.py", "choose compile and recap model provider"),
     "push-secrets": ("push_secrets.py", "push credentials staged in bin/.env to GitHub Actions secrets"),
     "lint": ("lint.py", "run the provenance linter over wiki/"),
+    "doctor": ("doctor.py", "check config, recap feed freshness, and lint status"),
 }
 
 # Verbs whose scripts parse arguments themselves (argparse) — pass --help through to
 # them. Everything else gets a static synopsis here, so asking for help never starts
 # the wizard, runs the linter, or requires credentials.
 ARGPARSE_VERBS = {"auth", "folders", "pull", "backfill", "accounts", "dump-account",
-                  "ingest-book", "models", "push-secrets"}
+                  "ingest-book", "models", "push-secrets", "doctor"}
 
 SYNOPSES = {
     "init": "usage: bowerbird init\n\nInteractive setup wizard: X app credentials, OAuth sign-in, bookmark-folder ->\ntopic mapping, account mirrors, GitHub Actions secrets. Re-runnable; never\noverwrites existing config without asking. Takes no arguments.",

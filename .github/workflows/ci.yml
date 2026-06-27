@@ -1,14 +1,12 @@
 name: ci
 
-# Offline test suite + provenance lint on every code change. The suite includes
-# tests/test_demo_instance.py, which lints the shipped root demo wiki and
-# validates root demo recap files/manifests against the real validators.
+# Offline test suite + provenance lint on code and compile-contract changes.
 
 on:
   push:
-    paths: ["src/**", "bin/**", "tests/**", "config/**", "raw/**", "wiki/**", "compile/recaps/**", "recaps/**", "pyproject.toml", ".github/workflows/**"]
+    paths: ["src/**", "bin/**", "tests/**", "config/**", "raw/**", "wiki/**", "compile/**", "recaps/**", "pyproject.toml", ".github/workflows/**"]
   pull_request:
-    paths: ["src/**", "bin/**", "tests/**", "config/**", "raw/**", "wiki/**", "compile/recaps/**", "recaps/**", "pyproject.toml", ".github/workflows/**"]
+    paths: ["src/**", "bin/**", "tests/**", "config/**", "raw/**", "wiki/**", "compile/**", "recaps/**", "pyproject.toml", ".github/workflows/**"]
   workflow_dispatch: {}
 
 permissions:

@@ -78,6 +78,14 @@ def main() -> None:
     if args.limit_per_folder < 0:
         sys.exit("--limit-per-folder must be non-negative")
 
+    cfg = TopicsConfig.load(os.path.join(ROOT, "config", "topics.toml"))
+    topics = [t for t in cfg.topics if (not args.topic or t.name == args.topic)]
+    if not topics:
+        if args.topic:
+            sys.exit(f"topic '{args.topic}' not in config")
+        print("No bookmark topics configured in config/topics.toml.")
+        return
+
     load_local_env()
     token_store = TokenStore(
         os.environ["X_CLIENT_ID"], os.environ.get("X_CLIENT_SECRET"), make_storage(),
@@ -85,12 +93,7 @@ def main() -> None:
     user_id = resolve_user_id(token_store)
     bookmarks = XBookmarkClient(user_id, token_store)
     search = SearchClient(os.environ["X_BEARER_TOKEN"])
-    cfg = TopicsConfig.load(os.path.join(ROOT, "config", "topics.toml"))
     writer = RawWriter(os.path.join(ROOT, "raw", "bookmarks"))
-
-    topics = [t for t in cfg.topics if (not args.topic or t.name == args.topic)]
-    if not topics:
-        sys.exit(f"topic '{args.topic}' not in config")
 
     limit_per_folder = args.limit_per_folder or None
     summary = run_pull(

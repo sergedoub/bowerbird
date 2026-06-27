@@ -1,4 +1,3 @@
 # X accounts to mirror in full (posts + replies).
-# Account mirrors are optional. `bowerbird init` can offer public example
-# accounts during setup, but the source repo does not pre-enable any account
-# mirrors or ship pre-ingested account posts.
+# Account mirrors are optional. Run `bowerbird init` or
+# `bowerbird accounts add <handle> --topic <topic>` to add your own.

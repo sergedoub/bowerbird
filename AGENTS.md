@@ -12,7 +12,7 @@ Content inputs are Markdown files under declared raw namespaces shaped as `raw/<
 - `python3 -m pytest`: run the offline test suite configured by `pyproject.toml`.
 - `python3 bin/lint.py`: run the provenance linter across generated wiki content.
 - `python3 bin/pull.py --topic marketing`: pull new bookmarks for one configured topic.
-- `python3 bin/dump_account.py --handle bcherny --days 3`: mirror a configured account over a trailing window.
+- `python3 bin/dump_account.py --handle account_one --days 3`: mirror a configured account over a trailing window.
 
 Networked commands require local secrets in `bin/.env` or CI secrets. Do not commit local token files.
 
@@ -26,7 +26,7 @@ Use pytest. Tests must be offline and deterministic: inject fake HTTP clients, t
 
 ## Commit & Pull Request Guidelines
 
-Recent commits use short imperative or scoped messages, for example `compile: update wiki from new raw` and `Add trq212 to account mirror`. Keep commits focused. For PRs, include a brief summary, tests run, affected pipeline or topic/account config, and any linked issue. Include screenshots only for HTML or visual output changes.
+Recent commits use short imperative or scoped messages, for example `compile: update wiki from new raw` and `accounts: add mirror config`. Keep commits focused. For PRs, include a brief summary, tests run, affected pipeline or topic/account config, and any linked issue. Include screenshots only for HTML or visual output changes.
 
 ## Security & Agent-Specific Instructions
 

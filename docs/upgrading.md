@@ -19,9 +19,9 @@ The repo enforces a path-disjointness rule:
   `compile/PROMPT.md`, `compile/recaps/`, `.github/`, `docs/`, `connectors/`,
   `skill/` — are only ever changed by upstream. Your instance's automation
   never writes here.
-- **Data paths** — `raw/`, `wiki/`, `config/`, `recaps/` — are
-  only ever written by your instance (your imports, your compile, your config).
-  Upstream never ships changes here beyond the initial examples.
+- **Data paths** — `raw/`, `wiki/`, `config/`, `recaps/` — are owned by your
+  instance after setup. The source repo keeps generated data out of upstream;
+  your imports, compile output, recap files, and chosen config live in your fork.
 
 Disjoint paths mean `git merge upstream/main` cannot conflict, no matter how
 many daily data commits your fork has accumulated.

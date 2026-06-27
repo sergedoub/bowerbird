@@ -42,18 +42,18 @@ def test_router_uses_classifier_for_unsorted_when_provided():
 
 def test_accounts_config_normalizes_handles_and_carries_topic():
     cfg = AccountsConfig.from_dict({"handles": [
-        {"handle": "bcherny", "topic": "claude-code"},
-        {"handle": "@karpathy", "topic": "ai"},
+        {"handle": "account_one", "topic": "ai-updates"},
+        {"handle": "@account_two", "topic": "research"},
     ]})
     assert [(a.handle, a.topic, a.off_topic) for a in cfg.accounts] == [
-        ("bcherny", "claude-code", "skip"),   # default off_topic policy
-        ("karpathy", "ai", "skip"),           # leading @ stripped
+        ("account_one", "ai-updates", "skip"),   # default off_topic policy
+        ("account_two", "research", "skip"),     # leading @ stripped
     ]
 
 
 def test_accounts_config_respects_explicit_off_topic_policy():
     cfg = AccountsConfig.from_dict({"handles": [
-        {"handle": "bcherny", "topic": "claude-code", "off_topic": "quarantine"},
+        {"handle": "account_one", "topic": "ai-updates", "off_topic": "quarantine"},
     ]})
     assert cfg.accounts[0].off_topic == "quarantine"
 
@@ -67,27 +67,27 @@ def test_accounts_config_rejects_duplicates():
     with pytest.raises(ConfigError):
         # same account twice
         AccountsConfig.from_dict({"handles": [
-            {"handle": "bcherny", "topic": "claude-code"},
-            {"handle": "@bcherny", "topic": "claude-code"},
+            {"handle": "account_one", "topic": "ai-updates"},
+            {"handle": "@account_one", "topic": "ai-updates"},
         ]})
 
 
 def test_accounts_config_requires_topic():
     with pytest.raises(ConfigError):
-        AccountsConfig.from_dict({"handles": [{"handle": "bcherny"}]})
+        AccountsConfig.from_dict({"handles": [{"handle": "account_one"}]})
 
 
 def test_accounts_config_rejects_unknown_off_topic_policy():
     with pytest.raises(ConfigError):
         AccountsConfig.from_dict({"handles": [
-            {"handle": "bcherny", "topic": "claude-code", "off_topic": "explode"},
+            {"handle": "account_one", "topic": "ai-updates", "off_topic": "explode"},
         ]})
 
 
 def test_accounts_config_rejects_legacy_string_handles():
-    """Legacy `handles = ["bcherny"]` form no longer parses — explicit topic is now required."""
+    """Legacy `handles = ["account_one"]` form no longer parses — explicit topic is now required."""
     with pytest.raises(ConfigError):
-        AccountsConfig.from_dict({"handles": ["bcherny"]})
+        AccountsConfig.from_dict({"handles": ["account_one"]})
 
 
 def test_books_config_loads_books_and_gets_by_id():
@@ -132,16 +132,16 @@ def test_books_config_rejects_missing_fields_bad_ids_and_duplicates():
 
 def test_recaps_config_loads_profiles_selectors_and_deliveries():
     cfg = RecapsConfig.from_dict({"recaps": [{
-        "name": "ai-accounts-daily",
+        "name": "accounts-daily",
         "frequency": "daily",
-        "accounts": ["@BCHERNY", "thsottiaux"],
+        "accounts": ["@ACCOUNT_ONE", "account_two"],
         "prompt": "compile/recaps/default.md",
         "format": "slack_mrkdwn",
         "deliveries": [{"type": "slack", "destination": "#augur-updates"}],
     }]})
     profile = cfg.profiles[0]
-    assert profile.name == "ai-accounts-daily"
-    assert profile.accounts == ("bcherny", "thsottiaux")
+    assert profile.name == "accounts-daily"
+    assert profile.accounts == ("account_one", "account_two")
     assert profile.topics == ()
     assert profile.output_format == "slack_mrkdwn"
     assert profile.deliveries[0].kind == "slack"
@@ -164,8 +164,7 @@ def test_recaps_config_supports_weekly_topic_profiles():
 
 
 def test_recaps_config_rejects_bad_profiles():
-    with pytest.raises(ConfigError, match="no \\[\\[recaps\\]\\]"):
-        RecapsConfig.from_dict({})
+    assert RecapsConfig.from_dict({}).profiles == ()
     with pytest.raises(ConfigError, match="lowercase slug"):
         RecapsConfig.from_dict({"recaps": [{
             "name": "Bad Profile",

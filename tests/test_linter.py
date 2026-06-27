@@ -102,25 +102,25 @@ def test_raw_id_resolves_via_mirror_for_account_source(tmp_path):
     root, wiki = _repo(
         tmp_path,
         raws=[],  # no bookmark raw exists; must resolve via raw/accounts/
-        account_raws={"bcherny": ["2026-05-24__555.md"]},
+        account_raws={"account_one": ["2026-05-24__555.md"]},
     )
     (wiki / "sources" / "y.md").write_text(
-        "---\nauthor: '@bcherny'\nurl: u\ndate: 2026-05-24\nraw_id: \"555\"\n"
-        "mirror: accounts/bcherny\n---\nbody\n"
+        "---\nauthor: '@account_one'\nurl: u\ndate: 2026-05-24\nraw_id: \"555\"\n"
+        "mirror: accounts/account_one\n---\nbody\n"
     )
     (wiki / "concepts" / "c.md").write_text("[[y]]\n")
     assert lint(wiki, repo_root=root) == []
 
 
 def test_raw_id_missing_in_account_mirror_is_flagged(tmp_path):
-    root, wiki = _repo(tmp_path, account_raws={"bcherny": []})  # mirror dir exists, file doesn't
+    root, wiki = _repo(tmp_path, account_raws={"account_one": []})  # mirror dir exists, file doesn't
     (wiki / "sources" / "y.md").write_text(
-        "---\nauthor: '@bcherny'\nurl: u\ndate: 2026-05-24\nraw_id: \"555\"\n"
-        "mirror: accounts/bcherny\n---\nbody\n"
+        "---\nauthor: '@account_one'\nurl: u\ndate: 2026-05-24\nraw_id: \"555\"\n"
+        "mirror: accounts/account_one\n---\nbody\n"
     )
     (wiki / "concepts" / "c.md").write_text("[[y]]\n")
     v = lint(wiki, repo_root=root)
-    assert any(x.kind == "missing_raw" and "raw/accounts/bcherny" in x.message for x in v)
+    assert any(x.kind == "missing_raw" and "raw/accounts/account_one" in x.message for x in v)
 
 
 def test_raw_id_resolves_for_book_chapter_source(tmp_path):

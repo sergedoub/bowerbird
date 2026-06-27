@@ -109,8 +109,8 @@ Each tracked account is a `[[handles]]` table with three fields:
 
 ```toml
 [[handles]]
-handle    = "bcherny"
-topic     = "claude-code"   # distilled source notes land in wiki/claude-code/sources/
+handle    = "account_one"
+topic     = "ai-updates"   # distilled source notes land in wiki/ai-updates/sources/
 off_topic = "skip"          # policy for posts that don't fit the topic; only "skip" is implemented today
 ```
 

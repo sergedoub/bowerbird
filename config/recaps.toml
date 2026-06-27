@@ -1,10 +1,2 @@
-[[recaps]]
-name = "getting-started-daily"
-frequency = "daily"
-topics = ["getting-started"]
-prompt = "compile/recaps/default.md"
-format = "markdown"
-
-[[recaps.deliveries]]
-type = "slack"
-destination = "#bowerbird-recaps"
+# Active recap profiles.
+# Run `bowerbird init` to create topic and/or account recap profiles for your fork.

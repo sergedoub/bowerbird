@@ -22,8 +22,8 @@ These may be personal, sensitive, or too specific for a reusable public repo:
 
 | Path | Decision |
 | --- | --- |
-| `raw/bookmarks/` | Publish only if the imported posts and your curation choices are meant to be public. Otherwise replace with sanitized demo raw files or remove before publishing. |
-| `raw/accounts/` | Publish only if mirrored accounts and selected handles are intentional public examples. |
+| `raw/bookmarks/` | Publish only if the imported posts and your curation choices are meant to be public. The source repo should not ship generated raw data. |
+| `raw/accounts/` | Publish only if mirrored accounts and selected handles are intentional public data. The source repo should not ship generated account data. |
 | `raw/books/` | Do not publish copyrighted or private source material unless you have the rights to do so. |
 | `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with a sanitized demo wiki or remove before publishing. |
 | `recaps/` | Publish only if generated recap bodies, source note paths, and destinations are safe. Otherwise replace with sanitized demo recap files or remove before publishing. |
@@ -55,10 +55,12 @@ Still check Git history before going public if secrets were ever committed.
 
 ## Suggested Public Shape
 
-For a reusable open-source release, ship a runnable demo instance in the real
-top-level paths: `config/`, `raw/`, `wiki/`, and `recaps/`. The demo content
-should be synthetic or intentionally public. Avoid a separate sample tree:
-duplicated layouts drift and make setup less clear.
+For a reusable open-source release, keep the source repo clean: code, docs,
+workflow scaffolding, prompt files, and empty config templates. Generated
+`raw/`, `wiki/`, and `recaps/` output belongs in an installed fork or a
+separate data repo such as
+[bowerbird-demo](https://github.com/sergedoub/bowerbird-demo). Do not duplicate
+generated data inside the source repo.
 
 ## GitHub Actions Setup For Users
 

@@ -10,7 +10,7 @@ def _write_valid_repo(root):
         '[topics.marketing]\nfolder_ids = ["123"]\n'
     )
     (root / "config" / "accounts.toml").write_text(
-        '[[handles]]\nhandle = "bcherny"\ntopic = "claude-code"\n'
+        '[[handles]]\nhandle = "account_one"\ntopic = "ai-updates"\n'
     )
     (root / "config" / "recaps.toml").write_text(
         '[[recaps]]\n'
@@ -70,7 +70,7 @@ def test_topics_use_canonical_validation(tmp_path):
 def test_accounts_use_canonical_validation(tmp_path):
     _write_valid_repo(tmp_path)
     (tmp_path / "config" / "accounts.toml").write_text(
-        '[[handles]]\nhandle = "bcherny"\ntopic = "claude-code"\noff_topic = "explode"\n'
+        '[[handles]]\nhandle = "account_one"\ntopic = "ai-updates"\noff_topic = "explode"\n'
     )
     report = HealthCheck().check(
         tmp_path,

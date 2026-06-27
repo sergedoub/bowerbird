@@ -77,8 +77,10 @@ class RecapsConfig:
     @classmethod
     def from_dict(cls, data: dict) -> "RecapsConfig":
         raw_profiles = data.get("recaps", [])
-        if not isinstance(raw_profiles, list) or not raw_profiles:
-            raise ConfigError("no [[recaps]] entries found in recaps config")
+        if not isinstance(raw_profiles, list):
+            raise ConfigError("recaps config must use [[recaps]] tables")
+        if not raw_profiles:
+            return cls(profiles=())
 
         profiles: list[RecapProfile] = []
         seen: set[str] = set()
@@ -200,7 +202,7 @@ class TopicsConfig:
     def from_dict(cls, data: dict) -> "TopicsConfig":
         raw = data.get("topics", {})
         if not raw:
-            raise ConfigError("no [topics.*] tables found in config")
+            return cls(topics=())
         topics: list[Topic] = []
         seen_folders: dict[str, str] = {}
         for name, body in raw.items():
@@ -249,8 +251,8 @@ class AccountsConfig:
     Reads config/accounts.toml. Each account is a `[[handles]]` table:
 
         [[handles]]
-        handle = "bcherny"
-        topic  = "claude-code"
+        handle = "account_one"
+        topic  = "ai-updates"
         off_topic = "skip"
 
     Normalizes any stray leading '@' on the handle and rejects duplicates (which would

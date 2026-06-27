@@ -185,14 +185,13 @@ The journey:
 6. WATCH FOLDERS AND FOLLOW ACCOUNTS — run `bowerbird folders`, then ask me
    which folders to watch and which accounts to follow. Use plain language:
    "watch a folder", "follow an account", "wiki section", and "recap
-   label". If I do not know what account to mirror yet, offer the four public
-   example accounts from the setup wizard as an opt-in starter set; explain
-   that their posts are not pre-ingested in the source repo and that pulling
-   them will spend X API reads. Write `config/topics.toml`, optional
-   `config/accounts.toml`, and `config/recaps.toml` directly. For each watched
-   topic, ask whether to create a daily or weekly recap profile; if account
-   mirrors are selected, ask whether to create a daily account recap profile.
-   Commit the config changes, and push.
+   label". Do not suggest accounts; have me provide the accounts I want to
+   follow, and explain that each mirrored post is a paid X API read. Write
+   `config/topics.toml`, optional `config/accounts.toml`, and
+   `config/recaps.toml` directly. For each watched topic, ask whether to create
+   a daily or weekly recap profile; if account mirrors are selected, ask
+   whether to create a daily account recap profile. Commit the config changes,
+   and push.
 
 7. FIRST PULL — make sure Actions
    are enabled on the repo (walk me through the Actions tab if needed),

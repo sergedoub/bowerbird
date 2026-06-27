@@ -10,7 +10,7 @@ the last few days and accrues forward; the daily overlap self-heals a skipped ru
 Auth is the app-only Bearer only — set X_BEARER_TOKEN (GitHub secret, or bin/.env locally).
 No user-context token / rotation needed for this pipeline.
 
-Usage:  python3 bin/dump_account.py [--handle bcherny] [--days 3 | --full]
+Usage:  python3 bin/dump_account.py [--handle account_one] [--days 3 | --full]
 """
 from __future__ import annotations
 

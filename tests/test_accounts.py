@@ -7,12 +7,12 @@ from kb.config import ConfigError
 
 
 def test_add_account_to_empty_config():
-    text, added = add_account_to_text("", "@guinnesschen", topic="codex", label="Guinness")
+    text, added = add_account_to_text("", "@account_two", topic="codex", label="Guinness")
 
     assert added is True
     parsed = tomllib.loads(text)
     assert parsed["handles"] == [{
-        "handle": "guinnesschen",
+        "handle": "account_two",
         "topic": "codex",
         "off_topic": "skip",
         "label": "Guinness",
@@ -22,19 +22,19 @@ def test_add_account_to_empty_config():
 def test_add_account_preserves_existing_rows_and_is_idempotent():
     original = """
 [[handles]]
-handle = "bcherny"
+handle = "account_one"
 topic = "ai"
 off_topic = "skip"
-label = "Boris"
+label = "Account One"
 """
-    first, added = add_account_to_text(original, "guinnesschen", topic="codex")
-    second, added_again = add_account_to_text(first, "@guinnesschen", topic="other")
+    first, added = add_account_to_text(original, "account_two", topic="codex")
+    second, added_again = add_account_to_text(first, "@account_two", topic="other")
 
     assert added is True
     assert added_again is False
     parsed = tomllib.loads(second)
-    assert [row["handle"] for row in parsed["handles"]] == ["bcherny", "guinnesschen"]
-    assert parsed["handles"][0]["label"] == "Boris"
+    assert [row["handle"] for row in parsed["handles"]] == ["account_one", "account_two"]
+    assert parsed["handles"][0]["label"] == "Account One"
     assert parsed["handles"][1]["topic"] == "codex"
 
 

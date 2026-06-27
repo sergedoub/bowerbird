@@ -114,18 +114,13 @@ raw/bookmarks/<topic>/<YYYY-MM-DD>__<tweet-id>.md
 Each account mirror maps a handle to the topic where compiled notes should land:
 
 ```bash
-bowerbird accounts add example_handle --topic claude-code
+bowerbird accounts add your_handle --topic your-topic
 ```
-
-If you do not know what to mirror yet, `bowerbird init` can offer four public
-example accounts as an opt-in starter set. Choosing them writes normal
-`config/accounts.toml` entries in your fork; the source repo does not ship
-their posts or compiled account notes.
 
 ```toml
 [[handles]]
-handle = "example_handle"
-topic = "claude-code"
+handle = "your_handle"
+topic = "your-topic"
 off_topic = "skip"
 ```
 
@@ -144,13 +139,13 @@ python3 bin/dump_account.py --days 1 --max-posts 5
 Run one account explicitly:
 
 ```bash
-python3 bin/dump_account.py --handle example_handle --days 3
+python3 bin/dump_account.py --handle your_handle --days 3
 ```
 
 Or dispatch the targeted GitHub Actions version:
 
 ```bash
-gh workflow run account-dump.yml -f handle=example_handle -f days=3
+gh workflow run account-dump.yml -f handle=your_handle -f days=3
 ```
 
 The importer writes:

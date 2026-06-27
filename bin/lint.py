@@ -20,16 +20,17 @@ from kb.recaps import validate_recap_files  # noqa: E402
 def main() -> None:
     topics_dir = os.path.join(ROOT, "wiki")
     violations = []
-    for topic in sorted(os.listdir(topics_dir)):
-        wiki = os.path.join(topics_dir, topic)
-        if not os.path.isdir(wiki):
-            continue
-        for v in lint(wiki, repo_root=ROOT):
-            print(f"[{topic}] {v.kind}: {os.path.relpath(v.path, ROOT)} :: {v.message}")
-            violations.append(v)
-        for v in okf_conformance(wiki):
-            print(f"[{topic}] {v.kind}: {os.path.relpath(v.path, ROOT)} :: {v.message}")
-            violations.append(v)
+    if os.path.isdir(topics_dir):
+        for topic in sorted(os.listdir(topics_dir)):
+            wiki = os.path.join(topics_dir, topic)
+            if not os.path.isdir(wiki):
+                continue
+            for v in lint(wiki, repo_root=ROOT):
+                print(f"[{topic}] {v.kind}: {os.path.relpath(v.path, ROOT)} :: {v.message}")
+                violations.append(v)
+            for v in okf_conformance(wiki):
+                print(f"[{topic}] {v.kind}: {os.path.relpath(v.path, ROOT)} :: {v.message}")
+                violations.append(v)
     for issue in validate_recap_files(ROOT):
         print(f"[recaps] recap: {issue}")
         violations.append(issue)

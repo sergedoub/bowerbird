@@ -25,11 +25,10 @@ markdown files as the database, your GitHub fork as the storage and compute
 credentials you own — your X developer app, your LLM key, and your connector
 services.
 
-The public source repo includes a synthetic `getting-started` demo instance
-directly in the real pipeline paths: `config/`, `raw/`, `wiki/`, and
-`recaps/`. There is no second sample layout. Account mirrors are configured
-during setup; the wizard can offer public example accounts, but the source repo
-does not ship pre-ingested account posts.
+The public source repo is clean product code and setup scaffolding. It does not
+ship pre-ingested `raw/`, compiled `wiki/`, or generated `recaps/` data. A
+separate [bowerbird-demo](https://github.com/sergedoub/bowerbird-demo) repo is
+reserved for generated output examples, independent from the source.
 
 ## Quick start
 
@@ -59,8 +58,9 @@ does not ship pre-ingested account posts.
    accounts it follows, and setting the GitHub Actions secrets (automatic when
    the `gh` CLI is installed).
 3. **Enable GitHub Actions** on your fork and run `pull-bookmarks` once with
-   `limit_per_folder=3`, then run `account-dump` once manually. Later account
-   adds use `bowerbird accounts add <handle> --topic <topic>` plus a targeted
+   `limit_per_folder=3`. If you configured account mirrors, run `account-dump`
+   once manually too. Later account adds use
+   `bowerbird accounts add <handle> --topic <topic>` plus a targeted
    `account-dump` dispatch with `handle=<handle>`, `days=3`. The compile chains
    automatically; `bowerbird lint` must print `provenance and recaps OK` and
    `bowerbird doctor` should report healthy config/recap/lint status.

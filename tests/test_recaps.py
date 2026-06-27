@@ -23,7 +23,7 @@ def _profile(**overrides):
         "frequency": "daily",
         "prompt_path": "compile/recaps/default.md",
         "output_format": "slack_mrkdwn",
-        "accounts": ("bcherny",),
+        "accounts": ("account_one",),
         "topics": (),
         "deliveries": (DeliveryTarget("slack", "#augur-updates"),),
         "weekly_due_day": "monday",
@@ -57,12 +57,12 @@ def test_daily_and_weekly_calendar_windows():
 
 def test_load_source_notes_and_selectors_split_accounts_from_topics():
     files = {
-        "wiki/claude-code/sources/2026-06-21-boris.md": """---
+        "wiki/ai-updates/sources/2026-06-21-account-one.md": """---
 date: 2026-06-21
-mirror: accounts/bcherny
+mirror: accounts/account_one
 ---
 
-Boris shipped a coding-agent update.
+Account One shipped a coding-agent update.
 """,
         "wiki/marketing/sources/2026-06-21-positioning.md": """---
 date: 2026-06-21
@@ -72,8 +72,8 @@ topic: marketing
 Positioning note.
 """,
     }
-    notes = load_source_notes(list(files), files.__getitem__, account_labels={"bcherny": "Boris"})
-    account_profile = _profile(accounts=("bcherny",), topics=())
+    notes = load_source_notes(list(files), files.__getitem__, account_labels={"account_one": "Account One"})
+    account_profile = _profile(accounts=("account_one",), topics=())
     topic_profile = _profile(
         name="marketing-daily",
         accounts=(),
@@ -85,9 +85,9 @@ Positioning note.
     selected_topic = select_notes(topic_profile, notes)
 
     assert [note.path for note in selected_account] == [
-        "wiki/claude-code/sources/2026-06-21-boris.md"
+        "wiki/ai-updates/sources/2026-06-21-account-one.md"
     ]
-    assert selected_account[0].label == "Boris"
+    assert selected_account[0].label == "Account One"
     assert [note.path for note in selected_topic] == [
         "wiki/marketing/sources/2026-06-21-positioning.md"
     ]
@@ -96,15 +96,15 @@ Positioning note.
 def test_build_recap_artifact_frontmatter_and_manifest():
     profile = _profile()
     files = {
-        "wiki/claude-code/sources/2026-06-21-boris.md": """---
+        "wiki/ai-updates/sources/2026-06-21-account-one.md": """---
 date: 2026-06-21
-mirror: accounts/bcherny
+mirror: accounts/account_one
 ---
 
-Boris shipped a coding-agent update.
+Account One shipped a coding-agent update.
 """,
     }
-    notes = load_source_notes(list(files), files.__getitem__, account_labels={"bcherny": "Boris"})
+    notes = load_source_notes(list(files), files.__getitem__, account_labels={"account_one": "Account One"})
     artifact = build_recap_artifact(
         profile,
         notes,
@@ -120,13 +120,13 @@ Boris shipped a coding-agent update.
     assert "type: Recap" in artifact.content
     assert 'profile: "ai-accounts-daily"' in artifact.content
     assert 'prompt_path: "compile/recaps/default.md"' in artifact.content
-    assert '  - "wiki/claude-code/sources/2026-06-21-boris.md"' in artifact.content
+    assert '  - "wiki/ai-updates/sources/2026-06-21-account-one.md"' in artifact.content
     assert 'destination: "#augur-updates"' in artifact.content
     assert artifact.manifest_entry["deliveries"] == [
         {"type": "slack", "destination": "#augur-updates"}
     ]
     assert "*Knowledge Base - daily recap - 2026-06-21*" in artifact.content
-    assert "*Boris:* Boris shipped a coding-agent update." in artifact.content
+    assert "*Account One:* Account One shipped a coding-agent update." in artifact.content
     assert "_1 new note | 1 account lane_" in artifact.content
 
     manifest = manifest_for(
@@ -142,15 +142,15 @@ Boris shipped a coding-agent update.
 def test_model_prompt_uses_compact_lane_recap_contract():
     profile = _profile()
     files = {
-        "wiki/claude-code/sources/2026-06-21-boris.md": """---
+        "wiki/ai-updates/sources/2026-06-21-account-one.md": """---
 date: 2026-06-21
-mirror: accounts/bcherny
+mirror: accounts/account_one
 ---
 
-Boris shipped a coding-agent update.
+Account One shipped a coding-agent update.
 """,
     }
-    notes = load_source_notes(list(files), files.__getitem__, account_labels={"bcherny": "Boris"})
+    notes = load_source_notes(list(files), files.__getitem__, account_labels={"account_one": "Account One"})
     artifact = build_recap_artifact(
         profile,
         notes,

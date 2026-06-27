@@ -2,7 +2,8 @@
 
 Five workflows live in `.github/workflows/`. Two are cron-triggered content
 pipelines, one is the LLM compile step, one writes file-first recaps, and
-`ci.yml` runs the offline test suite + lint on code changes. The pipelines
+`ci.yml` runs the offline test suite + lint on code, docs, and compile-contract
+changes. The pipelines
 chain through `workflow_run` events because commits made with the default
 `GITHUB_TOKEN` do **not** fire `push` events (by design — GitHub avoids
 infinite loops).
@@ -15,7 +16,7 @@ infinite loops).
 | `account-dump.yml` | Daily cron `0 22 * * *` + manual | Runs `bin/dump_account.py --days ${DUMP_WINDOW_DAYS:-3}` for all configured accounts, or a targeted manual import with `handle`/`days` inputs. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. Commits new `raw/accounts/` files with `GITHUB_TOKEN`. |
 | `compile.yml` | `workflow_run` chained from **either** `pull-bookmarks` or `account-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — installs and invokes the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md`, per the contract in `compile/INSTRUCTIONS.md`. Processes declared auto-compile raw namespaces. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
 | `recap.yml` | Daily cron `30 1 * * *`; `workflow_run` from `compile-wiki`; manual | Runs `bin/recap.py`: reads `config/recaps.toml`, generates `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`, commits only `recaps/`, then runs the bundled Slack adapter for manifest-listed Slack deliveries. |
-| `ci.yml` | push/PR on code paths + manual | `pytest` (includes demo lint/recap checks) + `bin/lint.py`. |
+| `ci.yml` | push/PR on code, docs, and compile-contract paths + manual | `pytest` + `bin/lint.py`. |
 
 ## Chaining model
 
@@ -36,9 +37,9 @@ without removing the generated recap files.
 
 The compile job filters with `BOWERBIRD_LIVE_INSTANCE=true` for automatic
 `push` and `workflow_run` triggers, while manual dispatch remains explicit.
-For chained runs, the upstream import must also have succeeded. This lets the
-public source repo carry demo `raw/` fixtures without requiring a configured
-compile runner.
+For chained runs, the upstream import must also have succeeded. This keeps the
+public source repo inert until an installed fork has configured ingest and
+compile credentials.
 
 The two scheduled import workflows also filter with
 `BOWERBIRD_LIVE_INSTANCE=true`. Source repos carry the automation as product

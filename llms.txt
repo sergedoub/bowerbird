@@ -14,7 +14,7 @@ This is the **agent-facing knowledge base** for the *repository pipeline* — de
 - [Daily recap](docs/slack-recap.md): `recaps/` and manifest contract plus the one-message daily delivery model.
 - [Upgrading](docs/upgrading.md): Fork upgrade path (`git merge upstream/main`), path-disjointness rule, repo variables, the cron exception.
 - [Slack connector](connectors/slack/README.md): Bot-token delivery contract for turning generated recap files into one Slack recap message.
-- [Open-source checklist](docs/open-source.md): What to keep, redact, replace, or generalize before making a personal instance public.
+- [Publishing a Bowerbird instance](docs/open-source.md): What to review, redact, or separate before making an instance or demo data repo public.
 - [Overview](docs/agent/overview.md): What the repo is, the Karpathy-style philosophy, the raw-source pipeline at 10,000 feet, key identifiers and where to look first.
 - [Pipeline](docs/agent/pipeline.md): End-to-end flow of `bin/pull.py`, `bin/dump_account.py`, the compile step, `bin/recap.py`, `bin/slack_recap.py`, and `bin/lint.py` — with the exact responsibilities of each `src/kb/` module.
 - [Repo layout](docs/agent/repo-layout.md): Every top-level directory and the `raw/<namespace>/<bucket>/` layout. Where new content lands and where it must never land.

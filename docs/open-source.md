@@ -1,38 +1,47 @@
-# Open-Source Checklist
+# Publishing A Bowerbird Instance
 
-This repo can be open sourced, but a personal instance may contain private
-content, private automation details, and source-specific configuration. Review
-these items before switching repository visibility.
+The Bowerbird source repo is meant to stay clean and public: code, docs,
+workflow scaffolding, prompt files, connector setup assets, and empty config
+templates.
 
-## Keep
+A Bowerbird fork or install is different. It can contain private raw material,
+compiled wiki notes, recap files, selected account handles, Slack destinations,
+and workflow choices. Use this checklist before making an instance or demo data
+repo public.
 
-These parts are generally safe and useful to publish:
+## Default Recommendation
 
-- `src/kb/`
-- `bin/`
-- `tests/`
-- `compile/INSTRUCTIONS.md`
-- `.github/workflows/*.yml`, after reviewing cron times and secrets
-- Public setup docs under `docs/`
-- Agent docs under `docs/agent/`, after removing private workspace identifiers
+Keep your personal Bowerbird instance private.
 
-## Review Or Replace
+If you want public examples, publish a separate data/demo repository such as
+[bowerbird-demo](https://github.com/sergedoub/bowerbird-demo). That repo can
+show the shape of `raw/`, `wiki/`, and `recaps/` without copying generated data
+back into the product source repo.
 
-These may be personal, sensitive, or too specific for a reusable public repo:
+## Source Repo Vs Instance Repo
 
-| Path | Decision |
-| --- | --- |
-| `raw/bookmarks/` | Publish only if the imported posts and your curation choices are meant to be public. The source repo should not ship generated raw data. |
-| `raw/accounts/` | Publish only if mirrored accounts and selected handles are intentional public data. The source repo should not ship generated account data. |
-| `raw/books/` | Do not publish copyrighted or private source material unless you have the rights to do so. |
-| `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with a sanitized demo wiki or remove before publishing. |
-| `recaps/` | Publish only if generated recap bodies, source note paths, and destinations are safe. Otherwise replace with sanitized demo recap files or remove before publishing. |
-| `config/*.toml` | Replace personal folder IDs, handles, recap destinations, and model choices with sanitized demo config if needed. |
-| Personal automation docs | Remove or generalize anything referencing private workspaces, trigger IDs, or Slack channel IDs. |
+| Repo type | Should contain | Should not contain |
+| --- | --- | --- |
+| Source repo | Product code, setup docs, workflows, prompts, empty config templates. | Personal raw data, compiled wiki output, generated recap files, real account selections, Slack destinations. |
+| Personal instance | Your chosen config plus generated `raw/`, `wiki/`, and `recaps/`. | Public secrets or data you do not intend to share. |
+| Demo/data repo | Intentional public example output. | Product-only source changes that belong upstream. |
+
+## Review Before Publishing An Instance
+
+| Path | Risk | Public-safe action |
+| --- | --- | --- |
+| `raw/bookmarks/` | Reveals saved posts and curation choices. | Publish only if the selection is intentional public data. |
+| `raw/accounts/` | Reveals followed handles and mirrored post history. | Publish only if those account mirrors are intentional public data. |
+| `raw/books/` | May contain copyrighted or private source material. | Do not publish unless you have rights to the text. |
+| `raw/notes/` | Often contains first-party private notes. | Redact or keep private by default. |
+| `raw/clips/` | May include copied web/API content. | Confirm licensing, privacy, and attribution. |
+| `wiki/` | Compiled claims expose source choices and synthesis. | Publish only if the whole compiled knowledge base is intended public. |
+| `recaps/` | Recap bodies can reveal source paths and delivery intent. | Publish only intentional public recaps. |
+| `config/*.toml` | Can reveal folder IDs, handles, topics, model choices, and destinations. | Replace private IDs/destinations with placeholders or demo values. |
 
 ## Secrets
 
-Do not publish any of these values:
+Never publish secret values:
 
 - `X_CLIENT_ID`
 - `X_CLIENT_SECRET`
@@ -40,9 +49,9 @@ Do not publish any of these values:
 - `X_BEARER_TOKEN`
 - `GH_PAT`
 - `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`
-- Slack bot tokens, webhook URLs, or connector-runtime service credentials
+- Slack bot tokens, webhook URLs, or connector-runtime credentials
 
-The repo ignores the local secret files:
+The repo ignores local secret files:
 
 ```text
 bin/.env
@@ -51,38 +60,33 @@ bin/.env
 bin/.x_tokens.json
 ```
 
-Still check Git history before going public if secrets were ever committed.
+Still check history before publishing. If a secret was ever committed, rotate it
+before making the repo public.
 
-## Suggested Public Shape
+## GitHub Actions
 
-For a reusable open-source release, keep the source repo clean: code, docs,
-workflow scaffolding, prompt files, and empty config templates. Generated
-`raw/`, `wiki/`, and `recaps/` output belongs in an installed fork or a
-separate data repo such as
-[bowerbird-demo](https://github.com/sergedoub/bowerbird-demo). Do not duplicate
-generated data inside the source repo.
+Before making an instance public, review Actions settings and logs:
 
-## GitHub Actions Setup For Users
+1. Keep `BOWERBIRD_LIVE_INSTANCE` unset or `false` unless the public repo should
+   actively run paid personal ingest workflows.
+2. Remove or rotate secrets that were used only for private setup.
+3. Check workflow logs for pasted tokens, private channel names, or accidental
+   raw content.
+4. Confirm recap delivery targets in `config/recaps.toml` are public-safe.
 
-Document the required setup in the repository settings:
+## Final Checks
 
-1. Enable GitHub Actions write permissions for commits.
-2. Add the X and compile-runner secrets listed in [Importing from X](importing-x.md).
-3. Adjust cron times in `.github/workflows/`.
-4. Manually run `pull-bookmarks` and `account-dump`.
-5. Confirm `compile-wiki` runs and `python3 bin/lint.py` passes.
-6. Confirm `recap` writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`.
-7. Configure Slack from [connectors/slack](../connectors/slack/README.md):
-   `SLACK_BOT_TOKEN` in Actions secrets, non-secret destinations in
-   `config/recaps.toml`, and one verified bot post with a Slack timestamp.
+Run a direct scan before publishing:
 
-## Public Positioning
+```bash
+rg -n "xoxb-|ghp_|github_pat_|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY|X_BEARER_TOKEN|X_TOKENS|SLACK_BOT_TOKEN" .
+python3 -m pytest
+python3 bin/lint.py
+python3 bin/doctor.py --json
+```
 
-The shortest useful description:
+The shortest public positioning:
 
-> A file-first personal knowledge-base pipeline that imports X bookmarks and
-> selected X accounts, compiles them into a cited markdown wiki, and emits
-> durable recap files for Slack and other delivery adapters.
-
-The important distinction is that this is a provenance-preserving compile
-pipeline, not a chatbot memory store.
+> Bowerbird is a file-first personal knowledge-base pipeline that imports X
+> bookmarks and selected X accounts, compiles them into a cited markdown wiki,
+> and emits durable recap files for Slack and other delivery adapters.

@@ -134,6 +134,15 @@ def _slug(name: str) -> str:
     return cleaned.strip("-") or "topic"
 
 
+def _has_config_values(text: str) -> bool:
+    """True when a config file contains real TOML, not just template comments."""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            return True
+    return False
+
+
 def _collect_credentials(io: WizardIO, deps: WizardDeps) -> dict:
     env = deps.read_env()
     io.say("Step 1/6 — X app credentials")
@@ -172,7 +181,7 @@ def _map_folders(io: WizardIO, deps: WizardDeps, authed: bool) -> dict[str, list
            "your knowledge base. Most people start with one or two folders — you "
            "can add more any time.")
     existing = deps.read_config("topics.toml")
-    if existing.strip():
+    if _has_config_values(existing):
         io.say("Current config/topics.toml:\n" + existing)
         if not io.confirm("Replace it with a new mapping?", default=False):
             return {}
@@ -212,7 +221,7 @@ def _collect_accounts(io: WizardIO, deps: WizardDeps) -> list[dict]:
     io.say("Following an account mirrors every post + reply they make into your "
            "knowledge base. Each followed post is a paid API read.")
     existing = deps.read_config("accounts.toml")
-    if existing.strip():
+    if _has_config_values(existing):
         io.say("Current config/accounts.toml:\n" + existing)
         if not io.confirm("Replace it with a new list?", default=False):
             return []
@@ -242,7 +251,7 @@ def _configure_recaps(io: WizardIO, deps: WizardDeps, topics: dict[str, list[str
                       accounts: list[dict]) -> list[dict]:
     io.say("Step 5/6 — recap profiles")
     existing = deps.read_config("recaps.toml")
-    if existing.strip():
+    if _has_config_values(existing):
         io.say("Current config/recaps.toml:\n" + existing)
         if not io.confirm("Replace it with new recap profiles?", default=False):
             return []
@@ -287,7 +296,7 @@ def _ask_secret(io: WizardIO, env: dict, key: str) -> str:
 def _select_model_provider(io: WizardIO, deps: WizardDeps, env: dict) -> ModelConfig:
     existing = deps.read_config("models.toml")
     current = ModelConfig(provider=detect_setup_provider())
-    if existing.strip():
+    if _has_config_values(existing):
         try:
             from .model_config import parse_model_config
 

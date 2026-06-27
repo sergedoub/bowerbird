@@ -104,6 +104,36 @@ def test_happy_path_writes_configs_and_secrets():
     assert result.remaining == []
 
 
+def test_comment_only_config_templates_do_not_block_init_generation():
+    world = FakeWorld(
+        folders=[{"id": "111", "name": "Marketing"}],
+        configs={
+            "topics.toml": "# Bookmark folders -> wiki topics.\n",
+            "accounts.toml": "# X accounts to mirror.\n",
+            "recaps.toml": "# Active recap profiles.\n",
+            "models.toml": "# Model provider.\n",
+        },
+    )
+    io, transcript = scripted_io([
+        "client-id", "client-secret", "bearer-tok",
+        "marketing",
+        "account_one", "ai-updates",
+        "",
+        "", "",
+        "",
+        "", "",
+        "pat-token",
+        "openai-key",
+    ])
+    result = run_wizard(io, world.deps())
+
+    assert result.topics == {"marketing": ["111"]}
+    assert result.accounts == [{"handle": "account_one", "topic": "ai-updates"}]
+    assert [profile["name"] for profile in result.recaps] == ["marketing-daily", "accounts-daily"]
+    assert "Replace it with" not in "\n".join(transcript)
+    assert tomllib.loads(world.configs["recaps.toml"])["recaps"][0]["topics"] == ["marketing"]
+
+
 def test_no_gh_prints_manual_secret_values():
     world = FakeWorld(gh=False, folders=[{"id": "111", "name": "m"}])
     io, transcript = scripted_io([

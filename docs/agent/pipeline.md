@@ -46,7 +46,6 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `init_wizard.py` | Real-world wiring for the `bowerbird init` wizard (terminal I/O, OAuth subprocess, gh CLI secrets). |
 | `compile.sh` | The pluggable compile runner seam — installs and invokes the agent CLI selected by `COMPILE_RUNNER`. See `docs/compile-runners.md`. |
 | `x_auth_spike.py` | The OAuth flow + raw API helpers (`bowerbird auth`). |
-| `migrate_okf.py` | Optional upgrade utility for existing legacy wiki bundles: stamps `type` on every note, converts legacy `[[stem]]` citations to relative markdown links, makes `index.md` files OKF-conformant, and writes the bundle-root `wiki/index.md`. Re-running is a no-op. |
 
 ## End-to-end flow
 

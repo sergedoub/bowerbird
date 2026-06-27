@@ -1,0 +1,82 @@
+name: recap
+
+# File-first recap generation. This workflow reads config/recaps.toml, scans
+# newly added wiki/*/sources/*.md notes in each due calendar window, writes
+# recaps/<profile>/<date>.md plus recaps/manifests/<run-date>.json, and commits
+# only recaps/. The bundled Slack adapter consumes the committed manifest; it
+# does not synthesize recap knowledge.
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["compile-wiki"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: recap
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Generate recap files
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 bin/recap.py
+
+      - name: Commit recap files
+        id: commit
+        env:
+          PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$(git status --porcelain -- recaps)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add recaps
+            git commit -m "recap: generate files for $(date -u +%Y-%m-%d)"
+            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No recap changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deliver Slack recaps
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: python3 bin/slack_recap.py
+
+      - name: Trigger delivery adapters
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GUILD_RECAP_WEBHOOK_URL: ${{ secrets.GUILD_RECAP_WEBHOOK_URL }}
+        run: |
+          if [ -z "${GUILD_RECAP_WEBHOOK_URL:-}" ]; then
+            echo "No Guild recap webhook configured; skipping delivery adapter trigger."
+            exit 0
+          fi
+          latest_manifest="$(ls -1 recaps/manifests/*.json | sort | tail -1)"
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "Content-Type: application/json" \
+            --data @"$latest_manifest" \
+            "$GUILD_RECAP_WEBHOOK_URL"

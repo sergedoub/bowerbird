@@ -59,7 +59,7 @@ def main() -> None:
         "--topic",
         help="wiki topic for this account (default: slug of handle)",
     )
-    add_parser.add_argument("--label", help="display label for recap feeds")
+    add_parser.add_argument("--label", help="display label for recap profiles")
     add_parser.add_argument(
         "--off-topic",
         choices=("skip", "quarantine"),

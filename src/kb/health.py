@@ -1,18 +1,18 @@
 """Text-first health checks for a Bowerbird checkout.
 
-The web UI used to own this surface. The checks here are pure over files and an
-injected lint result so the CLI, agents, and tests can all use the same contract.
+The checks here are pure over files and an injected lint result so the CLI,
+agents, and tests can all use the same contract without any UI server.
 """
 from __future__ import annotations
 
 import datetime as dt
-import json
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-from .config import AccountsConfig, ConfigError, TopicsConfig
+from .config import AccountsConfig, ConfigError, RecapsConfig, TopicsConfig
+from .recaps import validate_recap_files
 
 
 @dataclass(frozen=True)
@@ -99,81 +99,58 @@ def _check_accounts(repo_root: Path) -> HealthItem:
                  path=str(path), accounts=count)
 
 
-def _parse_date(value: object) -> dt.date | None:
-    if not isinstance(value, str):
-        return None
+def _check_recaps_config(repo_root: Path) -> HealthItem:
+    path = repo_root / "config" / "recaps.toml"
     try:
-        return dt.date.fromisoformat(value)
-    except ValueError:
-        return None
+        config = RecapsConfig.load(path)
+    except (FileNotFoundError, tomllib.TOMLDecodeError, ConfigError) as exc:
+        return _item("config_recaps", "error", f"config/recaps.toml {_config_error(exc)}",
+                     path=str(path))
 
-
-def _summary_int(summary: Mapping[str, Any], key: str) -> int | None:
-    value = summary.get(key, 0)
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if number >= 0 else None
-
-
-def _check_recap_feed(repo_root: Path, today: dt.date, max_feed_age_days: int) -> list[HealthItem]:
-    path = repo_root / "compile" / "recap-feed.json"
-    if not path.exists():
-        return [_item("recap_feed", "error", "compile/recap-feed.json missing", path=str(path))]
-    try:
-        feed = json.loads(path.read_text())
-    except json.JSONDecodeError as exc:
-        return [_item("recap_feed", "error", f"compile/recap-feed.json invalid JSON: {exc}",
-                      path=str(path))]
-    if not isinstance(feed, dict):
-        return [_item("recap_feed", "error", "compile/recap-feed.json must be a JSON object",
-                      path=str(path))]
-
-    summary = feed.get("summary", {})
-    if not isinstance(summary, dict):
-        return [_item("recap_feed", "error", "compile/recap-feed.json has no summary object",
-                      path=str(path))]
-    generated = _parse_date(feed.get("generated"))
-    if generated is None:
-        return [_item("recap_feed", "error", "compile/recap-feed.json has invalid generated date",
-                      path=str(path), generated=feed.get("generated"))]
-
-    total_new = _summary_int(summary, "total_new")
-    account_lanes = _summary_int(summary, "account_lanes")
-    topic_lanes = _summary_int(summary, "topic_lanes")
-    if total_new is None or account_lanes is None or topic_lanes is None:
-        return [_item("recap_feed", "error", "compile/recap-feed.json has invalid summary counts",
-                      path=str(path), summary=summary)]
-    items = [
-        _item(
-            "recap_feed",
-            "ok",
-            f"compile/recap-feed.json valid ({total_new} new note(s))",
-            path=str(path),
-            generated=generated.isoformat(),
-            total_new=total_new,
-            account_lanes=account_lanes,
-            topic_lanes=topic_lanes,
-        )
+    missing_prompts = [
+        profile.prompt_path
+        for profile in config.profiles
+        if not (repo_root / profile.prompt_path).is_file()
     ]
+    if missing_prompts:
+        return _item(
+            "config_recaps",
+            "error",
+            "recap prompt file missing: " + ", ".join(missing_prompts),
+            path=str(path),
+            missing_prompts=missing_prompts,
+        )
+    deliveries = sum(len(profile.deliveries) for profile in config.profiles)
+    return _item(
+        "config_recaps",
+        "ok",
+        f"config/recaps.toml valid ({len(config.profiles)} profile(s), {deliveries} delivery target(s))",
+        path=str(path),
+        profiles=len(config.profiles),
+        deliveries=deliveries,
+    )
 
-    age_days = (today - generated).days
-    if age_days < 0:
-        status = "warn"
-        message = f"recap feed generated in the future ({generated.isoformat()})"
-    elif age_days > max_feed_age_days:
-        status = "warn"
-        message = f"recap feed is {age_days} day(s) old"
-    else:
-        status = "ok"
-        message = f"recap feed is fresh ({age_days} day(s) old)"
-    items.append(_item("recap_freshness", status, message, generated=generated.isoformat(),
-                       today=today.isoformat(), age_days=age_days,
-                       max_feed_age_days=max_feed_age_days))
-    return items
+
+def _check_recap_files(repo_root: Path) -> HealthItem:
+    issues = validate_recap_files(repo_root)
+    if issues:
+        return _item(
+            "recaps",
+            "error",
+            "\n".join(issues[:8]),
+            issues=issues,
+        )
+    recaps_dir = repo_root / "recaps"
+    recap_count = len(list(recaps_dir.glob("*/*.md"))) if recaps_dir.exists() else 0
+    manifest_dir = recaps_dir / "manifests"
+    manifest_count = len(list(manifest_dir.glob("*.json"))) if manifest_dir.exists() else 0
+    return _item(
+        "recaps",
+        "ok",
+        f"recaps/ valid ({recap_count} recap file(s), {manifest_count} manifest(s))",
+        recap_files=recap_count,
+        manifests=manifest_count,
+    )
 
 
 def _check_lint(lint_status: LintStatus | None) -> HealthItem:
@@ -200,11 +177,11 @@ class HealthCheck:
         lint_status: LintStatus | None = None,
     ) -> HealthReport:
         root = Path(repo_root)
-        actual_today = today or dt.datetime.now(dt.UTC).date()
         items = [
             _check_topics(root),
             _check_accounts(root),
-            *_check_recap_feed(root, actual_today, self.stale_after_days),
+            _check_recaps_config(root),
+            _check_recap_files(root),
             _check_lint(lint_status),
         ]
         return HealthReport(

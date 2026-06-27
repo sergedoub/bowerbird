@@ -74,7 +74,7 @@ their legacy `raw_id` under `raw/books/<topic>/`. Notes use
 | `raw_not_compile_eligible` | `raw_path` points at a review-gated or snapshot-only namespace that should not be compiled unattended. |
 | `missing_type` | A non-reserved note (`sources/` or `concepts/`) lacks a non-empty `type` — the OKF conformance floor, from `okf_conformance()`. |
 
-`bin/lint.py` walks every `wiki/<topic>/` and prints `[topic] kind: relpath :: message` for each violation, then exits 1 if any were found, else prints `provenance OK` and exits 0.
+`bin/lint.py` walks every `wiki/<topic>/` and prints `[topic] kind: relpath :: message` for each violation. It also validates committed recap files/manifests under `recaps/`. It exits 1 if any were found, else prints `provenance and recaps OK` and exits 0.
 
 The compile workflow runs `bin/lint.py` as the guardrail; a failing lint means the LLM's commits do not ship.
 
@@ -120,6 +120,6 @@ The linter resolves the link's basename stem (`2026-01-10-seraleev-formula-60k-u
 Before committing a change to `wiki/`:
 
 1. `python3 -m pytest` passes (linter has unit tests).
-2. `python3 bin/lint.py` prints `provenance OK`.
+2. `python3 bin/lint.py` prints `provenance and recaps OK`.
 3. Any new concept article carries `type: Concept` and cites at least one source note.
 4. Any new source note has all required frontmatter (including a `type`) and a `raw_path` that resolves to an actual declared, compile-eligible raw file. Keep `raw_id` too, but do not use it as the only back-pointer for new notes.

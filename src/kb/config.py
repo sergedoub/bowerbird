@@ -22,6 +22,171 @@ class ConfigError(ValueError):
     pass
 
 
+RECAP_FREQUENCIES = ("daily", "weekly")
+RECAP_FORMATS = ("markdown", "slack_mrkdwn", "email_markdown")
+RECAP_WEEKDAYS = (
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+)
+
+
+def _slug(value: str) -> bool:
+    return bool(re.fullmatch(r"[a-z0-9][a-z0-9-]*", value))
+
+
+@dataclass(frozen=True)
+class DeliveryTarget:
+    """A non-secret delivery target for a generated recap file."""
+
+    kind: str
+    destination: str
+
+
+@dataclass(frozen=True)
+class RecapProfile:
+    """A durable recap file profile.
+
+    Presence in config/recaps.toml means the profile is active. Secrets stay out
+    of this config; destinations are non-secret handoff coordinates consumed by
+    delivery adapters.
+    """
+
+    name: str
+    frequency: str
+    prompt_path: str
+    output_format: str
+    accounts: tuple[str, ...] = ()
+    topics: tuple[str, ...] = ()
+    deliveries: tuple[DeliveryTarget, ...] = ()
+    weekly_due_day: str = "monday"
+
+
+@dataclass(frozen=True)
+class RecapsConfig:
+    profiles: tuple[RecapProfile, ...]
+
+    @classmethod
+    def load(cls, path: str | Path) -> "RecapsConfig":
+        return cls.from_dict(tomllib.loads(Path(path).read_text()))
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RecapsConfig":
+        raw_profiles = data.get("recaps", [])
+        if not isinstance(raw_profiles, list) or not raw_profiles:
+            raise ConfigError("no [[recaps]] entries found in recaps config")
+
+        profiles: list[RecapProfile] = []
+        seen: set[str] = set()
+        for raw in raw_profiles:
+            if not isinstance(raw, dict):
+                raise ConfigError(f"recap profile must be a table, got {raw!r}")
+
+            name = str(raw.get("name", "")).strip()
+            if not name:
+                raise ConfigError("recap profile missing name")
+            if not _slug(name):
+                raise ConfigError(
+                    f"recap profile '{name}' must be a lowercase slug with letters, numbers, and hyphens"
+                )
+            if name in seen:
+                raise ConfigError(f"duplicate recap profile '{name}'")
+            seen.add(name)
+
+            frequency = str(raw.get("frequency", "")).strip().lower()
+            if frequency not in RECAP_FREQUENCIES:
+                raise ConfigError(
+                    f"recap profile '{name}' has unknown frequency '{frequency}' "
+                    f"(expected one of {RECAP_FREQUENCIES})"
+                )
+            output_format = str(raw.get("format", "markdown")).strip().lower() or "markdown"
+            if output_format not in RECAP_FORMATS:
+                raise ConfigError(
+                    f"recap profile '{name}' has unknown format '{output_format}' "
+                    f"(expected one of {RECAP_FORMATS})"
+                )
+            prompt_path = str(raw.get("prompt", "")).strip()
+            if not prompt_path:
+                raise ConfigError(f"recap profile '{name}' missing prompt")
+            if not prompt_path.startswith("compile/recaps/"):
+                raise ConfigError(
+                    f"recap profile '{name}' prompt must live under compile/recaps/"
+                )
+
+            weekly_due_day = str(raw.get("weekly_due_day", "monday")).strip().lower() or "monday"
+            if weekly_due_day not in RECAP_WEEKDAYS:
+                raise ConfigError(
+                    f"recap profile '{name}' has unknown weekly_due_day '{weekly_due_day}' "
+                    f"(expected one of {RECAP_WEEKDAYS})"
+                )
+
+            accounts = tuple(
+                value.lstrip("@").strip().lower()
+                for value in _string_list(name, "accounts", raw.get("accounts", []))
+                if value.lstrip("@").strip()
+            )
+            topics = tuple(
+                value.strip()
+                for value in _string_list(name, "topics", raw.get("topics", []))
+                if value.strip()
+            )
+            if not accounts and not topics:
+                raise ConfigError(f"recap profile '{name}' must select at least one account or topic")
+            if len(set(accounts)) != len(accounts):
+                raise ConfigError(f"recap profile '{name}' has duplicate accounts")
+            if len(set(topics)) != len(topics):
+                raise ConfigError(f"recap profile '{name}' has duplicate topics")
+
+            raw_deliveries = raw.get("deliveries", [])
+            if not isinstance(raw_deliveries, list):
+                raise ConfigError(f"recap profile '{name}' deliveries must be an array")
+            deliveries = tuple(_parse_delivery_target(name, item) for item in raw_deliveries)
+            profiles.append(
+                RecapProfile(
+                    name=name,
+                    frequency=frequency,
+                    prompt_path=prompt_path,
+                    output_format=output_format,
+                    accounts=accounts,
+                    topics=topics,
+                    deliveries=deliveries,
+                    weekly_due_day=weekly_due_day,
+                )
+            )
+        return cls(profiles=tuple(profiles))
+
+
+def _string_list(profile_name: str, field: str, raw: object) -> tuple[str, ...]:
+    if not isinstance(raw, list):
+        raise ConfigError(f"recap profile '{profile_name}' {field} must be an array")
+    values: list[str] = []
+    for item in raw:
+        if not isinstance(item, str):
+            raise ConfigError(f"recap profile '{profile_name}' {field} must contain strings")
+        values.append(item)
+    return tuple(values)
+
+
+def _parse_delivery_target(profile_name: str, raw: object) -> DeliveryTarget:
+    if not isinstance(raw, dict):
+        raise ConfigError(f"recap profile '{profile_name}' delivery must be a table, got {raw!r}")
+    kind = str(raw.get("type", "")).strip().lower()
+    destination = str(raw.get("destination", "")).strip()
+    if not kind:
+        raise ConfigError(f"recap profile '{profile_name}' delivery missing type")
+    if not _slug(kind):
+        raise ConfigError(
+            f"recap profile '{profile_name}' delivery type '{kind}' must be a lowercase slug"
+        )
+    if not destination:
+        raise ConfigError(f"recap profile '{profile_name}' delivery missing destination")
+    return DeliveryTarget(kind=kind, destination=destination)
+
+
 @dataclass(frozen=True)
 class TopicsConfig:
     topics: tuple[Topic, ...]
@@ -69,7 +234,7 @@ class Account:
     which the compile step distills this account's posts (`wiki/<topic>/sources/`).
     `off_topic` is the policy for posts that don't fit the configured topic — currently
     only "skip" is implemented; "quarantine" is reserved for a future parking lot.
-    `label` is an optional display name used by the recap feed (defaults to the handle).
+    `label` is an optional display name used by recap profiles (defaults to the handle).
     """
     handle: str
     topic: str

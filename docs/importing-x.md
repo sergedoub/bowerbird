@@ -190,9 +190,9 @@ The built-in workflows assume these secrets:
 | `X_TOKENS` | `pull-bookmarks` | Serialized OAuth2 token JSON. The refresh token may rotate. |
 | `GH_PAT` | `pull-bookmarks` | Fine-grained token used to persist rotated `X_TOKENS`. |
 | `X_BEARER_TOKEN` | `pull-bookmarks`, `account-dump` | App-only bearer token for search/timeline calls. |
-| `OPENAI_API_KEY` | `compile-wiki` | Default hosted compile credential for the Codex runner. |
+| `OPENAI_API_KEY` | `compile-wiki`, `recap` | Default hosted compile/recap credential for the Codex/OpenAI path. |
 | `CODEX_ACCESS_TOKEN` | `compile-wiki` | Optional Enterprise Codex access token alternative. |
-| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | `compile-wiki` | Alternative hosted compile credentials when selected in `config/models.toml`. |
+| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | `compile-wiki`, `recap` | Alternative hosted compile/recap credentials when selected in `config/models.toml`. |
 
 Manual setup dispatch accepts `limit_per_folder` and `import_all` inputs on
 `pull-bookmarks`; use `limit_per_folder=3` for the first run. Use
@@ -208,7 +208,7 @@ The default schedule is:
 | `account-dump` | Daily | `raw/accounts/` commits. |
 | `pull-bookmarks` | Daily | `raw/bookmarks/` commits. |
 | `compile-wiki` | After either importer succeeds | `wiki/` commits. |
-| `kb-recap-feed` | Daily after compile should have finished | `compile/recap-feed.json`. |
+| `recap` | Daily or after compile succeeds | `recaps/` commits. |
 
 If you fork this repo, adjust the cron times to match your timezone and expected
 compile duration.

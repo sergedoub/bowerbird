@@ -190,7 +190,7 @@ missing `type` (the OKF floor), uncited concept claims, unresolved citation link
 **`raw_path` not resolving to a declared, compile-eligible raw file**, or legacy
 **`raw_id` not resolving to a file in the expected raw root** (`raw/bookmarks/<topic>/`,
 `raw/books/<topic>/` for `source_type: book-chapter`, or `raw/accounts/<handle>/` when
-`mirror:` is set) — and re-run until it prints `provenance OK`. **Do not
+`mirror:` is set) — and re-run until it prints `provenance and recaps OK`. **Do not
 finish with violations outstanding.** If something genuinely can't be made compliant,
 write a short note to `wiki/<topic>/_health.md` explaining what and why, rather
 than shipping a bad claim.

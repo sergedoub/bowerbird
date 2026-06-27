@@ -12,11 +12,12 @@
 | `bin/` | CLI entry points (stdlib-only Python scripts). See [pipeline](pipeline.md). |
 | `src/kb/` | Library code — pipelines, clients, linter, models. See [pipeline](pipeline.md). |
 | `tests/` | Offline pytest suite (no network). |
-| `config/` | TOML configuration. Extensibility seam for topics, accounts, and book ingest. |
-| `compile/` | `INSTRUCTIONS.md` (the LLM compile contract), `PROMPT.md` (the shared runner prompt), and the generated `recap-feed.json`. |
+| `config/` | TOML configuration. Extensibility seam for topics, accounts, books, models, and recap profiles. |
+| `compile/` | `INSTRUCTIONS.md` (the LLM compile contract), `PROMPT.md` (the shared runner prompt), and `compile/recaps/` prompt files. No generated recap output lives here. |
+| `recaps/` | Generated recap Markdown and delivery manifests. Commit these files; delivery adapters consume them. |
 | `skill/` | The my-knowledge retrieval skill for downstream coding agents. |
 | `connectors/` | Agent-facing playbooks for service delivery, starting with Slack recap delivery. |
-| `samples/` | Template demo content (synthetic raw + lint-passing wiki + configs + feed). Copied into place during launch assembly; never read by the pipeline. |
+| `samples/` | Template demo content (synthetic raw + lint-passing wiki + configs + recaps). Copied into place during launch assembly; never read by the pipeline. |
 | `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/kb/raw_sources.py`. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
 | `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`. |
@@ -95,13 +96,34 @@ Each account is a `[[handles]]` table:
 | `handle` | yes | X username without the leading `@`. |
 | `topic` | yes | Topic into which distilled source notes are filed (`wiki/<topic>/sources/`). The topic does not need a corresponding bookmarks folder in `topics.toml`. |
 | `off_topic` | no | Policy for posts that don't fit the configured topic. Only `"skip"` is implemented today; `"quarantine"` is reserved. Defaults to `"skip"`. |
-| `label` | no | Display name used by the recap feed lanes. Defaults to a prettified handle. |
+| `label` | no | Display name used by recap profiles. Defaults to a prettified handle. |
 
 **Adding an account:** prefer `bowerbird accounts add <handle> --topic <topic>`
 instead of hand-editing TOML. Then dispatch
 `gh workflow run account-dump.yml -f handle=<handle> -f days=3` for the
 first trailing-window import. The next `compile-wiki` run distills the posts
 into the configured topic's wiki.
+
+### `config/recaps.toml`
+
+```toml
+[[recaps]]
+name = "ai-accounts-daily"
+frequency = "daily"
+accounts = ["bcherny"]
+prompt = "compile/recaps/default.md"
+format = "slack_mrkdwn"
+
+[[recaps.deliveries]]
+type = "slack"
+destination = "#bowerbird-recaps"
+```
+
+Presence of a profile means enabled. A profile selects account and/or topic
+lanes from compiled `wiki/*/sources/*.md` notes, chooses `daily` or `weekly`
+calendar windows, points at a prompt under `compile/recaps/`, and lists
+non-secret delivery targets. `bowerbird recap` writes generated files under
+`recaps/<profile>/` plus `recaps/manifests/`.
 
 ### `config/books.toml`
 

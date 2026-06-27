@@ -2,7 +2,7 @@
 """Push staged credentials to this repo's GitHub Actions secrets (`bowerbird push-secrets`).
 
 Reads the gitignored bin/.env (X_CLIENT_ID, X_CLIENT_SECRET, X_BEARER_TOKEN, GH_PAT,
-provider API keys) and bin/.x_tokens.json (X_TOKENS), and runs `gh secret set`
+provider API keys, SLACK_BOT_TOKEN) and bin/.x_tokens.json (X_TOKENS), and runs `gh secret set`
 for every value present. Nothing is typed and no secret value is ever printed — only
 key names. Requires the gh CLI, authenticated, inside the repo clone.
 

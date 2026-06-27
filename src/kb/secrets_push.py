@@ -14,7 +14,7 @@ from collections.abc import Callable
 # Keys the workflows may need, in push order. X_TOKENS comes from the token file.
 ENV_SECRET_KEYS = ("X_CLIENT_ID", "X_CLIENT_SECRET", "X_BEARER_TOKEN",
                    "GH_PAT", "OPENAI_API_KEY", "CODEX_ACCESS_TOKEN", "ANTHROPIC_API_KEY",
-                   "GEMINI_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN")
+                   "GEMINI_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "SLACK_BOT_TOKEN")
 LIVE_INSTANCE_VARIABLE = "BOWERBIRD_LIVE_INSTANCE"
 LIVE_INSTANCE_SECRET_NAMES = ("X_CLIENT_ID", "X_BEARER_TOKEN", "X_TOKENS", "GH_PAT")
 

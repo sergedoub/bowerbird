@@ -14,8 +14,9 @@ Heads-up before you start:
   the session terminal (for example, Claude Code uses `! <command>`).
 - Want the agent to drive the X developer portal for you? Browser control is
   opt-in. Enable your agent's browser-control mode before starting if you want
-  help with the portal; without it, the agent falls back to click-by-click
-  instructions.
+  help with the portal; the prompt below then tells the agent to use it
+  directly at credential steps instead of asking again. Without browser
+  control, the agent falls back to click-by-click instructions.
 
 ---
 
@@ -36,20 +37,24 @@ Ground rules:
 - Go ONE STEP AT A TIME: do a step, verify it worked, show me the evidence
   (command output, file created, green run), then move on. If something
   fails, stop and troubleshoot before continuing.
-- I run anything interactive or secret-bearing myself: when a step needs an
-  OAuth browser flow or typing credentials, tell me the exact command to run
-  with the `!` prefix (e.g. `! bowerbird init`) and wait for me to report
-  back. Never ask me to paste tokens or secrets into this chat, never write
-  them into any file other than the repo's gitignored bin/.env, and never
-  commit them.
+- I run anything interactive or secret-bearing myself unless browser-control
+  tooling is enabled in this session. When browser control is not available,
+  tell me the exact command to run with the `!` prefix (e.g. `! bowerbird
+  init`) and wait for me to report back. When browser control is available,
+  use it for credential pages by default: attach to the browser, navigate the
+  page, and pause only for login, billing/payment, CAPTCHA, or a credential
+  page where the safe Copy-button workflow is not possible. Never ask me to
+  paste tokens or secrets into this chat, never write them into any file other
+  than the repo's gitignored bin/.env, and never commit them.
 - Clipboard rule when you have browser control — it applies to EVERY
   credential behind a Copy/reveal control in this journey (the X console
-  values, the GitHub fine-grained PAT, and the compile-runner credential):
+  values, the GitHub fine-grained PAT if this repo still requires one, and the
+  compile-runner credential):
   click Copy yourself and pipe the clipboard into the repo's gitignored
   bin/.env under the exact key name, e.g.
   (umask 177; touch bin/.env); printf 'GH_PAT=%s\n' "$(pbpaste)" >> bin/.env
   (Linux: xclip -o instead of pbpaste). Keys: X_CLIENT_ID, X_CLIENT_SECRET,
-  X_BEARER_TOKEN, GH_PAT, and exactly one compile key:
+  X_BEARER_TOKEN, GH_PAT, SLACK_BOT_TOKEN, and exactly one compile key:
   OPENAI_API_KEY for codex, ANTHROPIC_API_KEY for claude, or GEMINI_API_KEY
   for gemini. NEVER let a secret value
   into your context: no DOM text reads of credential fields, NO screenshots
@@ -58,12 +63,33 @@ Ground rules:
   locate the Copy control by reading only the interactive-element /
   accessibility tree (button labels and roles, never page text or field
   values) and click it by reference — a real click populates the clipboard.
-  Verify by key name only, e.g. grep -c '^GH_PAT=' bin/.env.
-- After credentials are verified by key name only, close only setup/credential
-  tabs you opened: X developer portal/console tabs, GitHub PAT or repo-secret
-  pages, model-provider API-key pages, OAuth callback leftovers, Slack app
-  setup tabs, and setup docs/search tabs opened just for credential work. Do
-  not inspect secret values, and do not close unrelated browsing.
+  Verify by key presence plus non-empty/value-shape only; never print values,
+  and do not rely on `grep -c '^KEY='` alone because empty values can pass
+  that check.
+- After credentials are verified by key presence plus non-empty/value shape
+  only, close only setup/credential tabs you opened: X developer portal/console
+  tabs, GitHub PAT or repo-secret pages, model-provider API-key pages, OAuth
+  callback leftovers, Slack app setup tabs, and setup docs/search tabs opened
+  just for credential work. Do not inspect secret values, and do not close
+  unrelated browsing.
+- Parallel setup mode: if your agent can use subagents, use them only for
+  non-browser work that cannot touch secrets: reading docs, checking repo
+  health, preparing command lists, watching GitHub Actions, and drafting Slack
+  connector checklists. One browser coordinator owns all GitHub/X/Slack/model
+  provider pages. Do not let multiple agents control the same logged-in Chrome
+  profile, clipboard, OAuth popup, or one-time credential modal. Credential
+  copy sections must be serialized: one Copy click, immediate write to
+  `bin/.env`, verify by key presence plus non-empty/value shape only, then
+  continue.
+- GitHub automation preference: use `gh` or GitHub APIs for every GitHub step
+  they can handle: fork/clone, setting Actions secrets from staged files,
+  setting variables, workflow dispatch, and run watching. Do not use Chrome for
+  GitHub work when terminal auth can do it. GitHub does not offer an API to
+  create a PAT; prefilled PAT URLs still require human web confirmation. If the
+  repo supports a GitHub App installation-token path for secret writeback,
+  prefer that over a PAT. If the current repo still requires `GH_PAT`, keep PAT
+  creation as a minimal user-owned copy handoff, not a long browser-driving
+  task.
 - Never touch the repo's raw/ or wiki/ by hand, and never force-push.
 
 The journey:
@@ -86,6 +112,21 @@ The journey:
    python3 -m pytest and bowerbird lint. Both must pass. Confirm git status
    is clean.
 
+3b. OPTIONAL PARALLEL PREP — after install is green, use subagents if they are
+   available and helpful:
+   - repo watcher: keep checking `git status`, `gh run list`, and later
+     workflow runs, reporting only blockers or green evidence;
+   - docs scout: keep README.md, docs/setup.md, docs/importing-x.md, and
+     connectors/slack/README.md open conceptually and prepare the next exact
+     command/checklist;
+   - Slack prep: prepare the Slack app manifest for an app named `Bowerbird`,
+     required bot scope (`chat:write`), destination questions, and acceptance
+     test. The recap must post as the `Bowerbird` bot, not from my personal
+     Slack account.
+   These helpers must not drive Chrome credential pages, read secret files, or
+   run setup commands that write credentials. The main agent remains the single
+   setup coordinator.
+
 4. X DEVELOPER APP — create a NEW app dedicated to Bowerbird, even if I
    already have other X apps (separate credentials I can revoke
    independently, and its own usage line on my X bill). Walk me through the
@@ -95,25 +136,45 @@ The journey:
    http://bowerbird.localhost:8080/callback. Scopes "bookmark.read tweet.read
    users.read offline.access". docs/setup.md has the click-by-click
    appendix.
-   - If you have browser control (e.g. Claude in Chrome or a browser tool),
-     offer to drive the portal together with my logged-in session instead of
-     dictating clicks — I'll handle the login and any payment step myself.
+   - If browser-control tooling is available, use it now: attach to my logged-in
+     browser session, open the portal, and drive the setup with me. Do not end
+     the turn asking whether to drive. Pause only for login, billing/payment,
+     CAPTCHA, unavailable browser tooling, or a credential page where the safe
+     Copy-button workflow is not possible.
+   X's console can be slow to refresh after app creation. If a create flow
+   shows credentials but the app is not immediately visible in the list, wait,
+   refresh/reopen the Apps list, and verify whether it appeared before trying
+   another create. Do not create duplicate apps just because the list is stale.
    Stage the three values per the clipboard rule (X_CLIENT_ID,
    X_CLIENT_SECRET, X_BEARER_TOKEN).
 
 5. REMAINING CREDENTIALS — stage into bin/.env, then push:
-   a. GH_PAT: fine-grained PAT scoped to my fork, "Secrets: read and
-      write" — suggest a longer expiration than the 30-day default (the
-      pipeline uses it on every run). Clipboard rule applies.
+   a. GitHub automation: first use existing `gh` authentication for everything
+      terminal automation can do. `bowerbird push-secrets` sets initial Actions
+      secrets from `bin/.env` through `gh secret set`; do not create a PAT just
+      to push setup secrets. If the repo exposes a GitHub App setup path for
+      scheduled writeback, prefer it: one human install/authorization step, then
+      short-lived installation tokens generated programmatically. Only if this
+      repo version still requires `GH_PAT`, create a fine-grained PAT scoped
+      only to my Bowerbird fork with repository permission `Secrets: Read and
+      write`. Do not try to API-create the PAT; GitHub requires its browser
+      settings flow.
+      Use a short name under 40 characters, verify exactly one selected repo
+      and the final `Secrets: Read and write` permission, remove accidental
+      adjacent permissions such as `Codespaces secrets`, then have me click
+      Generate/Copy if browser automation is brittle. Stage `GH_PAT` from the
+      clipboard and verify only presence plus non-empty/value shape.
    b. Model provider credential: default to the active setup agent's provider
       unless I choose otherwise. In Codex, choose OpenAI/Codex: run
       `bowerbird models --provider openai --write`, open
       https://platform.openai.com/api-keys, create a Bowerbird API key, and
-      stage it as OPENAI_API_KEY per the clipboard rule. If I choose Claude or
-      Gemini instead, run `bowerbird models --provider anthropic --write` plus
-      ANTHROPIC_API_KEY, or `bowerbird models --provider gemini --write` plus
-      GEMINI_API_KEY. Hosted GitHub Actions cannot use a local app
-      subscription directly; it needs the API key secret.
+      stage it as OPENAI_API_KEY per the clipboard rule. If browser control is
+      available, open the API-key page and use the same Copy-button workflow
+      without asking again. If I choose Claude or Gemini instead, run
+      `bowerbird models --provider anthropic --write` plus ANTHROPIC_API_KEY,
+      or `bowerbird models --provider gemini --write` plus GEMINI_API_KEY.
+      Hosted GitHub Actions cannot use a local app subscription directly; it
+      needs the API key secret.
    c. Run `bowerbird auth` to create the OAuth token file, then run
       `bowerbird push-secrets` — pushes everything staged to the repo's
       Actions secrets without printing a value and sets
@@ -124,26 +185,48 @@ The journey:
 6. WATCH FOLDERS AND FOLLOW ACCOUNTS — run `bowerbird folders`, then ask me
    which folders to watch and which accounts to follow. Use plain language:
    "watch a folder", "follow an account", "wiki section", and "recap
-   label". Write `config/topics.toml` and `config/accounts.toml` directly,
-   commit the config changes, and push.
+   label". Write `config/topics.toml`, `config/accounts.toml`, and
+   `config/recaps.toml` directly; for each watched topic, ask whether to create
+   a daily or weekly recap profile. Commit the config changes, and push.
 
 7. FIRST PULL — make sure Actions
    are enabled on the repo (walk me through the Actions tab if needed),
-   then dispatch `pull-bookmarks` with `limit_per_folder=3` and dispatch
-   `account-dump` with gh workflow run; watch with gh run watch. The default
-   first bookmark import is capped to the latest 3 items per selected folder.
+   then run the first import workflows serially to avoid branch-race push
+   failures: dispatch `account-dump` first, watch it green, pull the resulting
+   commit locally, then dispatch `pull-bookmarks` with `limit_per_folder=3`
+   and watch it green. The default first bookmark import is capped to the
+   latest 3 items per selected folder.
    If I explicitly ask to import all folder history, first run
    `bowerbird folders --counts`, explain the count/cost estimate, then dispatch
    `pull-bookmarks` with `import_all=true`. Both importers must go green;
-   confirm compile-wiki chains green and new files land in raw/ and wiki/; run
-   bowerbird lint and bowerbird doctor after pulling. Troubleshoot from
-   docs/setup.md if a run fails.
+   confirm compile-wiki chains green and new files land in raw/ and wiki/.
+   Compile can take a few minutes in the model step; do not treat a quiet
+   running run as stuck. Capture the compile run id with `gh run list`, then
+   watch it in a background terminal or repo-watcher helper with low-frequency
+   status updates, e.g. `gh run watch <run-id> --exit-status`. While compile
+   runs, you may read Slack/setup docs or prepare the next checklist, but do
+   not dispatch recap/slack work or claim setup success until compile is green,
+   the wiki commit is pulled locally, and `bowerbird lint` passes. If an older
+   compile run fails only in the final push/commit step after compile and lint
+   passed, and a newer compile run is already queued for the current branch,
+   watch the newer run before declaring setup blocked. Run bowerbird doctor
+   after pulling if this checkout exposes it. Troubleshoot from docs/setup.md
+   if a run fails.
 
 8. SLACK CONNECTOR — follow connectors/slack/README.md. With browser
-   control, help me create or configure the Slack app, install it, store the
-   bot token in the connector runtime's secret store, choose a channel/DM/App
-   Home destination, set the external connector schedule after kb-recap-feed,
-   and manually verify one delivery.
+   control, help me create or configure a dedicated Slack app named
+   `Bowerbird` from `connectors/slack/manifest.json`, install it, and stage the
+   Bot User OAuth Token as `SLACK_BOT_TOKEN` in `bin/.env` without reading,
+   printing, screenshotting, or pasting the token into chat. Store the
+   non-secret destination in `config/recaps.toml` under the relevant
+   `[[recaps.deliveries]]` entry; prefer the channel or DM ID. Run
+   `bowerbird push-secrets`, verify by secret name only that `gh secret list`
+   includes `SLACK_BOT_TOKEN`, then dispatch `recap` or run
+   `bowerbird slack-recap` against an existing manifest. Do not send from my
+   personal Slack account, a user token, an incoming webhook, Codex/ChatGPT's
+   Slack connector, or Guild's Slack app. Setup is complete only after one
+   recap posts from the `Bowerbird` bot and the log records the destination,
+   Slack channel, and Slack timestamp.
 
 9. WRAP-UP — print a status table: what's working (tests, lint, doctor,
    each workflow, Slack connector), what I chose (watched folders, followed

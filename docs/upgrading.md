@@ -16,9 +16,10 @@ git push
 The repo enforces a path-disjointness rule:
 
 - **Code paths** — `src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`,
-  `compile/PROMPT.md`, `.github/`, `docs/`, `connectors/`, `skill/` — are only ever changed by
-  upstream. Your instance's automation never writes here.
-- **Data paths** — `raw/`, `wiki/`, `config/`, `compile/recap-feed.json` — are
+  `compile/PROMPT.md`, `compile/recaps/`, `.github/`, `docs/`, `connectors/`,
+  `skill/` — are only ever changed by upstream. Your instance's automation
+  never writes here.
+- **Data paths** — `raw/`, `wiki/`, `config/`, `recaps/` — are
   only ever written by your instance (your imports, your compile, your config).
   Upstream never ships changes here beyond the initial examples.
 

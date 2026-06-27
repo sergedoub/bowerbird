@@ -1,7 +1,7 @@
 """TopicsConfig + TopicRouter: validation and folder->topic routing."""
 import pytest
 
-from kb.config import AccountsConfig, BooksConfig, ConfigError, TopicsConfig
+from kb.config import AccountsConfig, BooksConfig, ConfigError, RecapsConfig, TopicsConfig
 from kb.routing import TopicRouter
 
 
@@ -125,3 +125,68 @@ def test_books_config_rejects_missing_fields_bad_ids_and_duplicates():
                 "source_path": "b.md",
             },
         ]})
+
+
+def test_recaps_config_loads_profiles_selectors_and_deliveries():
+    cfg = RecapsConfig.from_dict({"recaps": [{
+        "name": "ai-accounts-daily",
+        "frequency": "daily",
+        "accounts": ["@BCHERNY", "thsottiaux"],
+        "prompt": "compile/recaps/default.md",
+        "format": "slack_mrkdwn",
+        "deliveries": [{"type": "slack", "destination": "#augur-updates"}],
+    }]})
+    profile = cfg.profiles[0]
+    assert profile.name == "ai-accounts-daily"
+    assert profile.accounts == ("bcherny", "thsottiaux")
+    assert profile.topics == ()
+    assert profile.output_format == "slack_mrkdwn"
+    assert profile.deliveries[0].kind == "slack"
+    assert profile.deliveries[0].destination == "#augur-updates"
+
+
+def test_recaps_config_supports_weekly_topic_profiles():
+    cfg = RecapsConfig.from_dict({"recaps": [{
+        "name": "marketing-weekly",
+        "frequency": "weekly",
+        "weekly_due_day": "friday",
+        "topics": ["marketing"],
+        "prompt": "compile/recaps/default.md",
+        "format": "email_markdown",
+    }]})
+    profile = cfg.profiles[0]
+    assert profile.frequency == "weekly"
+    assert profile.weekly_due_day == "friday"
+    assert profile.deliveries == ()
+
+
+def test_recaps_config_rejects_bad_profiles():
+    with pytest.raises(ConfigError, match="no \\[\\[recaps\\]\\]"):
+        RecapsConfig.from_dict({})
+    with pytest.raises(ConfigError, match="lowercase slug"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "Bad Profile",
+            "frequency": "daily",
+            "topics": ["marketing"],
+            "prompt": "compile/recaps/default.md",
+        }]})
+    with pytest.raises(ConfigError, match="unknown frequency"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
+            "frequency": "hourly",
+            "topics": ["marketing"],
+            "prompt": "compile/recaps/default.md",
+        }]})
+    with pytest.raises(ConfigError, match="compile/recaps"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
+            "frequency": "daily",
+            "topics": ["marketing"],
+            "prompt": "compile/PROMPT.md",
+        }]})
+    with pytest.raises(ConfigError, match="at least one account or topic"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
+            "frequency": "daily",
+            "prompt": "compile/recaps/default.md",
+        }]})

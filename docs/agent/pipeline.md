@@ -18,14 +18,15 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 | `pull.py` | Library entry point for the bookmark pipeline; orchestrates client → threads → writer. |
 | `account_dump.py` | Library entry point for the account-mirror pipeline. |
 | `routing.py` | Maps folder ID → topic (for the pull pipeline). |
-| `recap_feed.py` | Builds the daily recap feed dict (lane grouping, labels, caps) from the day's added source-note paths. Pure over injected reads. |
+| `recaps.py` | Builds file-first recap artifacts and manifests from selected wiki source notes. Pure over injected reads and synthesis. |
+| `recap_llm.py` | Hosted model call edge for recap body generation. Stdlib-only `urllib`; tests inject deterministic synthesis. |
 | `cli.py` | The `bowerbird` console entry point — thin verb router over the bin/ scripts (runpy). |
 | `wizard.py` | The `bowerbird init` setup wizard; all effects injected via `WizardDeps` (offline-testable). |
 | `folders.py` | Bookmark-folder listing/formatting for the CLI and wizard. |
 | `local.py` | Shared local-run wiring for bin scripts: `.env` loading, token store, user-id resolution. |
 | `indexer.py` | Regenerates per-topic `wiki/index.md`. |
 | `linter.py` | `lint(wiki_dir, repo_root=None)` returns `Violation[]`. When `repo_root` is provided, also checks that each source note's `raw_path` resolves to a declared, compile-eligible raw file; legacy notes without `raw_path` fall back to `raw_id` resolution. Companion `okf_conformance(wiki_dir)` adds the OKF `type`-presence floor. See [provenance](provenance.md). |
-| `health.py` | Text-first doctor checks for config, recap-feed freshness, and lint status. |
+| `health.py` | Text-first doctor checks for config, recap file validity, and lint status. |
 
 ## Entry points (`bin/`)
 
@@ -38,9 +39,10 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `ingest_book.py` | Manual book ingest. Reads `config/books.toml`, splits one Markdown book by chapter/appendix, writes to `raw/books/<topic>/`. |
 | `dump_all.py` | Archive helper for dumping all bookmark folders plus unsorted bookmarks outside the compile pipeline. |
 | `backfill.py` | One-off backfill — pulls historical bookmarks past the daily window. |
-| `lint.py` | Walks every `wiki/<topic>/` and runs `kb.linter.lint(wiki, repo_root=ROOT)` plus `kb.linter.okf_conformance(wiki)` (the OKF `type` floor). Exits 0 (prints `provenance OK`) or 1 (prints `N provenance violation(s) — fix before shipping.`). |
-| `recap_feed.py` | Writes `compile/recap-feed.json` from source notes git-added in the window (default 24h). Labels from `config/accounts.toml`. |
-| `doctor.py` | Checks config, recap-feed validity/freshness, and provenance lint status. Supports `--json` for agents. |
+| `lint.py` | Walks every `wiki/<topic>/` and runs `kb.linter.lint(wiki, repo_root=ROOT)` plus `kb.linter.okf_conformance(wiki)` (the OKF `type` floor), then validates committed recap files/manifests. Exits 0 (prints `provenance and recaps OK`) or 1. |
+| `recap.py` | Runs `bowerbird recap`: reads `config/recaps.toml`, scans git-added `wiki/*/sources/*.md` notes for due calendar windows, writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`. |
+| `slack_recap.py` | Runs `bowerbird slack-recap`: reads the latest recap manifest, opens manifest-listed recap files, and posts Slack delivery targets with `SLACK_BOT_TOKEN` as the dedicated Bowerbird bot. |
+| `doctor.py` | Checks config, recap file validity, and provenance lint status. Supports `--json` for agents. |
 | `folders.py` | Lists the authenticated user's bookmark folders (names + ids). |
 | `init_wizard.py` | Real-world wiring for the `bowerbird init` wizard (terminal I/O, OAuth subprocess, gh CLI secrets). |
 | `compile.sh` | The pluggable compile runner seam — installs and invokes the agent CLI selected by `COMPILE_RUNNER`. See `docs/compile-runners.md`. |
@@ -75,16 +77,17 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
               │ exit 0 → commit ships
               │ exit 1 → fail the run
               ▼
-          .github/workflows/kb-recap-feed.yml
-          (daily: bin/recap_feed.py groups new wiki source notes
-           into account and topic lanes)
+          .github/workflows/recap.yml
+          (daily or after compile: bin/recap.py groups new wiki
+           source notes into configured account and topic lanes)
               │
               ▼
-          compile/recap-feed.json
+          recaps/<profile>/<date>.md
+          recaps/manifests/<run-date>.json
               │
               ▼
-          connector agent (or any feed consumer)
-          (daily: one Slack recap via Slack or another connector)
+          delivery adapters
+          (bin/slack_recap.py for Slack, email, Guild, or another connector)
 ```
 
 ## Filename invariants
@@ -95,6 +98,8 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
 - **Raw file:** `raw/<namespace>/<bucket>/<YYYY-MM-DD>__<id>.md`. Namespace rules live in `src/kb/raw_sources.py`; bucket is usually the topic, except namespaces such as `accounts` where the bucket is resolved through config.
 - **Wiki source note:** `wiki/<topic>/sources/<YYYY-MM-DD>-<short-slug>.md`. Frontmatter `raw_path` points to the raw file and `raw_id` keeps the local dedup key. Account-mirror source notes additionally carry `provenance: first-party` and a `mirror: accounts/<handle>` back-pointer.
 - **Wiki concept article:** `wiki/<topic>/concepts/<theme-slug>.md`. Carries `type: Concept`; cites sources via relative markdown links, `[label](../sources/<source-stem>.md)`.
+- **Recap file:** `recaps/<profile>/<YYYY-MM-DD>.md`. Carries `type: Recap` frontmatter with profile, window, selected lanes, source note paths, totals, prompt, model/provider, timestamp, and delivery targets.
+- **Recap manifest:** `recaps/manifests/<run-date>.json`. Runtime-agnostic delivery handoff listing generated recap files and non-secret targets.
 
 These are not just conventions — the linter and the compile step depend on them. Don't rename files mechanically; the `raw_path` / `raw_id` glue is what makes the system idempotent.
 

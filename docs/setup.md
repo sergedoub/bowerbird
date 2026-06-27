@@ -8,6 +8,16 @@ portal.
 > repo's guided setup skill; not cloned yet — paste the prompt from
 > [docs/setup-prompt.md](setup-prompt.md) into an agent session anywhere.
 
+Agent acceleration works best with one coordinator. Subagents can safely read
+docs, check repo health, prepare command lists, and watch workflow runs in
+parallel, but one browser coordinator should own all GitHub/X/Slack/model
+provider pages. Do not split credential-copy work across agents sharing the
+same Chrome profile or clipboard; copy one secret, write it to `bin/.env`,
+verify by key presence plus non-empty/value shape only, then continue. For
+GitHub, prefer terminal/API automation through `gh`: fork/clone, initial
+Actions secrets, variables, workflow dispatch, and run watching should not need
+Chrome if `gh` is authenticated.
+
 ## 0. Prerequisites
 
 - A GitHub account and a fork of this repository (your fork is your knowledge
@@ -49,22 +59,28 @@ The wizard collects credentials into a gitignored `bin/.env`, opens the X
 OAuth flow in your browser, lists your bookmark folders so you can choose
 which ones Bowerbird watches (anything you bookmark into a watched folder
 becomes part of your knowledge base), asks which accounts to follow, writes
-`config/topics.toml` and `config/accounts.toml`, and pushes the GitHub
-Actions secrets. If `gh` is absent, it prints the secret names you still need
-to set manually; values stay in `bin/.env` and `bin/.x_tokens.json`. It ends
-with a checklist of anything left.
+`config/topics.toml`, `config/accounts.toml`, and optional
+`config/recaps.toml` topic profiles, and pushes the GitHub Actions secrets. If
+`gh` is absent, it prints the secret names you still need to set manually;
+values stay in `bin/.env` and `bin/.x_tokens.json`. It ends with a checklist
+of anything left.
 
-The one secret you must mint by hand is `GH_PAT`: a fine-grained personal
-access token that can write this repo's secrets
+Initial Actions secrets are pushed with your local `gh` authentication; you do
+not need a PAT just to run setup. The current workflow still needs one
+steady-state writeback credential, `GH_PAT`: a fine-grained personal access
+token that can write this repo's secrets
 (<https://github.com/settings/personal-access-tokens/new>; repository
 permission "Secrets: read and write"). The pipeline uses it to persist the
-rotating X token after each run.
+rotating X token after each run. GitHub does not provide an API to create a PAT;
+prefilled URLs still require web confirmation. If you are maintaining a larger
+installation, a GitHub App with `Secrets: write` permission can replace this
+PAT with short-lived installation tokens after a one-time app install.
 
 Agent-native alternative to the wizard: each wizard sub-step also exists as
 its own non-interactive command, so a coding agent can run the whole setup
 from chat — `bowerbird auth` (browser OAuth, no terminal input),
 `bowerbird folders` (list folders for mapping), write the config TOMLs
-directly, then `bowerbird push-secrets` (pushes everything staged in
+directly including `config/recaps.toml`, then `bowerbird push-secrets` (pushes everything staged in
 `bin/.env` plus the token file to Actions secrets without printing a value).
 Stage one compile credential for the provider you plan to use:
 `OPENAI_API_KEY` for `codex`, `ANTHROPIC_API_KEY` for `claude`, or
@@ -74,13 +90,22 @@ records the provider in `config/models.toml`; no workflow edit is needed.
 ## 2. Commit config and enable Actions
 
 ```bash
-git add config && git commit -m "config: my topics and accounts" && git push
+git add config && git commit -m "config: my topics, accounts, and recaps" && git push
 ```
 
-On GitHub: **Actions tab → enable workflows**. Then dispatch `pull-bookmarks`
-once with `limit_per_folder=3` and `account-dump` once manually (Run workflow).
-Green runs mean raw posts are landing in `raw/`; the `compile-wiki` workflow
-chains automatically and writes `wiki/`, gated by the provenance linter.
+On GitHub: **Actions tab → enable workflows**. For the first import, run the
+two import workflows serially so their first commits do not race: dispatch
+`account-dump` once manually, wait for it to go green and pull the commit
+locally, then dispatch `pull-bookmarks` once with `limit_per_folder=3`. Green
+runs mean raw posts are landing in `raw/`; the `compile-wiki` workflow chains
+automatically and writes `wiki/`, gated by the provenance linter.
+
+Compile can take a few minutes in the model step. During setup, record the
+compile run id with `gh run list --workflow compile.yml --limit 5`, then watch
+it with `gh run watch <run-id> --exit-status`. It is fine to leave that watch
+running in a background terminal while preparing Slack/checklist context, but
+wait for a green compile, pull the wiki commit locally, and run `bowerbird lint`
+before dispatching recap/slack verification or calling setup complete.
 
 That first bookmark import is intentionally capped. Normal scheduled bookmark
 pulls are forward-only: they read newest-first and stop when they hit an
@@ -92,17 +117,30 @@ Verify locally any time:
 
 ```bash
 bowerbird pull          # should print written/skipped counts and search_mode
-bowerbird lint          # must print: provenance OK
-bowerbird doctor        # config, recap feed, and lint health
+bowerbird lint          # must print: provenance and recaps OK
+bowerbird doctor        # config, recap files, and lint health
 ```
 
 ## 3. Recap delivery
 
-The `kb-recap-feed` workflow writes `compile/recap-feed.json` daily — the
-machine-readable "what's new" feed. To get it in Slack, configure the
-[Slack connector](../connectors/slack/README.md). The connector agent reads
-that feed, checks freshness, synthesizes one recap, and sends it to the
-channel or DM you choose.
+The `recap` workflow runs `bowerbird recap` and commits generated Markdown under
+`recaps/` plus a manifest under `recaps/manifests/`. To get those files in
+Slack, configure the [Slack connector](../connectors/slack/README.md):
+
+1. Create or install the dedicated `Bowerbird` Slack app from
+   `connectors/slack/manifest.json`.
+2. Stage the Bot User OAuth Token locally as `SLACK_BOT_TOKEN` and run
+   `bowerbird push-secrets`; the token belongs in GitHub Actions secrets, not
+   in tracked files or chat.
+3. Put the non-secret Slack destination in `config/recaps.toml` under the
+   relevant `[[recaps.deliveries]]` entry. Prefer channel IDs, for example
+   `destination = "C0123456789"`.
+4. Dispatch the `recap` workflow or run `bowerbird slack-recap` against an
+   existing manifest. Setup is not complete until the log records a Slack
+   channel and timestamp, and the message appears from the `Bowerbird` bot.
+
+Do not use your personal Slack account, a user token, or an incoming webhook for
+the public setup path.
 
 ## 4. Check health
 
@@ -113,8 +151,8 @@ bowerbird doctor
 bowerbird doctor --json
 ```
 
-It reports config presence, recap-feed validity and freshness, and the local
-provenance lint result. For X token recovery, run `bowerbird auth`, then
+It reports config presence, recap file validity, and the local provenance lint
+result. For X token recovery, run `bowerbird auth`, then
 `bowerbird push-secrets` to update the `X_TOKENS` Actions secret.
 
 ## 5. Customization
@@ -126,7 +164,8 @@ provenance lint result. For X token recovery, run `bowerbird auth`, then
 | Live-instance scheduled ingest | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
 | Cron times | Workflow files — the one accepted fork edit, see [upgrading](upgrading.md) |
 | Recap labels per account | `label` field in `config/accounts.toml` |
-| Recap delivery | Connector agent configuration, starting with `connectors/slack/` |
+| Recap profiles | `config/recaps.toml`; prompts live under `compile/recaps/` |
+| Recap delivery | `SLACK_BOT_TOKEN` Actions secret plus Slack destinations in `config/recaps.toml` |
 
 ## Troubleshooting
 
@@ -140,8 +179,11 @@ provenance lint result. For X token recovery, run `bowerbird auth`, then
   the compile agent is required to fix violations before committing, so
   repeated failures usually mean a malformed raw file or an interrupted run.
   Re-dispatch `compile-wiki`.
-- **Recap silent** — run `bowerbird doctor`, inspect the `kb-recap-feed`
-  workflow run, and check the connector agent's last run/logs.
+- **Recap silent** — run `bowerbird doctor`, inspect the `recap` workflow run,
+  confirm a manifest was committed under `recaps/manifests/`, confirm
+  `SLACK_BOT_TOKEN` is present in `gh secret list`, and check the
+  `Deliver Slack recaps` step for the profile, destination, channel, and
+  timestamp.
 
 ## Appendix: the X developer app, click by click
 

@@ -1,0 +1,26 @@
+{
+  "type": "RecapManifest",
+  "run_date": "2026-06-06",
+  "generated_at": "2026-06-06T00:00:00+00:00",
+  "recaps": [
+    {
+      "profile": "getting-started-daily",
+      "file": "recaps/getting-started-daily/2026-06-05.md",
+      "format": "markdown",
+      "frequency": "daily",
+      "window_start": "2026-06-05",
+      "window_end": "2026-06-06",
+      "totals": {
+        "source_notes": 1,
+        "account_lanes": 0,
+        "topic_lanes": 1
+      },
+      "deliveries": [
+        {
+          "type": "slack",
+          "destination": "#bowerbird-recaps"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+[[recaps]]
+name = "getting-started-daily"
+frequency = "daily"
+topics = ["getting-started"]
+prompt = "compile/recaps/default.md"
+format = "markdown"
+
+[[recaps.deliveries]]
+type = "slack"
+destination = "#bowerbird-recaps"

@@ -26,7 +26,7 @@ These may be personal, sensitive, or too specific for a reusable public repo:
 | `raw/accounts/` | Publish only if mirrored accounts and selected handles are intentional public examples. |
 | `raw/books/` | Do not publish copyrighted or private source material unless you have the rights to do so. |
 | `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with `samples/wiki/`. |
-| `compile/recap-feed.json` | Safe only if its note text and paths are safe. Otherwise replace with `samples/recap-feed.json`. |
+| `recaps/` | Publish only if generated recap bodies, source note paths, and destinations are safe. Otherwise replace with `samples/recaps/`. |
 | `config/*.toml` | Replace personal folder IDs and handles with `samples/config/` if needed. |
 | Personal automation docs | Remove or generalize anything referencing private workspaces, trigger IDs, or Slack channel IDs. |
 
@@ -69,16 +69,18 @@ Document the required setup in the repository settings:
 3. Adjust cron times in `.github/workflows/`.
 4. Manually run `pull-bookmarks` and `account-dump`.
 5. Confirm `compile-wiki` runs and `python3 bin/lint.py` passes.
-6. Confirm `kb-recap-feed` writes a fresh `compile/recap-feed.json`.
-7. Configure exactly one Slack connector from [connectors/slack](../connectors/slack/README.md).
+6. Confirm `recap` writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`.
+7. Configure Slack from [connectors/slack](../connectors/slack/README.md):
+   `SLACK_BOT_TOKEN` in Actions secrets, non-secret destinations in
+   `config/recaps.toml`, and one verified bot post with a Slack timestamp.
 
 ## Public Positioning
 
 The shortest useful description:
 
 > A file-first personal knowledge-base pipeline that imports X bookmarks and
-> selected X accounts, compiles them into a cited markdown wiki, and emits a
-> daily recap feed for Slack.
+> selected X accounts, compiles them into a cited markdown wiki, and emits
+> durable recap files for Slack and other delivery adapters.
 
 The important distinction is that this is a provenance-preserving compile
 pipeline, not a chatbot memory store.

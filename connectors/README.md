@@ -1,16 +1,18 @@
 # Connectors
 
 Connectors are agent-facing playbooks for services that consume Bowerbird
-artifacts. They are not web pages and they are not runtime code in this repo.
+artifacts. The Slack connector also has a small bundled delivery adapter so
+public setup can prove daily delivery without a separate runtime.
 
 Bowerbird's stable handoff is file-first:
 
 ```text
-compile/recap-feed.json
+recaps/<profile>/<YYYY-MM-DD>.md
+recaps/manifests/<run-date>.json
 ```
 
-A connector agent reads that file, checks freshness, performs any service setup
-the user approves, and owns the external schedule and delivery credentials.
+A connector reads the manifest and listed recap files, performs any service
+setup the user approves, and owns the service credential boundary.
 
 ## Included Connectors
 
@@ -21,9 +23,9 @@ the user approves, and owns the external schedule and delivery credentials.
 ## Connector Rules
 
 - Read deterministic repo artifacts; do not infer state from chat history.
-- Keep service credentials in the connector runtime or the user's secret store,
-  not in tracked repo files.
-- Post at most one daily recap from a fresh `compile/recap-feed.json`.
+- Keep service credentials in GitHub Actions secrets, the connector runtime, or
+  the user's secret store, not in tracked repo files.
+- Deliver generated recap files; do not synthesize new recap knowledge.
 - Keep setup verifiable: list required scopes, secrets, target IDs, schedule,
   and one explicit acceptance test.
 - Prefer browser-assisted service setup when no public app-provisioning API

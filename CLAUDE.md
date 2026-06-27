@@ -13,7 +13,7 @@ The current source of truth lives in `llms.txt` and the linked `docs/agent/*.md`
 **New to this repo (fresh clone, nothing configured)?** Type `/setup` — the
 repo ships a guided, in-session setup skill (`.claude/skills/setup/SKILL.md`)
 covering credentials, the X app, OAuth, folder mapping, secrets, the first
-pull, and the web app.
+pull, `bowerbird doctor`, and the Slack connector hand-off.
 
 ## Commands
 
@@ -21,9 +21,6 @@ pull, and the web app.
 # Pipeline tests (pytest config in pyproject.toml: testpaths=tests, pythonpath=src)
 python3 -m pytest                          # full suite (fast, all offline with fakes)
 python3 -m pytest tests/test_threads.py::test_name -q   # one test
-
-# Web app tests/build (from web/)
-cd web && npm test && npm run typecheck && npm run build
 
 # The bowerbird CLI (installed by `pip install -e .`) wraps every bin/ script:
 bowerbird init                             # interactive setup wizard
@@ -33,16 +30,16 @@ bowerbird pull [--topic t] [--no-threads]  # bookmarks -> raw/bookmarks/<topic>/
 bowerbird backfill --topic t --no-threads  # historical bookmarks, cost-controlled
 bowerbird dump-account [--handle h] [--days 3 | --full] [--max-posts n]
 bowerbird models                           # compile + recap provider/model
+bowerbird recap                            # generate recap files + manifest
+bowerbird slack-recap                      # deliver manifest-listed Slack recaps
 bowerbird lint                             # provenance guardrail: must print "provenance OK"
-
-# Recap feed (what kb-recap-feed.yml runs)
-python3 bin/recap_feed.py [--window-hours 24]
+bowerbird doctor                           # text-first config, recap files, and lint health
 
 # Compile locally with any runner
 COMPILE_RUNNER=codex bash bin/compile.sh && python3 bin/lint.py
 ```
 
-The pipeline has **no build step and no third-party runtime dependency** — the `kb` package is stdlib-only (`urllib`, `tomllib`, `json`). Only the dev extra (`pytest`) is external. Keep it that way unless there's a strong reason; new deps break the "runs anywhere, including bare CI" property. The web app (`web/`) is a separate Next.js/TypeScript deployable with its own dependencies.
+The pipeline has **no build step, no product UI, and no third-party runtime dependency** — the `kb` package is stdlib-only (`urllib`, `tomllib`, `json`). Only the dev extra (`pytest`) is external. Keep it that way unless there's a strong reason; new deps break the "runs anywhere, including bare CI" property.
 
 ## Architecture: declared raw inputs -> compile -> use
 
@@ -100,7 +97,7 @@ Two **different** credentials are required:
 - **Bookmarks/folders** use OAuth2 **user-context** tokens (`kb.tokens.TokenStore`).
 - **Search** (for thread reconstruction) **rejects user-context with 403** and requires an **app-only Bearer** (`X_BEARER_TOKEN`). `SearchClient` tries full-archive (`/2/tweets/search/all`) first and permanently falls back to recent search (`/2/tweets/search/recent`, 7-day window) for the rest of the run if the plan rejects full-archive with 403; `summary["search_mode"]` reports which tier ran.
 
-The user-context **refresh token rotates (single-use)**: every refresh returns a new one that *must* be persisted immediately, or the next run is locked out. `TokenStore._refresh` does this. Refresh tokens also expire after ~6 months of inactivity, which is the main "silent death" failure mode — the web app's Health page surfaces it, and signing in with X on the web app re-seeds the `X_TOKENS` secret to recover.
+The user-context **refresh token rotates (single-use)**: every refresh returns a new one that *must* be persisted immediately, or the next run is locked out. `TokenStore._refresh` does this. Refresh tokens also expire after ~6 months of inactivity, which is the main "silent death" failure mode. Recover by running `bowerbird auth` to re-seed `bin/.x_tokens.json`, then `bowerbird push-secrets` so CI receives the new `X_TOKENS` secret.
 
 Token storage is `bin/.x_tokens.json` (`FileTokenStorage`, 0600). In CI the `X_TOKENS` secret is materialized to that file before the run and the rotated value is written back to the secret afterward (see `pull.yml`). Secrets live in `bin/.env` locally (gitignored) and GitHub Actions secrets in CI.
 
@@ -109,18 +106,26 @@ Token storage is `bin/.x_tokens.json` (`FileTokenStorage`, 0600). In CI the `X_T
 - `pull.yml` (`pull-bookmarks`) — daily cron. Materializes `X_TOKENS` secret → file, runs `pull.py`, then **writes the rotated token back** to the secret via a fine-grained PAT (`GH_PAT`), and commits new `raw/` files with the default `GITHUB_TOKEN`.
 - `account-dump.yml` — daily cron. Runs `dump_account.py` on a trailing window for every handle in `config/accounts.toml` and commits new `raw/accounts/<handle>/` files. Bearer-only, no token rotation.
 - `compile.yml` (`compile-wiki`) — runs `bin/compile.sh`, which installs and headlessly invokes the agent CLI selected by the `COMPILE_RUNNER` repo variable (codex | claude | gemini, default codex/OpenAI) against `compile/PROMPT.md` → `compile/INSTRUCTIONS.md`, gates on `bin/lint.py`, then commits `wiki/` changes. It's **chained from both `pull-bookmarks` and `account-dump` via `workflow_run`** (not push/dispatch) because commits made with `GITHUB_TOKEN` don't fire push/dispatch events.
-- `kb-recap-feed.yml` — daily cron. Runs `bin/recap_feed.py` (`kb.recap_feed`, unit-tested): writes `compile/recap-feed.json` from `wiki/*/sources/` notes added in the last 24 hours, grouped into account lanes (`mirror: accounts/<handle>`) and topic lanes. Concept/index changes are intentionally not counted.
+- `recap.yml` — daily cron plus `workflow_run` from `compile-wiki`. Runs `bin/recap.py`: writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`, then delivers manifest-listed Slack recaps with `bin/slack_recap.py` when `SLACK_BOT_TOKEN` is configured.
 - `ci.yml` — pytest + lint on code-path changes (includes the sample-data fixtures under `samples/`).
 
-GitHub Actions never post Slack updates. The daily recap is delivered by the web app's `/api/cron/recap` (or any other consumer of `compile/recap-feed.json` — the feed is the stable contract; see `docs/slack-recap.md`).
+The repo writes durable recap files first. Slack delivery consumes the committed
+manifest and recap files; it must not synthesize new recap content. The bundled
+Actions adapter posts with `SLACK_BOT_TOKEN`, and external connector runtimes
+can consume the same manifest contract. See `docs/slack-recap.md` and
+`connectors/slack/README.md`.
 
-## Web app (`web/`)
+## Slack connector hand-off
 
-Next.js/TypeScript, self-hosted by each user (their Vercel/Railway, their env vars). One deploy = one user = this repo. `web/src/lib/repoClient.ts` is the ONLY module that talks to GitHub; `configModel` mirrors `kb.config` validation; sign-in-with-X (owner-gated) seals the captured token into the `X_TOKENS` secret; `/api/cron/recap` delivers the daily recap through the `DeliveryAdapter` seam (Slack webhook at launch). Tests: `cd web && npm test` (vitest, mocked HTTP, offline).
+Bowerbird has no local app server and no webhook/default-personal-token Slack
+path. The connector contract is deliberately file-first: after `recap.yml`
+writes `recaps/`, the bundled Slack adapter or an external connector runtime
+opens the manifest, verifies each listed file is `type: Recap`, and sends the
+existing body with the dedicated Bowerbird bot token.
 
 ## Not yet implemented (stubs that raise `NotImplementedError`)
 
-`kb.indexer.IndexGenerator` (mechanical index generation — index is currently written by the compile LLM), `kb.articles.ArticleExtractor` (fetch linked essays to markdown; X-native Article bodies *are* already captured in pull via `article.plain_text`), and `kb.health.HealthCheck` (staleness/lint observability — the web app's Health page covers the operational need; the stub remains for a CLI equivalent). Each has a deliberately small interface and a docstring explaining the intended design — read it before implementing.
+`kb.indexer.IndexGenerator` (mechanical index generation — index is currently written by the compile LLM) and `kb.articles.ArticleExtractor` (fetch linked essays to markdown; X-native Article bodies *are* already captured in pull via `article.plain_text`). `kb.health.HealthCheck` is implemented as the text-first `bowerbird doctor` surface. Each stub has a deliberately small interface and a docstring explaining the intended design — read it before implementing.
 
 ## Data-loss guardrails specific to this repo
 

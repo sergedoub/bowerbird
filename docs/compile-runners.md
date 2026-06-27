@@ -45,7 +45,7 @@ bash bin/compile.sh && python3 bin/lint.py
 
 A passing smoke test = the agent terminated, the working tree contains new or
 updated `wiki/` files for any uncompiled raw items, and lint prints
-`provenance OK`.
+`provenance and recaps OK`.
 
 ## Adding a runner
 
@@ -58,4 +58,4 @@ updated `wiki/` files for any uncompiled raw items, and lint prints
 
 Pass credentials through `.github/workflows/compile.yml` env (add your secret
 name there). Please include a smoke-test transcript in the PR: a run of the
-local command above against the sample data, ending in `provenance OK`.
+local command above against the sample data, ending in `provenance and recaps OK`.

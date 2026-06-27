@@ -31,7 +31,7 @@ See [provenance](provenance.md). Never edit/delete/rename files under `raw/`.
 
 ### Path disjointness (fork upgrade contract)
 
-Forks upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `.github/`, `docs/`, `connectors/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `compile/recap-feed.json`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
+Forks upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `compile/recaps/`, `.github/`, `docs/`, `connectors/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `recaps/`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
 
 ### No RAG, no embeddings, no Postgres-backed content
 
@@ -89,5 +89,6 @@ It's an interactive helper to discover bookmark folder IDs. Don't wire it into a
 | Token storage / refresh | `src/kb/tokens.py` |
 | Wiki provenance rules | `src/kb/linter.py`, `bin/lint.py`, `compile/INSTRUCTIONS.md` |
 | Topic / account routing | `src/kb/routing.py`, `src/kb/config.py`, `config/*.toml` |
+| Recap generation | `src/kb/recaps.py`, `src/kb/recap_llm.py`, `bin/recap.py`, `config/recaps.toml`, `compile/recaps/` |
 | Cron / CI | `.github/workflows/*.yml` |
 | Tests | `tests/test_*.py` |

@@ -16,8 +16,8 @@ contract also fits local notes, web clips, and long-form material.
   linter enforces that mechanically. The wiki is a native **Open Knowledge
   Format (OKF) v0.1 bundle**, so any OKF-aware tool can read it — with
   Bowerbird's stricter provenance lint as a floor on top.
-- **Display** — a daily recap feed of what's new, delivered by connector
-  agents such as Slack.
+- **Display** — durable recap files of what's new, delivered by adapters such
+  as the bundled Slack bot-token workflow, email, or Guild.
 
 The design is deliberately simple: Python 3.11+ with a stdlib-only runtime,
 markdown files as the database, your GitHub fork as the storage and compute
@@ -49,17 +49,20 @@ services.
    ```
 
    The wizard walks you through X app credentials, the OAuth sign-in, choosing
-   which folders Bowerbird watches and which accounts it follows, and setting
-   the GitHub Actions secrets (automatic when the `gh` CLI is installed).
+   which folders Bowerbird watches, optional topic recap profiles, which
+   accounts it follows, and setting the GitHub Actions secrets (automatic when
+   the `gh` CLI is installed).
 3. **Enable GitHub Actions** on your fork and run `pull-bookmarks` once with
    `limit_per_folder=3`, then run `account-dump` once manually. Later account
    adds use `bowerbird accounts add <handle> --topic <topic>` plus a targeted
    `account-dump` dispatch with `handle=<handle>`, `days=3`. The compile chains
-   automatically; `bowerbird lint` must print `provenance OK` and `bowerbird
-   doctor` should report healthy config/feed/lint status.
-4. **Configure a connector agent** for delivery. Start with the
-   [Slack connector](connectors/slack/README.md), which sends one daily recap
-   from `compile/recap-feed.json`.
+   automatically; `bowerbird lint` must print `provenance and recaps OK` and
+   `bowerbird doctor` should report healthy config/recap/lint status.
+4. **Generate and deliver recaps.** `bowerbird recap` writes durable Markdown
+   files under `recaps/` plus a manifest under `recaps/manifests/`. Start with
+   the [Slack connector](connectors/slack/README.md): create the dedicated
+   Bowerbird app, store `SLACK_BOT_TOKEN` as a secret, keep channel IDs in
+   `config/recaps.toml`, and verify one bot post with a Slack timestamp.
 
 Full walkthrough: [docs/setup.md](docs/setup.md).
 
@@ -77,8 +80,10 @@ bowerbird accounts add <handle> --topic <topic>
 bowerbird dump-account --handle <h> --days 3
 bowerbird backfill --topic <t> --no-threads
 bowerbird models     # choose compile + recap provider/model
-bowerbird lint       # provenance guardrail
-bowerbird doctor     # config, recap feed freshness, and lint status
+bowerbird recap      # generate durable recap files + delivery manifest
+bowerbird slack-recap # post manifest-listed Slack recaps with SLACK_BOT_TOKEN
+bowerbird lint       # provenance + recap guardrail
+bowerbird doctor     # config, recap files, and lint status
 
 # advanced / optional
 bowerbird push-secrets # push staged credentials; marks the repo live when ingest secrets are complete
@@ -103,7 +108,7 @@ subscription.
 | [How it works](docs/how-it-works.md) | Architecture and data flow. |
 | [Importing from X](docs/importing-x.md) | Credentials, folder discovery, cost table, Actions secrets. |
 | [Compile runners](docs/compile-runners.md) | Choosing Codex / Claude / Gemini; adding a runner. |
-| [Daily recap](docs/slack-recap.md) | The feed contract and delivery options. |
+| [Daily recap](docs/slack-recap.md) | File-first recap generation and delivery options. |
 | [Connectors](connectors/README.md) | Agent playbooks for delivery services, starting with Slack. |
 | [Upgrading your fork](docs/upgrading.md) | `git merge upstream/main` and why it never conflicts. |
 | [`llms.txt`](llms.txt) | Dense agent-facing docset for coding agents working on this repo. |

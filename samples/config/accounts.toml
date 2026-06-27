@@ -1,6 +1,6 @@
 # X accounts to mirror in full (posts + replies). Each handle binds to the wiki
 # topic where its distilled source notes land. `label` is the display name used
-# by the daily recap feed (optional; defaults to the handle).
+# by recap profiles (optional; defaults to the handle).
 #
 # These defaults follow one voice from each large AI lab. Replace them with
 # accounts you actually want recaps of — every mirrored post is a paid API read.

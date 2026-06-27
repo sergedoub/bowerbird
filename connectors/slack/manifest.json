@@ -1,0 +1,25 @@
+{
+  "display_information": {
+    "name": "Bowerbird",
+    "description": "Daily Bowerbird knowledge-base recaps"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "bowerbird",
+      "always_online": false
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "chat:write.public"
+      ]
+    }
+  },
+  "settings": {
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "is_hosted": false,
+    "token_rotation_enabled": false
+  }
+}

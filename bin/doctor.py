@@ -28,14 +28,14 @@ def run_lint() -> LintStatus:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog=os.environ.get("BOWERBIRD_PROG", "bowerbird doctor"),
-        description="Check config, recap feed freshness, and provenance lint status.",
+        description="Check config, recap files, and provenance lint status.",
     )
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
     parser.add_argument(
         "--stale-after-days",
         type=int,
         default=14,
-        help="warn when compile/recap-feed.json is older than this many days",
+        help=argparse.SUPPRESS,
     )
     ns = parser.parse_args(argv)
 

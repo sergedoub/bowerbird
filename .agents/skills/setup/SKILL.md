@@ -19,29 +19,40 @@ show the evidence, then move on.
   concise numbered list and continue from the user's reply.
 - Anything interactive or secret-bearing that you cannot do safely, the user
   runs themselves: tell them the exact command with the `!` prefix and wait.
-- Browser control is opt-in. If you have a browser tool, offer to drive the X
-  developer portal, GitHub PAT pages, model-provider key pages, and Slack app
-  setup with the user's logged-in session — they handle login and payment
-  screens. If you do not have safe browser control, fall back to click-by-click
-  instructions.
+- Browser control is opt-in. If you have a browser tool, use it for X
+  developer portal, model-provider key pages, and Slack app setup with the
+  user's logged-in session — they handle login and payment screens. Prefer
+  terminal/API automation for GitHub work whenever `gh` can handle it. If you
+  do not have safe browser control, fall back to click-by-click instructions.
 - Clipboard rule (only when you have browser control): for EVERY credential
   behind a Copy/reveal control (X console values, the GitHub fine-grained
-  PAT, and the compile-runner credential), click Copy yourself and pipe the
+  PAT if this repo still requires one, and the compile-runner credential),
+  click Copy yourself and pipe the
   clipboard into the gitignored bin/.env under the exact key name:
   `(umask 177; touch bin/.env); printf 'GH_PAT=%s\n' "$(pbpaste)" >> bin/.env`
   (Linux: `xclip -o`). Keys: X_CLIENT_ID, X_CLIENT_SECRET, X_BEARER_TOKEN,
-  GH_PAT, and exactly one compile key: OPENAI_API_KEY for codex,
+  GH_PAT, SLACK_BOT_TOKEN, and exactly one compile key: OPENAI_API_KEY for codex,
   ANTHROPIC_API_KEY for claude, or GEMINI_API_KEY for gemini. NEVER let a
   secret value into your
   context: no DOM text reads of credential fields, no screenshots while a
   secret is revealed on screen, no cat of bin/.env, no echoing values.
   While a secret is visible, locate the Copy control via the
   interactive-element / accessibility tree only (labels and roles, never
-  page text or field values) and click it by reference. Verify by key name
-  only (`grep -c '^GH_PAT=' bin/.env`).
+  page text or field values) and click it by reference. Verify by key
+  presence plus non-empty/value-shape only; never print values, and do not
+  rely on `grep -c '^KEY='` alone because empty values can pass that check.
+- GitHub automation preference: use `gh` or GitHub APIs for every GitHub step
+  they can handle: fork/clone, setting Actions secrets from staged files,
+  setting variables, workflow dispatch, and run watching. Do not use Chrome for
+  GitHub work when terminal auth can do it. GitHub does not offer an API to
+  create a PAT; prefilled PAT URLs still require human web confirmation. If the
+  repo supports a GitHub App installation-token path for secret writeback,
+  prefer that over a PAT. If this repo version still requires `GH_PAT`, keep
+  PAT creation as a minimal user-owned copy handoff, not a long browser-driving
+  task.
 - After credentials are verified, clean up browser state. Once `bin/.env` has
-  the expected key names, `bowerbird push-secrets` has run, and
-  `gh secret list` shows the expected Actions secret names, close only
+  the expected non-empty staged credentials, `bowerbird push-secrets` has run,
+  and `gh secret list` shows the expected Actions secret names, close only
   setup-only tabs you opened: X developer portal/console tabs, GitHub PAT or
   repo-secret pages, model-provider API-key pages, OAuth callback leftovers,
   Slack app setup tabs, and setup docs/search tabs opened only for credential
@@ -71,9 +82,18 @@ show the evidence, then move on.
    the three credentials per the clipboard rule.
 
 4. **Remaining credentials** — stage into bin/.env, then push:
-   a. GH_PAT: fine-grained, this repo, "Secrets: read and write"; suggest
-      a longer expiration than the 30-day default (the pipeline uses it
-      on every run). Clipboard rule applies.
+   a. GitHub automation: first use existing `gh` authentication for everything
+      terminal automation can do. `bowerbird push-secrets` sets initial Actions
+      secrets from `bin/.env` through `gh secret set`; do not create a PAT just
+      to push setup secrets. If the repo exposes a GitHub App setup path for
+      scheduled writeback, prefer it: one human install/authorization step, then
+      short-lived installation tokens generated programmatically. Only if this
+      repo version still requires `GH_PAT`, create a fine-grained PAT scoped to
+      this repo with repository permission `Secrets: read and write`. Do not
+      try to API-create the PAT; GitHub requires its browser settings flow. Keep
+      the PAT name under 40 characters and treat creation as a user-owned
+      Generate/Copy handoff if browser automation is brittle. Clipboard rule
+      applies.
    b. Model provider key: default to the active setup agent's provider unless
       the user chooses otherwise. In Codex, use OpenAI/Codex:
       `bowerbird models --provider openai --write`, open
@@ -96,20 +116,38 @@ show the evidence, then move on.
    `config/accounts.toml` directly, then commit the config changes.
 
 6. **First pull** — commit/push anything still local, ensure Actions are
-   enabled, dispatch `pull-bookmarks` with `limit_per_folder=3` and
-   dispatch `account-dump` (`gh workflow run`, watch with `gh run watch`).
-   The default first bookmark import is capped to the latest 3 items per
-   selected folder. If the user explicitly asks to import all folder history,
+   enabled, then run the first import workflows serially to avoid branch-race
+   push failures: dispatch `account-dump` first, watch it green, pull the
+   resulting commit locally, then dispatch `pull-bookmarks` with
+   `limit_per_folder=3` and watch it green. The default first bookmark import
+   is capped to the latest 3 items per selected folder. If the user explicitly
+   asks to import all folder history,
    first run `bowerbird folders --counts`, explain the count/cost estimate,
    then dispatch `pull-bookmarks` with `import_all=true`. Confirm
    `compile-wiki` chains green, new files land in raw/ and wiki/, and
-   `bowerbird lint` passes. Run `bowerbird doctor` for the text-first health
-   surface.
+   `bowerbird lint` passes. Compile can take a few minutes in the model step;
+   do not treat a quiet running run as stuck. Capture the compile run id with
+   `gh run list`, then watch it in a background terminal or repo-watcher helper
+   with low-frequency status updates, e.g.
+   `gh run watch <run-id> --exit-status`. While compile runs, only do
+   non-mutating prep such as reading Slack/setup docs; do not dispatch
+   recap/slack work or claim setup success until compile is green and the wiki
+   commit is pulled locally. If an older compile run fails only in the final
+   push/commit step after compile and lint passed, and a newer compile run is
+   already queued for the current branch, watch the newer run before declaring
+   setup blocked. Run `bowerbird doctor` if this checkout exposes it.
 
 7. **Slack connector** — follow `connectors/slack/README.md`: create or
-   configure the Slack app with the user present, store the bot token in the
-   connector runtime secret store, choose a channel/DM/App Home target, set
-   the external connector schedule, and manually verify one delivery.
+   configure a dedicated Slack app named `Bowerbird` from
+   `connectors/slack/manifest.json` with the user present, stage the Bot User
+   OAuth Token as `SLACK_BOT_TOKEN` in `bin/.env` without exposing it, record
+   the non-secret channel/DM destination in `config/recaps.toml`, run
+   `bowerbird push-secrets`, and verify by secret name only that
+   `SLACK_BOT_TOKEN` is present. Dispatch `recap` or run `bowerbird slack-recap`
+   against an existing manifest, then confirm one delivery from the
+   `Bowerbird` bot plus the logged destination, Slack channel, and timestamp.
+   Do not send from the user's personal Slack account, a personal user token,
+   an incoming webhook, Codex/ChatGPT's Slack connector, or Guild's Slack app.
 
 8. **Wrap-up** — status table: what works (tests, lint, doctor, each
    workflow, Slack connector), what the user chose (watched folders,

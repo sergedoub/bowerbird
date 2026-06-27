@@ -14,6 +14,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from kb.linter import lint, okf_conformance  # noqa: E402
+from kb.recaps import validate_recap_files  # noqa: E402
 
 
 def main() -> None:
@@ -29,10 +30,13 @@ def main() -> None:
         for v in okf_conformance(wiki):
             print(f"[{topic}] {v.kind}: {os.path.relpath(v.path, ROOT)} :: {v.message}")
             violations.append(v)
+    for issue in validate_recap_files(ROOT):
+        print(f"[recaps] recap: {issue}")
+        violations.append(issue)
     if violations:
-        print(f"\n{len(violations)} provenance violation(s) — fix before shipping.")
+        print(f"\n{len(violations)} provenance/recap violation(s) — fix before shipping.")
         sys.exit(1)
-    print("provenance OK")
+    print("provenance and recaps OK")
 
 
 if __name__ == "__main__":

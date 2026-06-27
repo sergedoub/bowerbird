@@ -1,22 +1,15 @@
-"""The shipped sample data must stay valid: lint-clean wiki, contract-true feed.
+"""The shipped sample data must stay valid: lint-clean wiki and recap artifacts.
 
-Samples double as CI fixtures — if the linter rules or feed contract change, these
-tests force the samples to be regenerated alongside.
+Samples double as CI fixtures. If the linter rules or recap contract change,
+these tests force the samples to be regenerated alongside.
 """
-import json
 from pathlib import Path
 
+from kb.config import AccountsConfig, RecapsConfig, TopicsConfig
 from kb.linter import lint, okf_conformance
-from kb.recap_feed import build_feed
+from kb.recaps import validate_recap_files
 
 SAMPLES = Path(__file__).resolve().parents[1] / "samples"
-
-
-def _sample_source_paths():
-    return sorted(
-        str(p.relative_to(SAMPLES))
-        for p in (SAMPLES / "wiki").glob("*/sources/*.md")
-    )
 
 
 def test_sample_wiki_passes_provenance_lint():
@@ -29,23 +22,17 @@ def test_sample_wiki_passes_provenance_lint():
     assert violations == [], f"sample wiki has provenance/OKF violations: {violations}"
 
 
-def test_sample_feed_matches_what_the_builder_produces():
-    added = _sample_source_paths()
-    expected = build_feed(
-        added,
-        lambda p: (SAMPLES / p).read_text(encoding="utf-8"),
-        today="2026-06-05",
-    )
-    actual = json.loads((SAMPLES / "recap-feed.json").read_text())
-    assert actual == expected
+def test_sample_recaps_validate():
+    assert validate_recap_files(SAMPLES) == []
 
 
 def test_sample_configs_parse_with_real_validators():
-    from kb.config import AccountsConfig, TopicsConfig
-
     topics = TopicsConfig.load(SAMPLES / "config" / "topics.toml")
     assert topics.topics[0].name == "getting-started"
 
     accounts = AccountsConfig.load(SAMPLES / "config" / "accounts.toml")
     assert len(accounts.accounts) == 4
     assert all(a.label for a in accounts.accounts)
+
+    recaps = RecapsConfig.load(SAMPLES / "config" / "recaps.toml")
+    assert recaps.profiles[0].topics == ("getting-started",)

@@ -14,7 +14,7 @@ The repo has three important file layers:
 | --- | --- | --- |
 | Raw inputs | `raw/<namespace>/<bucket>/*.md` | Append-only source snapshots. Declared namespaces define semantics and compile eligibility. |
 | Wiki | `wiki/<topic>/sources/*.md`, `wiki/<topic>/concepts/*.md` | LLM-compiled source notes and cited concept articles. |
-| Recap feed | `compile/recap-feed.json` | Daily machine-readable input for recap delivery. |
+| Recaps | `recaps/<profile>/<date>.md`, `recaps/manifests/*.json` | Durable recap files plus runtime-agnostic delivery handoff. |
 
 Raw files are append-only ground truth. The compile step reads them, but normal
 automation should not edit or delete them.
@@ -44,19 +44,20 @@ raw/bookmarks/<topic>/  raw/accounts/<handle>/   raw/<namespace>/<bucket>/
         python3 bin/lint.py
                  |
                  v
-        .github/workflows/kb-recap-feed.yml
+        .github/workflows/recap.yml
                  |
                  v
-        compile/recap-feed.json
+        recaps/<profile>/<date>.md
+        recaps/manifests/<run-date>.json
                  |
                  v
-        one daily recap (connector agent -> Slack, or any feed consumer)
+        delivery adapters (Slack, email, Guild, or another consumer)
 ```
 
-The repository uses Git history as part of the workflow. The daily recap feed is
-based on source notes added to `wiki/*/sources/*.md` in the prior 24 hours, not
-on the dates of the original X posts. That distinction matters when the compiler
-catches up on old raw material.
+The repository uses Git history as part of the workflow. Recap generation is
+based on source notes added to `wiki/*/sources/*.md` in each profile's calendar
+window, not on the dates of the original X posts. That distinction matters when
+the compiler catches up on old raw material.
 
 ## Ingestion
 
@@ -104,9 +105,16 @@ committed.
 ## Recap
 
 The recap is not another importer and should not be a separate status stream.
-It is a view over newly added wiki source notes. The feed generator
-(`bin/recap_feed.py`) groups new sources into account lanes and bookmark-topic
-lanes and writes `compile/recap-feed.json`; a connector agent (or any consumer
-of the feed contract) turns that into one daily message.
+It is a generated file view over newly added wiki source notes. `bowerbird recap`
+reads `config/recaps.toml`, loads prompts from `compile/recaps/`, groups new
+sources into selected account and topic lanes, and writes Markdown under
+`recaps/<profile>/<date>.md`.
 
-See [Daily Slack recap](slack-recap.md) for the feed format and delivery options.
+Each generated recap has `type: Recap` frontmatter with provenance: profile,
+frequency, calendar window, selected lanes, source note paths, totals, prompt
+path, model/provider, generated timestamp, and delivery targets. The human body
+does not carry citations; the provenance lives in frontmatter. A matching
+`recaps/manifests/<run-date>.json` file lists generated files and non-secret
+delivery targets for Slack, email, Guild, or any other adapter.
+
+See [Daily Slack recap](slack-recap.md) for the file-first delivery contract.

@@ -30,20 +30,22 @@ VERBS: dict[str, tuple[str, str]] = {
     "dump-all": ("dump_all.py", "dump ALL bookmarks (every folder + unsorted) outside the pipeline"),
     "ingest-book": ("ingest_book.py", "split a configured Markdown book into raw chapters"),
     "models": ("models.py", "choose compile and recap model provider"),
+    "recap": ("recap.py", "generate durable recap files and delivery manifests"),
+    "slack-recap": ("slack_recap.py", "deliver generated recap files to Slack with the Bowerbird bot"),
     "push-secrets": ("push_secrets.py", "push credentials staged in bin/.env to GitHub Actions secrets"),
     "lint": ("lint.py", "run the provenance linter over wiki/"),
-    "doctor": ("doctor.py", "check config, recap feed freshness, and lint status"),
+    "doctor": ("doctor.py", "check config, recap files, and lint status"),
 }
 
 # Verbs whose scripts parse arguments themselves (argparse) — pass --help through to
 # them. Everything else gets a static synopsis here, so asking for help never starts
 # the wizard, runs the linter, or requires credentials.
 ARGPARSE_VERBS = {"auth", "folders", "pull", "backfill", "accounts", "dump-account",
-                  "ingest-book", "models", "push-secrets", "doctor"}
+                  "ingest-book", "models", "recap", "slack-recap", "push-secrets", "doctor"}
 
 SYNOPSES = {
     "init": "usage: bowerbird init\n\nInteractive setup wizard: X app credentials, OAuth sign-in, bookmark-folder ->\ntopic mapping, account mirrors, GitHub Actions secrets. Re-runnable; never\noverwrites existing config without asking. Takes no arguments.",
-    "lint": "usage: bowerbird lint\n\nRun the provenance linter over wiki/. Exits 0 and prints 'provenance OK', or\nexits 1 listing every violation. Takes no arguments.",
+    "lint": "usage: bowerbird lint\n\nRun the provenance and recap linter. Exits 0 and prints 'provenance and recaps OK', or\nexits 1 listing every violation. Takes no arguments.",
     "dump-all": "usage: bowerbird dump-all\n\nDump ALL bookmarks (every folder + unsorted) to ~/x-bookmarks-raw, outside the\npipeline. Requires X credentials (bin/.env). Takes no arguments.",
     "push-secrets": "usage: bowerbird push-secrets [--repo owner/name]\n\nPush credentials staged in the gitignored bin/.env (plus bin/.x_tokens.json as\nX_TOKENS) to this repo's GitHub Actions secrets via the gh CLI. Non-interactive;\nsecret values are never printed or typed.",
 }
@@ -55,7 +57,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="bowerbird",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="X bookmarks and accounts -> cited markdown wiki -> daily recap.",
+        description="X bookmarks and accounts -> cited markdown wiki -> file-first recaps.",
         epilog=f"verbs:\n{verb_help}\n\nrun `bowerbird <verb> --help` for verb options",
     )
     parser.add_argument("verb", choices=sorted(VERBS), metavar="verb")

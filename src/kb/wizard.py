@@ -29,6 +29,13 @@ PAT_URL = "https://github.com/settings/personal-access-tokens/new"
 BASE_SECRET_NAMES = ("X_CLIENT_ID", "X_CLIENT_SECRET", "X_BEARER_TOKEN", "X_TOKENS",
                      "GH_PAT")
 
+EXAMPLE_ACCOUNTS = (
+    {"handle": "thsottiaux", "topic": "openai", "label": "Thibault (OpenAI)"},
+    {"handle": "bcherny", "topic": "claude-code", "label": "Boris (Anthropic)"},
+    {"handle": "OfficialLoganK", "topic": "google-ai", "label": "Logan (Google)"},
+    {"handle": "santiagomed", "topic": "xai", "label": "Santiago (xAI)"},
+)
+
 
 @dataclass
 class WizardIO:
@@ -95,9 +102,10 @@ def accounts_toml(accounts: list[dict]) -> str:
             "[[handles]]",
             f'handle = "{a["handle"]}"',
             f'topic = "{a["topic"]}"',
-            'off_topic = "skip"',
-            "",
         ]
+        if a.get("label"):
+            lines.append(f'label = "{a["label"]}"')
+        lines += ['off_topic = "skip"', ""]
     return "\n".join(lines)
 
 
@@ -211,12 +219,18 @@ def _collect_accounts(io: WizardIO, deps: WizardDeps) -> list[dict]:
     io.say("Step 4/6 — follow whole X accounts (optional)")
     io.say("Following an account mirrors every post + reply they make into your "
            "knowledge base. Each followed post is a paid API read.")
+    io.say("If you do not know what to mirror yet, Bowerbird can offer four public "
+           "AI accounts as examples during setup. They are not baked into the source "
+           "repo; choosing them here writes them into your fork's config.")
     existing = deps.read_config("accounts.toml")
     if existing.strip():
         io.say("Current config/accounts.toml:\n" + existing)
         if not io.confirm("Replace it with a new list?", default=False):
             return []
     accounts: list[dict] = []
+    if io.confirm("Use the four example AI accounts for a first account recap?", default=False):
+        accounts.extend(dict(account) for account in EXAMPLE_ACCOUNTS)
+        io.say("added example accounts: " + ", ".join(f"@{a['handle']}" for a in EXAMPLE_ACCOUNTS))
     while True:
         handle = io.ask("Account handle to mirror (without @, empty to finish): ").strip().lstrip("@")
         if not handle:
@@ -238,7 +252,8 @@ def _recap_frequency(answer: str) -> str:
     return "daily"
 
 
-def _configure_recaps(io: WizardIO, deps: WizardDeps, topics: dict[str, list[str]]) -> list[dict]:
+def _configure_recaps(io: WizardIO, deps: WizardDeps, topics: dict[str, list[str]],
+                      accounts: list[dict]) -> list[dict]:
     io.say("Step 5/6 — recap profiles")
     existing = deps.read_config("recaps.toml")
     if existing.strip():
@@ -254,6 +269,13 @@ def _configure_recaps(io: WizardIO, deps: WizardDeps, topics: dict[str, list[str
             "name": f"{topic}-{frequency}",
             "frequency": frequency,
             "topics": [topic],
+        })
+    if accounts and io.confirm("Create a daily account recap profile for followed accounts?",
+                               default=True):
+        profiles.append({
+            "name": "accounts-daily",
+            "frequency": "daily",
+            "accounts": [account["handle"] for account in accounts],
         })
     if profiles:
         deps.write_config("recaps.toml", recaps_toml(profiles))
@@ -360,7 +382,7 @@ def run_wizard(io: WizardIO, deps: WizardDeps) -> WizardResult:
         result.remaining.append("run `bowerbird auth` to finish X authorization")
     result.topics = _map_folders(io, deps, authed)
     result.accounts = _collect_accounts(io, deps)
-    result.recaps = _configure_recaps(io, deps, result.topics)
+    result.recaps = _configure_recaps(io, deps, result.topics, result.accounts)
     _push_secrets(io, deps, env, result)
 
     io.say("Done. Next steps:")

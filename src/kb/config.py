@@ -269,7 +269,7 @@ class AccountsConfig:
     def from_dict(cls, data: dict) -> "AccountsConfig":
         handles = data.get("handles", [])
         if not handles:
-            raise ConfigError("no [[handles]] entries found in accounts config")
+            return cls(accounts=())
         seen: set[str] = set()
         accounts: list[Account] = []
         for raw in handles:

@@ -27,9 +27,9 @@ services.
 
 The public source repo includes a synthetic `getting-started` demo instance
 directly in the real pipeline paths: `config/`, `raw/`, `wiki/`, and
-`recaps/`. It also includes configured public account mirrors and their daily
-recap profile. There is no second sample layout; the demo is the same shape
-your fork runs after setup.
+`recaps/`. There is no second sample layout. Account mirrors are configured
+during setup; the wizard can offer public example accounts, but the source repo
+does not ship pre-ingested account posts.
 
 ## Quick start
 

@@ -8,14 +8,3 @@ format = "markdown"
 [[recaps.deliveries]]
 type = "slack"
 destination = "#bowerbird-recaps"
-
-[[recaps]]
-name = "ai-accounts-daily"
-frequency = "daily"
-accounts = ["thsottiaux", "bcherny", "OfficialLoganK", "santiagomed"]
-prompt = "compile/recaps/default.md"
-format = "slack_mrkdwn"
-
-[[recaps.deliveries]]
-type = "slack"
-destination = "#bowerbird-recaps"

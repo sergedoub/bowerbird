@@ -1,30 +1,4 @@
-# X accounts to mirror in full (posts + replies). Each handle binds to the wiki
-# topic where its distilled source notes land. `label` is the display name used
-# by recap profiles (optional; defaults to the handle).
-#
-# These defaults follow one voice from each large AI lab. Replace them with
-# accounts you actually want recaps of — every mirrored post is a paid API read.
-
-[[handles]]
-handle = "thsottiaux"
-topic = "openai"
-label = "Thibault (OpenAI)"
-off_topic = "skip"
-
-[[handles]]
-handle = "bcherny"
-topic = "claude-code"
-label = "Boris (Anthropic)"
-off_topic = "skip"
-
-[[handles]]
-handle = "OfficialLoganK"
-topic = "google-ai"
-label = "Logan (Google)"
-off_topic = "skip"
-
-[[handles]]
-handle = "santiagomed"
-topic = "xai"
-label = "Santiago (xAI)"
-off_topic = "skip"
+# X accounts to mirror in full (posts + replies).
+# Account mirrors are optional. `bowerbird init` can offer public example
+# accounts during setup, but the source repo does not pre-enable any account
+# mirrors or ship pre-ingested account posts.

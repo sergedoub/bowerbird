@@ -117,6 +117,11 @@ Each account mirror maps a handle to the topic where compiled notes should land:
 bowerbird accounts add example_handle --topic claude-code
 ```
 
+If you do not know what to mirror yet, `bowerbird init` can offer four public
+example accounts as an opt-in starter set. Choosing them writes normal
+`config/accounts.toml` entries in your fork; the source repo does not ship
+their posts or compiled account notes.
+
 ```toml
 [[handles]]
 handle = "example_handle"
@@ -128,6 +133,12 @@ Run all configured accounts over the default trailing window:
 
 ```bash
 python3 bin/dump_account.py
+```
+
+For a low-cost setup smoke, cap the first account import:
+
+```bash
+python3 bin/dump_account.py --days 1 --max-posts 5
 ```
 
 Run one account explicitly:

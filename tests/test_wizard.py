@@ -5,7 +5,15 @@ artifacts: env writes, config writes, secrets pushed, remaining-steps checklist.
 """
 import tomllib
 
-from kb.wizard import WizardDeps, WizardIO, accounts_toml, recaps_toml, run_wizard, topics_toml
+from kb.wizard import (
+    EXAMPLE_ACCOUNTS,
+    WizardDeps,
+    WizardIO,
+    accounts_toml,
+    recaps_toml,
+    run_wizard,
+    topics_toml,
+)
 
 
 class FakeWorld:
@@ -69,9 +77,11 @@ def test_happy_path_writes_configs_and_secrets():
         "client-id", "client-secret", "bearer-tok",   # step 1 credentials
         "marketing",                                  # folder 111 -> topic
         "",                                           # folder 222 skipped
+        "n",                                           # skip example accounts
         "bcherny", "claude-code",                     # one mirrored account
         "",                                           # finish accounts
         "", "",                                      # create daily marketing recap
+        "",                                           # create daily account recap
         "", "",                                      # OpenAI provider, provider default model
         "pat-token",                                  # GH_PAT
         "openai-key",                                 # OPENAI_API_KEY
@@ -89,6 +99,8 @@ def test_happy_path_writes_configs_and_secrets():
     parsed_recaps = tomllib.loads(world.configs["recaps.toml"])
     assert parsed_recaps["recaps"][0]["name"] == "marketing-daily"
     assert parsed_recaps["recaps"][0]["topics"] == ["marketing"]
+    assert parsed_recaps["recaps"][1]["name"] == "accounts-daily"
+    assert parsed_recaps["recaps"][1]["accounts"] == ["bcherny"]
 
     assert world.env["X_CLIENT_ID"] == "client-id"
     assert world.env["COMPILE_RUNNER"] == "codex"
@@ -106,6 +118,7 @@ def test_no_gh_prints_manual_secret_values():
     io, transcript = scripted_io([
         "cid", "", "bearer",
         "marketing",
+        "",       # skip example accounts
         "",       # finish accounts
         "", "",  # create daily marketing recap
         "", "",     # OpenAI provider, provider default model
@@ -151,6 +164,7 @@ def test_failed_oauth_degrades_to_manual_folder_ids_and_checklist():
         "cid", "", "bearer",
         "12345", "marketing",   # manual folder id entry
         "",                      # finish folder ids
+        "",                      # skip example accounts
         "",                      # finish accounts
         "", "",                  # create daily marketing recap
         "", "",                  # OpenAI provider, provider default model
@@ -175,6 +189,7 @@ def test_folder_listing_failure_falls_back_to_manual_entry():
         "777", "ai",
         "",
         "",
+        "",
         "", "",
         "", "",
         "", "",
@@ -194,6 +209,7 @@ def test_staged_secrets_in_env_file_flow_through_on_enter():
     io, transcript = scripted_io([
         "", "", "",     # keep staged credentials
         "marketing",    # folder 111 -> topic
+        "",             # skip example accounts
         "",             # finish accounts
         "", "",        # create daily marketing recap
         "", "",        # OpenAI provider, provider default model
@@ -212,6 +228,32 @@ def test_toml_writers_emit_valid_toml():
     assert topics["topics"]["a-b"]["folder_ids"] == ["1", "2"]
     accounts = tomllib.loads(accounts_toml([{"handle": "h", "topic": "t"}]))
     assert accounts["handles"][0]["off_topic"] == "skip"
+    labeled = tomllib.loads(accounts_toml([{"handle": "h", "topic": "t", "label": "Handle"}]))
+    assert labeled["handles"][0]["label"] == "Handle"
     recaps = tomllib.loads(recaps_toml([{"name": "marketing-weekly", "frequency": "weekly",
                                          "topics": ["marketing"]}]))
     assert recaps["recaps"][0]["weekly_due_day"] == "monday"
+
+
+def test_example_accounts_can_seed_account_recap_profile():
+    world = FakeWorld(folders=[])
+    io, _ = scripted_io([
+        "cid", "", "bearer",
+        "",                # finish manual folders
+        "y",               # use example accounts
+        "",                # no extra accounts
+        "",                # create account recap
+        "", "",           # OpenAI provider, provider default model
+        "", "",           # skip GH_PAT + OPENAI_API_KEY
+    ])
+    result = run_wizard(io, world.deps())
+    assert result.accounts == list(EXAMPLE_ACCOUNTS)
+    parsed_accounts = tomllib.loads(world.configs["accounts.toml"])
+    assert [a["handle"] for a in parsed_accounts["handles"]] == [
+        a["handle"] for a in EXAMPLE_ACCOUNTS
+    ]
+    parsed_recaps = tomllib.loads(world.configs["recaps.toml"])
+    assert parsed_recaps["recaps"][0]["name"] == "accounts-daily"
+    assert parsed_recaps["recaps"][0]["accounts"] == [
+        a["handle"] for a in EXAMPLE_ACCOUNTS
+    ]

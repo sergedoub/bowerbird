@@ -60,7 +60,10 @@ def main() -> None:
     cfg = AccountsConfig.load(os.path.join(ROOT, "config", "accounts.toml"))
     accounts = [a for a in cfg.accounts if (not args.handle or a.handle == args.handle.lstrip("@"))]
     if not accounts:
-        sys.exit(f"account '{args.handle}' not in config/accounts.toml")
+        if args.handle:
+            sys.exit(f"account '{args.handle}' not in config/accounts.toml")
+        print("No accounts configured in config/accounts.toml.")
+        return
 
     start_time = None
     if not args.full:

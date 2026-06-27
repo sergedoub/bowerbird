@@ -58,9 +58,12 @@ def test_accounts_config_respects_explicit_off_topic_policy():
     assert cfg.accounts[0].off_topic == "quarantine"
 
 
-def test_accounts_config_rejects_empty_and_duplicates():
-    with pytest.raises(ConfigError):
-        AccountsConfig.from_dict({"handles": []})
+def test_accounts_config_allows_no_accounts():
+    assert AccountsConfig.from_dict({}).accounts == ()
+    assert AccountsConfig.from_dict({"handles": []}).accounts == ()
+
+
+def test_accounts_config_rejects_duplicates():
     with pytest.raises(ConfigError):
         # same account twice
         AccountsConfig.from_dict({"handles": [

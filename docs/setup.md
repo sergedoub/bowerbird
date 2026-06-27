@@ -58,12 +58,15 @@ and reject bare `pip install` outside one.)
 The wizard collects credentials into a gitignored `bin/.env`, opens the X
 OAuth flow in your browser, lists your bookmark folders so you can choose
 which ones Bowerbird watches (anything you bookmark into a watched folder
-becomes part of your knowledge base), asks which accounts to follow, writes
-`config/topics.toml`, `config/accounts.toml`, and optional
-`config/recaps.toml` topic profiles, and pushes the GitHub Actions secrets. If
-`gh` is absent, it prints the secret names you still need to set manually;
-values stay in `bin/.env` and `bin/.x_tokens.json`. It ends with a checklist
-of anything left.
+becomes part of your knowledge base), asks which accounts to follow, and can
+offer four public example accounts as an opt-in first account recap. Those
+example accounts are written only into your fork's config if you choose them;
+the source repo does not ship their posts. The wizard writes
+`config/topics.toml`, optional `config/accounts.toml`, and
+`config/recaps.toml` profiles, then pushes the GitHub Actions secrets. If `gh`
+is absent, it prints the secret names you still need to set manually; values
+stay in `bin/.env` and `bin/.x_tokens.json`. It ends with a checklist of
+anything left.
 
 Initial Actions secrets are pushed with your local `gh` authentication; you do
 not need a PAT just to run setup. The current workflow still needs one

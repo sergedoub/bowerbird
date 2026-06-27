@@ -185,17 +185,23 @@ The journey:
 6. WATCH FOLDERS AND FOLLOW ACCOUNTS — run `bowerbird folders`, then ask me
    which folders to watch and which accounts to follow. Use plain language:
    "watch a folder", "follow an account", "wiki section", and "recap
-   label". Write `config/topics.toml`, `config/accounts.toml`, and
-   `config/recaps.toml` directly; for each watched topic, ask whether to create
-   a daily or weekly recap profile. Commit the config changes, and push.
+   label". If I do not know what account to mirror yet, offer the four public
+   example accounts from the setup wizard as an opt-in starter set; explain
+   that their posts are not pre-ingested in the source repo and that pulling
+   them will spend X API reads. Write `config/topics.toml`, optional
+   `config/accounts.toml`, and `config/recaps.toml` directly. For each watched
+   topic, ask whether to create a daily or weekly recap profile; if account
+   mirrors are selected, ask whether to create a daily account recap profile.
+   Commit the config changes, and push.
 
 7. FIRST PULL — make sure Actions
    are enabled on the repo (walk me through the Actions tab if needed),
    then run the first import workflows serially to avoid branch-race push
-   failures: dispatch `account-dump` first, watch it green, pull the resulting
-   commit locally, then dispatch `pull-bookmarks` with `limit_per_folder=3`
-   and watch it green. The default first bookmark import is capped to the
-   latest 3 items per selected folder.
+   failures: if account mirrors are configured, dispatch `account-dump` first
+   with `days=1` and a small `max_posts` cap for the setup smoke, watch it
+   green, and pull the resulting commit locally. Then dispatch `pull-bookmarks`
+   with `limit_per_folder=3` and watch it green. The default first bookmark
+   import is capped to the latest 3 items per selected folder.
    If I explicitly ask to import all folder history, first run
    `bowerbird folders --counts`, explain the count/cost estimate, then dispatch
    `pull-bookmarks` with `import_all=true`. Both importers must go green;

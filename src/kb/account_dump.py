@@ -77,7 +77,7 @@ def run_dump(
 
     `max_posts` caps how many posts are processed per account (newest-first), and shrinks
     the requested page size to match so the cap also caps paid API reads — used for cheap
-    sample seeding.
+    setup smoke imports.
     """
     if stop_at_seen is None:
         stop_at_seen = start_time is not None

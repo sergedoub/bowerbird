@@ -51,7 +51,7 @@ raw/bookmarks/<topic>/  raw/accounts/<handle>/   raw/<namespace>/<bucket>/
         recaps/manifests/<run-date>.json
                  |
                  v
-        delivery adapters (Slack, email, Guild, or another consumer)
+        delivery adapters (Slack, email, or another consumer)
 ```
 
 The repository uses Git history as part of the workflow. Recap generation is
@@ -116,6 +116,6 @@ path, model/provider, generated timestamp, and delivery targets. The human body
 is a compact digest: one title, one high-signal line per lane, and one footer
 with counts and keywords. It does not carry citations; the provenance lives in frontmatter. A matching
 `recaps/manifests/<run-date>.json` file lists generated files and non-secret
-delivery targets for Slack, email, Guild, or any other adapter.
+delivery targets for Slack, email, or any other adapter.
 
 See [Daily Slack recap](slack-recap.md) for the file-first delivery contract.

@@ -78,7 +78,7 @@ locally.
 | `pull.yml` | `write` | — (uses `GH_PAT` separately for `X_TOKENS` secret writeback) |
 | `account-dump.yml` | `write` | — |
 | `compile.yml` | `write` | — |
-| `recap.yml` | `write` | `SLACK_BOT_TOKEN` for bundled Slack delivery; optional `GUILD_RECAP_WEBHOOK_URL` secret for adapter trigger |
+| `recap.yml` | `write` | `SLACK_BOT_TOKEN` for bundled Slack delivery |
 
 GitHub's default `GITHUB_TOKEN` cannot update repository secrets, so the
 current public workflow uses `GH_PAT` for `X_TOKENS` writeback. For lower
@@ -98,7 +98,6 @@ PAT.
 | `CODEX_ACCESS_TOKEN` | `compile.yml` | Optional Enterprise Codex access token alternative. |
 | `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | `compile.yml`, `recap.yml` | Needed if the selected provider is Claude or Gemini. |
 | `SLACK_BOT_TOKEN` | `recap.yml` | Bot User OAuth Token for the dedicated Bowerbird Slack app. Required when `config/recaps.toml` has Slack delivery targets. |
-| `GUILD_RECAP_WEBHOOK_URL` | `recap.yml` | Optional delivery adapter trigger. Generation does not depend on it. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | `compile.yml` | Legacy Claude Code credential; prefer `ANTHROPIC_API_KEY` for fresh setup. |
 
 ## Variables

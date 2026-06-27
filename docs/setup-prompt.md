@@ -229,7 +229,7 @@ The journey:
    includes `SLACK_BOT_TOKEN`, then dispatch `recap` or run
    `bowerbird slack-recap` against an existing manifest. Do not send from my
    personal Slack account, a user token, an incoming webhook, Codex/ChatGPT's
-   Slack connector, or Guild's Slack app. Setup is complete only after one
+   Slack connector, or an unrelated Slack app. Setup is complete only after one
    recap posts from the `Bowerbird` bot and the log records the destination,
    Slack channel, and Slack timestamp.
 

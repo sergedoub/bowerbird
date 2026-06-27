@@ -1,6 +1,6 @@
 # Daily Recaps
 
-Bowerbird recaps are files first. Slack, email, Guild, or any other destination
+Bowerbird recaps are files first. Slack, email, or any other destination
 consumes generated recap files; delivery is not where recap knowledge is made.
 The bundled Slack path posts the generated files with the dedicated Bowerbird
 bot token after the recap workflow commits them.
@@ -101,8 +101,8 @@ Delivery identity is part of the contract:
 - Destinations live in `config/recaps.toml`, are copied into the manifest, and
   are passed through to Slack. Prefer channel IDs over channel names.
 
-Do not post from the user's personal Slack account. Do not use Guild's Slack app
-as the Bowerbird Slack identity.
+Do not post from the user's personal Slack account. Do not use an unrelated
+Slack app as the Bowerbird Slack identity.
 
 ## Bundled GitHub Actions Adapter
 
@@ -121,8 +121,8 @@ delivery step fails. That is intentional: a green recap workflow should not mean
 
 ## External Adapter
 
-Guild or another connector runtime can still own delivery orchestration. The
-shape is:
+An external connector runtime can still own delivery orchestration. The shape
+is:
 
 1. `.github/workflows/recap.yml` runs `bowerbird recap` and commits `recaps/`.
 2. The workflow triggers an adapter webhook with the manifest.
@@ -130,5 +130,5 @@ shape is:
 4. The adapter posts through a narrow Bowerbird `chat.postMessage` integration.
 5. The adapter records delivery status in its own logs only.
 
-Generation and delivery failures stay separate. If Guild or Slack delivery
-fails, the generated recap files remain valid and committed.
+Generation and delivery failures stay separate. If external delivery or Slack
+delivery fails, the generated recap files remain valid and committed.

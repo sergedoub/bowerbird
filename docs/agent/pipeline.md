@@ -87,7 +87,7 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
               │
               ▼
           delivery adapters
-          (bin/slack_recap.py for Slack, email, Guild, or another connector)
+          (bin/slack_recap.py for Slack, email, or another connector)
 ```
 
 ## Filename invariants

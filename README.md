@@ -17,7 +17,7 @@ contract also fits local notes, web clips, and long-form material.
   Format (OKF) v0.1 bundle**, so any OKF-aware tool can read it — with
   Bowerbird's stricter provenance lint as a floor on top.
 - **Display** — durable recap files of what's new, delivered by adapters such
-  as the bundled Slack bot-token workflow, email, or Guild.
+  as the bundled Slack bot-token workflow, email, or another connector.
 
 The design is deliberately simple: Python 3.11+ with a stdlib-only runtime,
 markdown files as the database, your GitHub fork as the storage and compute

@@ -63,20 +63,3 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: python3 bin/slack_recap.py
-
-      - name: Trigger delivery adapters
-        if: steps.commit.outputs.changed == 'true'
-        continue-on-error: true
-        env:
-          GUILD_RECAP_WEBHOOK_URL: ${{ secrets.GUILD_RECAP_WEBHOOK_URL }}
-        run: |
-          if [ -z "${GUILD_RECAP_WEBHOOK_URL:-}" ]; then
-            echo "No Guild recap webhook configured; skipping delivery adapter trigger."
-            exit 0
-          fi
-          latest_manifest="$(ls -1 recaps/manifests/*.json | sort | tail -1)"
-          curl --fail --show-error --silent \
-            -X POST \
-            -H "Content-Type: application/json" \
-            --data @"$latest_manifest" \
-            "$GUILD_RECAP_WEBHOOK_URL"

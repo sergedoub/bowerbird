@@ -2,8 +2,8 @@ import tomllib
 
 import pytest
 
-from kb.accounts import add_account_to_text, slug_topic
-from kb.config import ConfigError
+from bowerbird.accounts import add_account_to_text, slug_topic
+from bowerbird.config import ConfigError
 
 
 def test_add_account_to_empty_config():

@@ -17,7 +17,7 @@ dependencies = []
 dev = ["pytest>=8"]
 ```
 
-This is a deliberate choice — the pipelines must work in any Python 3.11+ environment with no `pip install`. HTTP uses `urllib.request`. TOML parsing uses `tomllib` (Python 3.11+). JSON uses `json`. **Do not introduce `requests`, `httpx`, `pydantic`, `tweepy`, or any other runtime dep.** If you need behavior they offer, write it against stdlib (see `src/kb/x_client.py` for an example).
+This is a deliberate choice — the pipelines must work in any Python 3.11+ environment with no `pip install`. HTTP uses `urllib.request`. TOML parsing uses `tomllib` (Python 3.11+). JSON uses `json`. **Do not introduce `requests`, `httpx`, `pydantic`, `tweepy`, or any other runtime dep.** If you need behavior they offer, write it against stdlib (see `src/bowerbird/x_client.py` for an example).
 
 `pytest` is dev-only and only needed for the test suite.
 
@@ -70,7 +70,7 @@ It's an interactive helper to discover bookmark folder IDs. Don't wire it into a
 
 ## Style
 
-- Snake_case for Python; modules grouped by responsibility under `src/kb/`.
+- Snake_case for Python; modules grouped by responsibility under `src/bowerbird/`.
 - All I/O uses pure functions where possible (the linter is the cleanest example — `lint(wiki_dir) -> list[Violation]`).
 - Tests are offline. Inject fakes for HTTP clients and the filesystem boundary; never hit the real X API from a test.
 
@@ -84,11 +84,11 @@ It's an interactive helper to discover bookmark folder IDs. Don't wire it into a
 
 | If you're touching… | Look in… |
 |---------------------|----------|
-| Bookmark ingest | `bin/pull.py`, `src/kb/pull.py`, `src/kb/search.py`, `src/kb/threads.py` |
-| Account-mirror ingest | `bin/dump_account.py`, `src/kb/account_dump.py`, `src/kb/timeline.py` |
-| Token storage / refresh | `src/kb/tokens.py` |
-| Wiki provenance rules | `src/kb/linter.py`, `bin/lint.py`, `compile/INSTRUCTIONS.md` |
-| Topic / account routing | `src/kb/routing.py`, `src/kb/config.py`, `config/*.toml` |
-| Recap generation | `src/kb/recaps.py`, `src/kb/recap_llm.py`, `bin/recap.py`, `config/recaps.toml`, `compile/recaps/` |
+| Bookmark ingest | `bin/pull.py`, `src/bowerbird/pull.py`, `src/bowerbird/search.py`, `src/bowerbird/threads.py` |
+| Account-mirror ingest | `bin/dump_account.py`, `src/bowerbird/account_dump.py`, `src/bowerbird/timeline.py` |
+| Token storage / refresh | `src/bowerbird/tokens.py` |
+| Wiki provenance rules | `src/bowerbird/linter.py`, `bin/lint.py`, `compile/INSTRUCTIONS.md` |
+| Topic / account routing | `src/bowerbird/routing.py`, `src/bowerbird/config.py`, `config/*.toml` |
+| Recap generation | `src/bowerbird/recaps.py`, `src/bowerbird/recap_llm.py`, `bin/recap.py`, `config/recaps.toml`, `compile/recaps/` |
 | Cron / CI | `.github/workflows/*.yml` |
 | Tests | `tests/test_*.py` |

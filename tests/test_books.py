@@ -1,6 +1,6 @@
-from kb.books import build_raw_doc, extract_sections, run_ingest
-from kb.config import Book
-from kb.raw_writer import RawWriter
+from bowerbird.books import build_raw_doc, extract_sections, run_ingest
+from bowerbird.config import Book
+from bowerbird.raw_writer import RawWriter
 
 
 BOOK = Book(

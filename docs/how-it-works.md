@@ -127,7 +127,7 @@ topic, an account, a subreddit, or something that needs a map? If that routing
 is not explicit, store snapshots only and do not auto-compile them.
 
 Add a new namespace only when the provider needs distinct behavior. That means
-declaring it in `src/kb/raw_sources.py` with:
+declaring it in `src/bowerbird/raw_sources.py` with:
 
 - bucket semantics (`topic`, `account`, or mapped)
 - compile state (`auto`, review-gated, or snapshot-only)

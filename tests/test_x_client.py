@@ -1,5 +1,5 @@
 """XBookmarkClient paging behavior."""
-from kb.x_client import XBookmarkClient
+from bowerbird.x_client import XBookmarkClient
 
 
 class FakeXBookmarkClient(XBookmarkClient):

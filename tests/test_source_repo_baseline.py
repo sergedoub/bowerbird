@@ -1,17 +1,18 @@
-"""The source repo starts clean: config templates only, no generated KB data.
+"""The source repo starts clean: config templates only, no generated Bowerbird data.
 
 Generated `raw/`, `wiki/`, and `recaps/` output belongs in an installed fork or
 the separate bowerbird-demo repository, not in the product source repo.
 """
+import tomllib
 from pathlib import Path
 
-from kb.config import AccountsConfig, RecapsConfig, TopicsConfig
-from kb.recaps import validate_recap_files
+from bowerbird.config import AccountsConfig, RecapsConfig, TopicsConfig
+from bowerbird.recaps import validate_recap_files
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_source_repo_has_no_generated_kb_data():
+def test_source_repo_has_no_generated_bowerbird_data():
     for path in ("raw", "wiki", "recaps"):
         root = ROOT / path
         assert not root.exists() or not any(p.is_file() for p in root.rglob("*")), (
@@ -32,3 +33,12 @@ def test_source_config_templates_parse_with_real_validators():
 
     recaps = RecapsConfig.load(ROOT / "config" / "recaps.toml")
     assert recaps.profiles == ()
+
+
+def test_public_package_name_matches_source_package():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert pyproject["project"]["name"] == "bowerbird"
+    assert pyproject["project"]["scripts"]["bowerbird"] == "bowerbird.cli:main"
+    assert (ROOT / "src" / "bowerbird").is_dir()
+    assert not (ROOT / "src" / "kb").exists()

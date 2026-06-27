@@ -17,9 +17,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.folders import run_folders                        # noqa: E402
-from kb.local import load_env_file, make_token_store, resolve_user_id  # noqa: E402
-from kb.x_client import XBookmarkClient                   # noqa: E402
+from bowerbird.folders import run_folders                        # noqa: E402
+from bowerbird.local import load_env_file, make_token_store, resolve_user_id  # noqa: E402
+from bowerbird.x_client import XBookmarkClient                   # noqa: E402
 
 
 def main() -> None:

@@ -24,13 +24,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.config import TopicsConfig           # noqa: E402
-from kb.models import RawDoc                  # noqa: E402
-from kb.raw_writer import RawWriter           # noqa: E402
-from kb.search import SearchClient            # noqa: E402
-from kb.threads import assemble               # noqa: E402
-from kb.tokens import FileTokenStorage, TokenStore  # noqa: E402
-from kb.x_client import XBookmarkClient       # noqa: E402
+from bowerbird.config import TopicsConfig           # noqa: E402
+from bowerbird.models import RawDoc                  # noqa: E402
+from bowerbird.raw_writer import RawWriter           # noqa: E402
+from bowerbird.search import SearchClient            # noqa: E402
+from bowerbird.threads import assemble               # noqa: E402
+from bowerbird.tokens import FileTokenStorage, TokenStore  # noqa: E402
+from bowerbird.x_client import XBookmarkClient       # noqa: E402
 
 
 def load_env() -> None:

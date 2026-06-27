@@ -1,8 +1,8 @@
 """run_pull: writes new bookmarks to raw/, reconstructs thread heads, idempotent on re-run."""
-from kb.config import Topic
-from kb.models import Bookmark, Tweet
-from kb.pull import build_raw_doc, run_pull
-from kb.raw_writer import RawWriter
+from bowerbird.config import Topic
+from bowerbird.models import Bookmark, Tweet
+from bowerbird.pull import build_raw_doc, run_pull
+from bowerbird.raw_writer import RawWriter
 
 
 class FakeBookmarks:

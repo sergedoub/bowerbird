@@ -36,7 +36,7 @@ and URL metadata, import it as `raw/clips/<topic>/` (`source_type: web-clip`) or
 `raw/notes/<topic>/` for first-party notes. For example, a saved LinkedIn article or a
 curated Reddit post can usually be a clip. Add a new raw namespace only when the provider
 needs distinct bucket semantics, provenance defaults, review gates, or locator rules.
-That requires updating `src/kb/raw_sources.py`, this compile contract, docs, and tests.
+That requires updating `src/bowerbird/raw_sources.py`, this compile contract, docs, and tests.
 
 Follow these rules exactly. Quality and provenance matter more than speed; this runs
 unattended, so be conservative.

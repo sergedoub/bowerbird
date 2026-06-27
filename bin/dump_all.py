@@ -23,9 +23,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.models import RawDoc                         # noqa: E402
-from kb.raw_writer import render                     # noqa: E402
-from kb.tokens import FileTokenStorage, TokenStore   # noqa: E402
+from bowerbird.models import RawDoc                         # noqa: E402
+from bowerbird.raw_writer import render                     # noqa: E402
+from bowerbird.tokens import FileTokenStorage, TokenStore   # noqa: E402
 
 USER_ID = os.environ.get("X_USER_ID", "201559911")
 OUTPUT_DIR = os.path.expanduser("~/x-bookmarks-raw")

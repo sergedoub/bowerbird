@@ -1,6 +1,6 @@
 """push-secrets core: staged values pushed, absent keys skipped, failures reported —
 and only key NAMES ever surface."""
-from kb.secrets_push import push_secrets
+from bowerbird.secrets_push import push_secrets
 
 
 def test_pushes_staged_values_and_skips_missing():

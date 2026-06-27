@@ -59,7 +59,7 @@ Book, note, and clip source notes also land in `wiki/<topic>/sources/`. Books us
 their legacy `raw_id` under `raw/books/<topic>/`. Notes use
 `source_type: markdown-note`; clips use `source_type: web-clip`.
 
-## Linter rules (`src/kb/linter.py`, invoked by `bin/lint.py`)
+## Linter rules (`src/bowerbird/linter.py`, invoked by `bin/lint.py`)
 
 `lint(wiki_dir, repo_root=None)` returns a list of `Violation(path, kind, message)` objects. Core kinds plus `missing_type` from the companion `okf_conformance(wiki_dir)`:
 
@@ -70,7 +70,7 @@ their legacy `raw_id` under `raw/books/<topic>/`. Notes use
 | `broken_link` | A citation in a concept article — a markdown link into `sources/`, or a legacy `[[citation]]` — does not resolve to a file stem in the same topic's `sources/`. |
 | `missing_raw` | A source note's `raw_path` does not resolve to a real file. Legacy notes without `raw_path` fall back to `raw_id` resolution in the expected bookmark/book/account raw root. Only checked when `repo_root` is passed to `lint()`. |
 | `invalid_raw_path` | `raw_path` is not a safe repo-relative `raw/<namespace>/<bucket>/<file>.md` path. |
-| `unknown_raw_namespace` | `raw_path` uses a namespace that is not declared in `src/kb/raw_sources.py`. |
+| `unknown_raw_namespace` | `raw_path` uses a namespace that is not declared in `src/bowerbird/raw_sources.py`. |
 | `raw_not_compile_eligible` | `raw_path` points at a review-gated or snapshot-only namespace that should not be compiled unattended. |
 | `missing_type` | A non-reserved note (`sources/` or `concepts/`) lacks a non-empty `type` — the OKF conformance floor, from `okf_conformance()`. |
 

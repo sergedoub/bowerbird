@@ -1,4 +1,4 @@
-from kb.raw_sources import (
+from bowerbird.raw_sources import (
     COMPILE_AUTO,
     COMPILE_REVIEW,
     BUCKET_TOPIC,

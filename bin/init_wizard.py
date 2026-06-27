@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real-world wiring for the init wizard (`bowerbird init`).
 
-All logic lives in kb.wizard (offline-testable); this script provides the effectful
+All logic lives in bowerbird.wizard (offline-testable); this script provides the effectful
 implementations: terminal I/O, the OAuth flow (delegated to bin/x_auth_spike.py in a
 subprocess), the bookmark client, and GitHub secrets via the gh CLI.
 """
@@ -16,9 +16,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.local import load_env_file, make_token_store, resolve_user_id  # noqa: E402
-from kb.wizard import WizardDeps, WizardIO, run_wizard   # noqa: E402
-from kb.x_client import XBookmarkClient                  # noqa: E402
+from bowerbird.local import load_env_file, make_token_store, resolve_user_id  # noqa: E402
+from bowerbird.wizard import WizardDeps, WizardIO, run_wizard   # noqa: E402
+from bowerbird.x_client import XBookmarkClient                  # noqa: E402
 
 ENV_PATH = os.path.join(HERE, ".env")
 TOKENS_PATH = os.path.join(HERE, ".x_tokens.json")

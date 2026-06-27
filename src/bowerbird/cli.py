@@ -16,7 +16,7 @@ import runpy
 import sys
 from pathlib import Path
 
-# src/kb/cli.py -> src -> repo root (editable install / checkout layout)
+# src/bowerbird/cli.py -> src -> repo root (editable install / checkout layout)
 ROOT = Path(__file__).resolve().parents[2]
 
 VERBS: dict[str, tuple[str, str]] = {

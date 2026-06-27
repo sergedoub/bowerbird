@@ -1,7 +1,7 @@
 """run_dump: account timeline -> raw/, windowed and idempotent; doc captures reply links."""
-from kb.account_dump import build_raw_doc, run_dump
-from kb.config import Account
-from kb.raw_writer import RawWriter
+from bowerbird.account_dump import build_raw_doc, run_dump
+from bowerbird.config import Account
+from bowerbird.raw_writer import RawWriter
 
 
 class FakeTimeline:

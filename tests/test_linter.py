@@ -1,5 +1,5 @@
 """ProvenanceLinter: the citation invariant — frontmatter, citations, resolvable links."""
-from kb.linter import lint, okf_conformance
+from bowerbird.linter import lint, okf_conformance
 
 
 def _wiki(tmp_path, sources: dict, concepts: dict):

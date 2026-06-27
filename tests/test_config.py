@@ -1,8 +1,8 @@
 """TopicsConfig + TopicRouter: validation and folder->topic routing."""
 import pytest
 
-from kb.config import AccountsConfig, BooksConfig, ConfigError, RecapsConfig, TopicsConfig
-from kb.routing import TopicRouter
+from bowerbird.config import AccountsConfig, BooksConfig, ConfigError, RecapsConfig, TopicsConfig
+from bowerbird.routing import TopicRouter
 
 
 def test_loads_topics_and_maps_folders():

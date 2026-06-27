@@ -5,7 +5,7 @@ artifacts: env writes, config writes, secrets pushed, remaining-steps checklist.
 """
 import tomllib
 
-from kb.wizard import WizardDeps, WizardIO, accounts_toml, recaps_toml, run_wizard, topics_toml
+from bowerbird.wizard import WizardDeps, WizardIO, accounts_toml, recaps_toml, run_wizard, topics_toml
 
 
 class FakeWorld:

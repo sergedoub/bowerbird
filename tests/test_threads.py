@@ -1,6 +1,6 @@
 """ThreadAssembler: walk the self-reply chain; drop replies-to-commenters and other authors."""
-from kb.models import Tweet
-from kb.threads import assemble
+from bowerbird.models import Tweet
+from bowerbird.threads import assemble
 
 CONVO = "100"
 AUTHOR = "alice"

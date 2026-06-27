@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This is a Python 3.11+ knowledge-base pipeline. Library code lives in `src/kb/`, with CLI entry points in `bin/`. Tests live in `tests/` and mirror the module names, for example `tests/test_pull.py` for `src/kb/pull.py`. Runtime configuration is TOML under `config/`: topics are in `config/topics.toml`, account mirrors in `config/accounts.toml`.
+This is the Python 3.11+ Bowerbird pipeline. Library code lives in `src/bowerbird/`, with CLI entry points in `bin/`. Tests live in `tests/` and mirror the module names, for example `tests/test_pull.py` for `src/bowerbird/pull.py`. Runtime configuration is TOML under `config/`: topics are in `config/topics.toml`, account mirrors in `config/accounts.toml`.
 
 Content inputs are Markdown files under declared raw namespaces shaped as `raw/<namespace>/<bucket>/<YYYY-MM-DD>__<id>.md`, for example `raw/bookmarks/<topic>/`, `raw/accounts/<handle>/`, `raw/notes/<topic>/`, and `raw/clips/<topic>/`; treat all `raw/*/` files as append-only pipeline data. Compiled wiki output lives under `wiki/<topic>/`, which is a native **Open Knowledge Format (OKF) v0.1 bundle** (markdown + YAML frontmatter, a `type` on every note, markdown-link citations). Agent-facing design notes are in `docs/agent/`, and the compile contract is in `compile/INSTRUCTIONS.md`.
 
@@ -18,7 +18,7 @@ Networked commands require local secrets in `bin/.env` or CI secrets. Do not com
 
 ## Coding Style & Naming Conventions
 
-Keep runtime code stdlib-only; `pytest` is dev-only. Do not add runtime dependencies such as `requests`, `httpx`, or `pydantic`. Use snake_case for modules, functions, and variables. Keep modules focused by responsibility under `src/kb/`. Prefer pure functions with injected clients or filesystem boundaries where practical, especially for code that needs tests.
+Keep runtime code stdlib-only; `pytest` is dev-only. Do not add runtime dependencies such as `requests`, `httpx`, or `pydantic`. Use snake_case for modules, functions, and variables. Keep modules focused by responsibility under `src/bowerbird/`. Prefer pure functions with injected clients or filesystem boundaries where practical, especially for code that needs tests.
 
 ## Testing Guidelines
 

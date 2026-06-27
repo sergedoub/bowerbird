@@ -19,7 +19,7 @@ cd "$ROOT"
 CONFIG_RUNNER="$(PYTHONPATH=src python3 - <<'PY'
 from pathlib import Path
 try:
-    from kb.model_config import parse_model_config
+    from bowerbird.model_config import parse_model_config
     p = Path("config/models.toml")
     if p.exists():
         print(parse_model_config(p.read_text()).compile_runner)
@@ -30,7 +30,7 @@ PY
 CONFIG_MODEL="$(PYTHONPATH=src python3 - <<'PY'
 from pathlib import Path
 try:
-    from kb.model_config import parse_model_config
+    from bowerbird.model_config import parse_model_config
     p = Path("config/models.toml")
     if p.exists():
         print(parse_model_config(p.read_text()).compile_model_effective)

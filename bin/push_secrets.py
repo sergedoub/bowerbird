@@ -21,7 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.secrets_push import (                             # noqa: E402
+from bowerbird.secrets_push import (                             # noqa: E402
     LIVE_INSTANCE_SECRET_NAMES,
     LIVE_INSTANCE_VARIABLE,
     push_secrets,

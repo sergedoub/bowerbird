@@ -1,4 +1,4 @@
-"""kb — personal knowledge-base pipeline (raw inputs -> compiled wiki/).
+"""Bowerbird pipeline: raw inputs -> compiled wiki.
 
 Deep modules with simple, stable interfaces:
   config   TopicsConfig      topic -> X folder allowlist (the extensibility seam)

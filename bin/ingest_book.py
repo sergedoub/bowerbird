@@ -9,9 +9,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.books import run_ingest  # noqa: E402
-from kb.config import BooksConfig, ConfigError  # noqa: E402
-from kb.raw_writer import RawWriter  # noqa: E402
+from bowerbird.books import run_ingest  # noqa: E402
+from bowerbird.config import BooksConfig, ConfigError  # noqa: E402
+from bowerbird.raw_writer import RawWriter  # noqa: E402
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 import datetime as dt
 
-from kb.health import HealthCheck, LintStatus, report_to_text
+from bowerbird.health import HealthCheck, LintStatus, report_to_text
 
 
 def _write_valid_repo(root):

@@ -1,5 +1,5 @@
 [project]
-name = "kb"
+name = "bowerbird"
 version = "0.1.0"
 description = "Personal LLM-compiled knowledge base (Karpathy-style markdown wiki) fed by X bookmarks."
 requires-python = ">=3.11"
@@ -9,7 +9,7 @@ dependencies = []
 dev = ["pytest>=8"]
 
 [project.scripts]
-bowerbird = "kb.cli:main"
+bowerbird = "bowerbird.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]

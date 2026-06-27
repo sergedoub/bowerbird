@@ -1,7 +1,7 @@
 """TokenStore: refresh only when expired, and always persist the rotated refresh token."""
 import pytest
 
-from kb.tokens import TokenStore
+from bowerbird.tokens import TokenStore
 
 
 class FakeStorage:

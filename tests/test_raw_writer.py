@@ -1,6 +1,6 @@
 """RawWriter: deterministic naming, real frontmatter+body, and idempotent re-writes."""
-from kb.models import RawAddress, RawDoc
-from kb.raw_writer import RawWriter
+from bowerbird.models import RawAddress, RawDoc
+from bowerbird.raw_writer import RawWriter
 
 
 def _doc():

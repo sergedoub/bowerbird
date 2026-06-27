@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from kb.slack_delivery import (
+from bowerbird.slack_delivery import (
     SlackDeliveryError,
     deliver_slack_recaps,
     latest_manifest_path,
@@ -32,7 +32,7 @@ def test_post_to_slack_uses_bot_token_json(monkeypatch):
         captured["timeout"] = timeout
         return FakeResponse()
 
-    monkeypatch.setattr("kb.slack_delivery.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("bowerbird.slack_delivery.urllib.request.urlopen", fake_urlopen)
 
     result = post_to_slack("xoxb-token", "C123", "hello")
 
@@ -59,7 +59,7 @@ def test_post_to_slack_surfaces_not_in_channel_hint(monkeypatch):
         def read(self):
             return b'{"ok": false, "error": "not_in_channel"}'
 
-    monkeypatch.setattr("kb.slack_delivery.urllib.request.urlopen", lambda req, timeout: FakeResponse())
+    monkeypatch.setattr("bowerbird.slack_delivery.urllib.request.urlopen", lambda req, timeout: FakeResponse())
 
     with pytest.raises(SlackDeliveryError, match="invite the Bowerbird bot"):
         post_to_slack("xoxb-token", "C123", "hello")

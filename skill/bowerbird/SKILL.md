@@ -91,9 +91,9 @@ tasks when the user's compiled wiki may contain relevant prior sources.
 - **Cite every curated claim inline** with source author + URL from the source note, e.g.
   `(@author, https://x.com/i/web/status/…)`.
 - **Keep your own generic model judgment clearly separated and labeled as yours** —
-  never blend it into curated claims. The entire value of this KB is that it is
+  never blend it into curated claims. The entire value of this knowledge base is that it is
   specific, attributable, human-curated knowledge, not generic advice.
-- If the KB has **nothing relevant**, say so plainly. If useful, suggest the kind of
+- If the knowledge base has **nothing relevant**, say so plainly. If useful, suggest the kind of
   source the user could bookmark or file into that topic. **Do not fabricate curated
   knowledge.**
 
@@ -101,5 +101,5 @@ tasks when the user's compiled wiki may contain relevant prior sources.
 
 If the task produces a validated **first-party** result worth keeping (e.g. "this angle
 actually worked, here's the number"), offer to file it back into `sources/` as a first-party
-note (`provenance: first-party`) so the KB compounds over time. Deliverables themselves live
-outside the wiki.
+note (`provenance: first-party`) so Bowerbird compounds over time. Deliverables themselves
+live outside the wiki.

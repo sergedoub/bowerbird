@@ -1,9 +1,9 @@
 import datetime as dt
 import json
 
-from kb.config import DeliveryTarget, RecapProfile
-from kb.model_config import ModelConfig
-from kb.recaps import (
+from bowerbird.config import DeliveryTarget, RecapProfile
+from bowerbird.model_config import ModelConfig
+from bowerbird.recaps import (
     RecapWindow,
     build_model_prompt,
     build_recap_artifact,

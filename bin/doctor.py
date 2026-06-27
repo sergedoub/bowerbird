@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.health import HealthCheck, LintStatus, report_to_text  # noqa: E402
+from bowerbird.health import HealthCheck, LintStatus, report_to_text  # noqa: E402
 
 
 def run_lint() -> LintStatus:

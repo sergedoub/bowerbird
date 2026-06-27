@@ -13,10 +13,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.config import AccountsConfig, ConfigError, RecapsConfig  # noqa: E402
-from kb.model_config import ModelConfig, detect_setup_provider, parse_model_config  # noqa: E402
-from kb.recap_llm import generate_recap_body  # noqa: E402
-from kb.recaps import (  # noqa: E402
+from bowerbird.config import AccountsConfig, ConfigError, RecapsConfig  # noqa: E402
+from bowerbird.model_config import ModelConfig, detect_setup_provider, parse_model_config  # noqa: E402
+from bowerbird.recap_llm import generate_recap_body  # noqa: E402
+from bowerbird.recaps import (  # noqa: E402
     RecapArtifact,
     RecapWindow,
     added_source_paths,

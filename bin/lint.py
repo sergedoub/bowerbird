@@ -13,8 +13,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.linter import lint, okf_conformance  # noqa: E402
-from kb.recaps import validate_recap_files  # noqa: E402
+from bowerbird.linter import lint, okf_conformance  # noqa: E402
+from bowerbird.recaps import validate_recap_files  # noqa: E402
 
 
 def main() -> None:

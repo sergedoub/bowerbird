@@ -2,7 +2,7 @@
 """CLI wrapper for bundled Slack recap delivery.
 
 Slack setup assets live under connectors/slack/. Runtime delivery stays in
-bin/ + src/kb/ so GitHub Actions and the bowerbird CLI can call it like the
+bin/ + src/bowerbird/ so GitHub Actions and the bowerbird CLI can call it like the
 other pipeline steps.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.slack_delivery import (  # noqa: E402
+from bowerbird.slack_delivery import (  # noqa: E402
     SlackDeliveryError,
     deliver_slack_recaps,
     latest_manifest_path,

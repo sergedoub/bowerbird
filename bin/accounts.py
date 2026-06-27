@@ -10,8 +10,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.accounts import add_account, load_account_rows, slug_topic  # noqa: E402
-from kb.config import ConfigError  # noqa: E402
+from bowerbird.accounts import add_account, load_account_rows, slug_topic  # noqa: E402
+from bowerbird.config import ConfigError  # noqa: E402
 
 
 def _config_path() -> str:

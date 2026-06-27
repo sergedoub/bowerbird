@@ -23,10 +23,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from kb.account_dump import run_dump                      # noqa: E402
-from kb.config import AccountsConfig                      # noqa: E402
-from kb.raw_writer import RawWriter                       # noqa: E402
-from kb.timeline import TimelineClient                    # noqa: E402
+from bowerbird.account_dump import run_dump                      # noqa: E402
+from bowerbird.config import AccountsConfig                      # noqa: E402
+from bowerbird.raw_writer import RawWriter                       # noqa: E402
+from bowerbird.timeline import TimelineClient                    # noqa: E402
 
 
 def load_local_env() -> None:

@@ -14,7 +14,7 @@ Launch ingestion is **forward-only, idempotent, and run unattended on GitHub Act
 
 1. **Bookmark pull** — `bin/pull.py` reads new bookmarks from allowlisted X folders (per `config/topics.toml`) and writes them into `raw/bookmarks/<topic>/`. Uses an OAuth2 user-context token that **rotates on every refresh**; the rotated value is persisted to the `X_TOKENS` repo secret in CI via `GH_PAT`. Local runs persist to a file (`bin/.x_tokens.json` by default).
 2. **Account mirror** — `bin/dump_account.py` mirrors every post + reply (no retweets) by handles in `config/accounts.toml` into `raw/accounts/<handle>/`. Trailing 3-day window, deduped. Uses an app-only Bearer token (`X_BEARER_TOKEN`), no rotation.
-3. **Other raw origins** — `src/kb/raw_sources.py` declares the non-X namespaces the compiler and linter understand. `books`, `notes`, and `clips` are auto-compile eligible topic buckets; `pdfs` are review-gated; `chats` are snapshot-only. Unknown `raw/*` directories are not processed by convention.
+3. **Other raw origins** — `src/bowerbird/raw_sources.py` declares the non-X namespaces the compiler and linter understand. `books`, `notes`, and `clips` are auto-compile eligible topic buckets; `pdfs` are review-gated; `chats` are snapshot-only. Unknown `raw/*` directories are not processed by convention.
 
 All pipelines write into `raw/` directories that are **sacred append-only ground truth** — never edited or deleted in-place. See [provenance](provenance.md).
 
@@ -42,8 +42,8 @@ The downstream wiki-style agent instructions live in `skill/bowerbird/SKILL.md`.
 | How does a bookmark become a wiki article? | [pipeline.md](pipeline.md) + `compile/INSTRUCTIONS.md` |
 | What workflows run on what schedule? | [github-actions.md](github-actions.md) |
 | How should an agent use the compiled wiki? | `skill/bowerbird/SKILL.md` |
-| What does the linter enforce? | [provenance.md](provenance.md) + `src/kb/linter.py` |
+| What does the linter enforce? | [provenance.md](provenance.md) + `src/bowerbird/linter.py` |
 | How do I add a new topic? | `config/topics.toml` (one TOML table) — see [repo-layout.md](repo-layout.md) |
 | How do I add a new account? | `bowerbird accounts add <handle> --topic <topic>` |
-| How do I add a new source origin? | `src/kb/raw_sources.py` first, then writer/importer code |
+| How do I add a new source origin? | `src/bowerbird/raw_sources.py` first, then writer/importer code |
 | Why no `requirements.txt`? | Stdlib-only — see [conventions.md](conventions.md) |

@@ -1,6 +1,6 @@
 import pytest
 
-from kb.model_config import (
+from bowerbird.model_config import (
     ModelConfig,
     detect_setup_provider,
     model_config_toml,

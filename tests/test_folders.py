@@ -1,5 +1,5 @@
 """Folder listing: aligned table over an injected client, empty-state message."""
-from kb.folders import (
+from bowerbird.folders import (
     estimate_owned_read_cost,
     estimate_post_read_cost,
     format_folders,

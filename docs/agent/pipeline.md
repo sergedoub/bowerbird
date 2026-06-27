@@ -2,7 +2,7 @@
 
 End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces, one shared compile + lint guardrail.
 
-## Module map (`src/kb/`)
+## Module map (`src/bowerbird/`)
 
 | Module | Purpose |
 |--------|---------|
@@ -29,7 +29,7 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 
 ## Entry points (`bin/`)
 
-All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py`, or via the installed `bowerbird` CLI (`bowerbird <verb>` — see `src/kb/cli.py` for the verb map).
+All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py`, or via the installed `bowerbird` CLI (`bowerbird <verb>` — see `src/bowerbird/cli.py` for the verb map).
 
 | Script | What it does |
 |--------|--------------|
@@ -38,7 +38,7 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `ingest_book.py` | Manual book ingest. Reads `config/books.toml`, splits one Markdown book by chapter/appendix, writes to `raw/books/<topic>/`. |
 | `dump_all.py` | Archive helper for dumping all bookmark folders plus unsorted bookmarks outside the compile pipeline. |
 | `backfill.py` | One-off backfill — pulls historical bookmarks past the daily window. |
-| `lint.py` | Walks every `wiki/<topic>/` and runs `kb.linter.lint(wiki, repo_root=ROOT)` plus `kb.linter.okf_conformance(wiki)` (the OKF `type` floor), then validates committed recap files/manifests. Exits 0 (prints `provenance and recaps OK`) or 1. |
+| `lint.py` | Walks every `wiki/<topic>/` and runs `bowerbird.linter.lint(wiki, repo_root=ROOT)` plus `bowerbird.linter.okf_conformance(wiki)` (the OKF `type` floor), then validates committed recap files/manifests. Exits 0 (prints `provenance and recaps OK`) or 1. |
 | `recap.py` | Runs `bowerbird recap`: reads `config/recaps.toml`, scans git-added `wiki/*/sources/*.md` notes for due calendar windows, writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`. |
 | `slack_recap.py` | Runs `bowerbird slack-recap`: reads the latest recap manifest, opens manifest-listed recap files, and posts Slack delivery targets with `SLACK_BOT_TOKEN` as the dedicated Bowerbird bot. |
 | `doctor.py` | Checks config, recap file validity, and provenance lint status. Supports `--json` for agents. |
@@ -93,7 +93,7 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
 - **Raw bookmark file:** `raw/bookmarks/<topic>/<YYYY-MM-DD>__<tweet-id>.md`. The id after `__` is the dedup key.
 - **Raw account post file:** `raw/accounts/<handle>/<YYYY-MM-DD>__<tweet-id>.md`. Same shape.
 - **Raw book chapter file:** `raw/books/<topic>/<YYYY-MM-DD>__<book-id>-chNN.md`. Appendix sections use `<book-id>-appendix`.
-- **Raw file:** `raw/<namespace>/<bucket>/<YYYY-MM-DD>__<id>.md`. Namespace rules live in `src/kb/raw_sources.py`; bucket is usually the topic, except namespaces such as `accounts` where the bucket is resolved through config.
+- **Raw file:** `raw/<namespace>/<bucket>/<YYYY-MM-DD>__<id>.md`. Namespace rules live in `src/bowerbird/raw_sources.py`; bucket is usually the topic, except namespaces such as `accounts` where the bucket is resolved through config.
 - **Wiki source note:** `wiki/<topic>/sources/<YYYY-MM-DD>-<short-slug>.md`. Frontmatter `raw_path` points to the raw file and `raw_id` keeps the local dedup key. Account-mirror source notes additionally carry `provenance: first-party` and a `mirror: accounts/<handle>` back-pointer.
 - **Wiki concept article:** `wiki/<topic>/concepts/<theme-slug>.md`. Carries `type: Concept`; cites sources via relative markdown links, `[label](../sources/<source-stem>.md)`.
 - **Recap file:** `recaps/<profile>/<YYYY-MM-DD>.md`. Carries `type: Recap` frontmatter with profile, window, selected lanes, source note paths, totals, prompt, model/provider, timestamp, and delivery targets.

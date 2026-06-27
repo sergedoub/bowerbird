@@ -34,13 +34,17 @@ generation step writes files; delivery adapters consume the manifest. Slack
 delivery runs after the commit, so a Slack failure marks delivery unhealthy
 without removing the generated recap files.
 
-The compile job filters with `if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}` — manual runs always fire; chained runs only fire on a green upstream.
+The compile job filters with `BOWERBIRD_LIVE_INSTANCE=true` for automatic
+`push` and `workflow_run` triggers, while manual dispatch remains explicit.
+For chained runs, the upstream import must also have succeeded. This lets the
+public source repo carry demo `raw/` fixtures without requiring a configured
+compile runner.
 
-The two scheduled import workflows also filter with `BOWERBIRD_LIVE_INSTANCE=true`.
-Source repos carry the automation as product code, but only a live instance repo
-should run paid, personal ingest jobs on a schedule. `bowerbird push-secrets`
-and `bowerbird init` enable the variable once the required X/GitHub ingest
-secrets are present.
+The two scheduled import workflows also filter with
+`BOWERBIRD_LIVE_INSTANCE=true`. Source repos carry the automation as product
+code, but only a live instance repo should run paid, personal ingest jobs or
+automatic compile jobs. `bowerbird push-secrets` and `bowerbird init` enable
+the variable once the required X/GitHub ingest secrets are present.
 
 ## Recap lane selection
 
@@ -101,7 +105,7 @@ PAT.
 
 | Variable | Used by | Notes |
 |----------|---------|-------|
-| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: scheduled personal ingest jobs are skipped, while manual dispatch still works and fails clearly if secrets are absent. |
+| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml`, `compile.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: scheduled personal ingest and automatic compile jobs are skipped, while manual dispatch still works and fails clearly if secrets are absent. |
 | `DUMP_WINDOW_DAYS` | `account-dump.yml` | Optional trailing window override; default is 3. |
 | `X_USER_ID` | `pull.yml` | Optional numeric X user id; skips a `/users/me` lookup per pull run. |
 | `COMPILE_RUNNER` / `COMPILE_MODEL` | `compile.yml` | Optional compile runner/model override; `config/models.toml` is preferred for fresh setup. |
@@ -109,7 +113,7 @@ PAT.
 ## Operational gotchas
 
 - A failed `pull.py` that fetched a new refresh token but crashed before persisting it **locks out future runs**. The workflow is structured so that persistence happens immediately after refresh; don't reorder.
-- `compile.yml` has a `push:` trigger for `raw/**` so human/PAT-pushed notes and clips compile. GITHUB_TOKEN commits from upstream workflows still do not fire push events, so the X pipelines continue to chain through `workflow_run`.
+- `compile.yml` has a `push:` trigger for `raw/**` so human/PAT-pushed notes and clips compile once `BOWERBIRD_LIVE_INSTANCE=true`. GITHUB_TOKEN commits from upstream workflows still do not fire push events, so the X pipelines continue to chain through `workflow_run`.
 - If `bin/lint.py` exits 1 inside compile, the LLM's commits do not ship and the workflow fails — read the run log to see which `Violation` kinds fired (`missing_frontmatter`, `uncited_concept`, `broken_link`, `missing_raw`).
 - Renaming any workflow breaks the `workflow_run` chain (it matches by `workflows: ["pull-bookmarks"]` etc.). Update both the producer name and every consumer's `workflows:` array together.
 - GitHub Actions generate recap files. If Slack delivery changes, inspect the

@@ -14,8 +14,8 @@ name: compile-wiki
 #     events, so workflow_run is the way to chain). Both raw roots feed the same wiki,
 #     so either trigger is sufficient to warrant a compile.
 #   - push: compiles raw files added outside the two X workflows, such as local notes
-#     or clips pushed by a human/PAT. GITHUB_TOKEN commits from upstream workflows still
-#     rely on workflow_run.
+#     or clips pushed by a human/PAT, once the repo is marked as a live instance.
+#     GITHUB_TOKEN commits from upstream workflows still rely on workflow_run.
 #   - workflow_dispatch: manual (also the escape hatch for raw added by a human/PAT push).
 
 on:
@@ -36,8 +36,10 @@ concurrency:
 
 jobs:
   compile:
-    # manual/push always; for the chained workflow_run, only when the pull succeeded
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # Manual dispatch is explicit; automatic push/workflow_run compile only runs
+    # after setup marks the fork live. This lets the public source repo carry demo
+    # raw fixtures without requiring a configured compile runner.
+    if: ${{ (github.event_name == 'workflow_dispatch' || vars.BOWERBIRD_LIVE_INSTANCE == 'true') && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -161,7 +161,7 @@ result. For X token recovery, run `bowerbird auth`, then
 | --- | --- |
 | Compile agent (claude / codex / gemini) | `COMPILE_RUNNER` repository variable |
 | Account-mirror window | `DUMP_WINDOW_DAYS` repository variable |
-| Live-instance scheduled ingest | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
+| Live-instance automation | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
 | Cron times | Workflow files — the one accepted fork edit, see [upgrading](upgrading.md) |
 | Recap labels per account | `label` field in `config/accounts.toml` |
 | Recap profiles | `config/recaps.toml`; prompts live under `compile/recaps/` |

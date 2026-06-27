@@ -33,7 +33,7 @@ Secrets and variables → Actions → Variables), not in workflow files:
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `BOWERBIRD_LIVE_INSTANCE` | unset / false | Treats the repo as an active personal instance. Scheduled `pull-bookmarks` and `account-dump` run only when this is `true`; setup sets it after required ingest secrets exist. |
+| `BOWERBIRD_LIVE_INSTANCE` | unset / false | Treats the repo as an active personal instance. Scheduled `pull-bookmarks`, scheduled `account-dump`, and automatic `compile-wiki` triggers run only when this is `true`; setup sets it after required ingest secrets exist. |
 | `COMPILE_RUNNER` | from `config/models.toml`, fallback `codex` | Which agent CLI performs the compile (`codex` \| `claude` \| `gemini`). |
 | `DUMP_WINDOW_DAYS` | `3` | Trailing window for the daily account mirror. |
 | `X_USER_ID` | (empty) | Your numeric X user id; skips a `/users/me` lookup per pull run. |

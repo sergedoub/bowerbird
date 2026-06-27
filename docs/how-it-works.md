@@ -85,6 +85,59 @@ non-X importers use the same storage shape:
 namespaces such as `pdfs` can store snapshots without being compiled until
 their locator/provenance contract is strong enough.
 
+## Adding New Source Types
+
+Do not put new providers under arbitrary `raw/<provider>/` paths and hope the
+compiler figures them out. A source should either fit an existing declared
+namespace or come with a code/docs change that declares a new namespace.
+
+Use an existing namespace when the semantics already fit:
+
+- First-party writing, Obsidian notes, or local markdown: `raw/notes/<topic>/`.
+- Web/API material that is already a stable article, post, comment, or page:
+  `raw/clips/<topic>/`.
+- Long-form books split into chapters: `raw/books/<topic>/`.
+
+For example, a LinkedIn article can usually be imported as a web clip:
+
+```text
+raw/clips/<topic>/<YYYY-MM-DD>__linkedin-<article-id>.md
+```
+
+with raw frontmatter like:
+
+```markdown
+---
+author: "Jane Doe"
+created_at: "2026-06-27T00:00:00Z"
+provenance: external-expert
+source_type: web-clip
+source_url: "https://www.linkedin.com/pulse/..."
+topic: "<topic>"
+---
+
+Verbatim or lightly normalized markdown body of the article.
+```
+
+A selected Reddit post or comment can also be a clip when the user has chosen
+the topic and the raw file carries a stable permalink, author, date, and body.
+If the goal is unattended ingestion of a subreddit, user, comment tree, or other
+provider-specific stream, first decide the routing contract: is the bucket a
+topic, an account, a subreddit, or something that needs a map? If that routing
+is not explicit, store snapshots only and do not auto-compile them.
+
+Add a new namespace only when the provider needs distinct behavior. That means
+declaring it in `src/kb/raw_sources.py` with:
+
+- bucket semantics (`topic`, `account`, or mapped)
+- compile state (`auto`, review-gated, or snapshot-only)
+- default source type and provenance
+- locator requirements, if citations need page, section, comment, or message IDs
+
+Then update the compile contract, tests, and docs before wiring an importer.
+The importer should still write append-only markdown raw files; it should not
+bypass `raw/` or write directly to `wiki/`.
+
 ## Compile
 
 The compile step is intentionally separate from ingestion. It scans declared,

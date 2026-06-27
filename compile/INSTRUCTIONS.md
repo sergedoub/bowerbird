@@ -30,6 +30,14 @@ until page/section locators are reliable. `raw/chats/<bucket>/` is snapshot-only
 future channel/topic map and compile contract explicitly promote it. Never compile an
 unknown namespace or arbitrary `raw/*/*` path by guessing.
 
+New source types should enter through the narrowest declared shape that preserves their
+semantics. If a source is just a topic-scoped markdown document with stable author, date,
+and URL metadata, import it as `raw/clips/<topic>/` (`source_type: web-clip`) or
+`raw/notes/<topic>/` for first-party notes. For example, a saved LinkedIn article or a
+curated Reddit post can usually be a clip. Add a new raw namespace only when the provider
+needs distinct bucket semantics, provenance defaults, review gates, or locator rules.
+That requires updating `src/kb/raw_sources.py`, this compile contract, docs, and tests.
+
 Follow these rules exactly. Quality and provenance matter more than speed; this runs
 unattended, so be conservative.
 

@@ -107,7 +107,7 @@ Token storage is `bin/.x_tokens.json` (`FileTokenStorage`, 0600). In CI the `X_T
 - `account-dump.yml` — daily cron. Runs `dump_account.py` on a trailing window for every handle in `config/accounts.toml` and commits new `raw/accounts/<handle>/` files. Bearer-only, no token rotation.
 - `compile.yml` (`compile-wiki`) — runs `bin/compile.sh`, which installs and headlessly invokes the agent CLI selected by the `COMPILE_RUNNER` repo variable (codex | claude | gemini, default codex/OpenAI) against `compile/PROMPT.md` → `compile/INSTRUCTIONS.md`, gates on `bin/lint.py`, then commits `wiki/` changes. It's **chained from both `pull-bookmarks` and `account-dump` via `workflow_run`** (not push/dispatch) because commits made with `GITHUB_TOKEN` don't fire push/dispatch events.
 - `recap.yml` — daily cron plus `workflow_run` from `compile-wiki`. Runs `bin/recap.py`: writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`, then delivers manifest-listed Slack recaps with `bin/slack_recap.py` when `SLACK_BOT_TOKEN` is configured.
-- `ci.yml` — pytest + lint on code-path changes (includes the sample-data fixtures under `samples/`).
+- `ci.yml` — pytest + lint on code-path changes (includes the root demo fixtures under `config/`, `raw/`, `wiki/`, and `recaps/`).
 
 The repo writes durable recap files first. Slack delivery consumes the committed
 manifest and recap files; it must not synthesize new recap content. The bundled

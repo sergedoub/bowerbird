@@ -25,6 +25,11 @@ markdown files as the database, your GitHub fork as the storage and compute
 credentials you own — your X developer app, your LLM key, and your connector
 services.
 
+The public source repo includes a synthetic `getting-started` demo instance
+directly in the real pipeline paths: `config/`, `raw/`, `wiki/`, and
+`recaps/`. There is no second sample layout; the demo is the same shape your
+fork runs after setup.
+
 ## Quick start
 
 > **Using Codex, Claude Code, or another coding agent?** Skip every manual

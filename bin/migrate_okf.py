@@ -18,7 +18,7 @@ skipped). Use --dry-run to preview counts without writing.
 
     python3 bin/migrate_okf.py --dry-run
     python3 bin/migrate_okf.py
-    python3 bin/migrate_okf.py samples/wiki      # migrate the public launch seed too
+    python3 bin/migrate_okf.py /path/to/wiki     # migrate another wiki bundle
 """
 from __future__ import annotations
 
@@ -111,7 +111,6 @@ def build_root_index(topics: list[str]) -> str:
 def main() -> None:
     dry = "--dry-run" in sys.argv
     # Optional positional arg: a wiki bundle root to migrate (default: <repo>/wiki).
-    # Used to also migrate samples/wiki, the public launch seed.
     positional = [a for a in sys.argv[1:] if not a.startswith("-")]
     wiki_root = Path(positional[0]).resolve() if positional else WIKI
     assert wiki_root.name == "wiki" and wiki_root.is_dir(), f"expected a wiki/ dir at {wiki_root}"

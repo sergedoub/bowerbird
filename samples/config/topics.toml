@@ -1,6 +1,0 @@
-# Bookmark folders -> wiki topics.
-# Find your folder ids with `bowerbird folders`, or run `bowerbird init` to map
-# them interactively. The id below is a placeholder matching the sample raw data.
-
-[topics.getting-started]
-folder_ids = ["9100000000000000001"]

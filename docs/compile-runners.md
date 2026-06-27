@@ -58,4 +58,5 @@ updated `wiki/` files for any uncompiled raw items, and lint prints
 
 Pass credentials through `.github/workflows/compile.yml` env (add your secret
 name there). Please include a smoke-test transcript in the PR: a run of the
-local command above against the sample data, ending in `provenance and recaps OK`.
+local command above against the seeded demo data, ending in
+`provenance and recaps OK`.

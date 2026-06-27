@@ -22,12 +22,12 @@ These may be personal, sensitive, or too specific for a reusable public repo:
 
 | Path | Decision |
 | --- | --- |
-| `raw/bookmarks/` | Publish only if the imported posts and your curation choices are meant to be public. Otherwise replace with `samples/raw/`. |
+| `raw/bookmarks/` | Publish only if the imported posts and your curation choices are meant to be public. Otherwise replace with sanitized demo raw files or remove before publishing. |
 | `raw/accounts/` | Publish only if mirrored accounts and selected handles are intentional public examples. |
 | `raw/books/` | Do not publish copyrighted or private source material unless you have the rights to do so. |
-| `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with `samples/wiki/`. |
-| `recaps/` | Publish only if generated recap bodies, source note paths, and destinations are safe. Otherwise replace with `samples/recaps/`. |
-| `config/*.toml` | Replace personal folder IDs and handles with `samples/config/` if needed. |
+| `wiki/` | Publish if you want the compiled knowledge base public; otherwise replace with a sanitized demo wiki or remove before publishing. |
+| `recaps/` | Publish only if generated recap bodies, source note paths, and destinations are safe. Otherwise replace with sanitized demo recap files or remove before publishing. |
+| `config/*.toml` | Replace personal folder IDs, handles, recap destinations, and model choices with sanitized demo config if needed. |
 | Personal automation docs | Remove or generalize anything referencing private workspaces, trigger IDs, or Slack channel IDs. |
 
 ## Secrets
@@ -55,10 +55,10 @@ Still check Git history before going public if secrets were ever committed.
 
 ## Suggested Public Shape
 
-For a reusable open-source release, ship the `samples/` tree in place of your
-personal data (`samples/README.md` documents the copy-into-place step), and
-either keep personal config/data out of the public branch or document that the
-repository intentionally includes your live personal knowledge base.
+For a reusable open-source release, ship a runnable demo instance in the real
+top-level paths: `config/`, `raw/`, `wiki/`, and `recaps/`. The demo content
+should be synthetic or intentionally public. Avoid a separate sample tree:
+duplicated layouts drift and make setup less clear.
 
 ## GitHub Actions Setup For Users
 

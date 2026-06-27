@@ -12,15 +12,14 @@
 | `bin/` | CLI entry points (stdlib-only Python scripts). See [pipeline](pipeline.md). |
 | `src/kb/` | Library code — pipelines, clients, linter, models. See [pipeline](pipeline.md). |
 | `tests/` | Offline pytest suite (no network). |
-| `config/` | TOML configuration. Extensibility seam for topics, accounts, books, models, and recap profiles. |
+| `config/` | TOML configuration. Extensibility seam for topics, accounts, books, models, and recap profiles. The public source repo carries synthetic demo config here, in the same path a fork uses. |
 | `compile/` | `INSTRUCTIONS.md` (the LLM compile contract), `PROMPT.md` (the shared runner prompt), and `compile/recaps/` prompt files. No generated recap output lives here. |
-| `recaps/` | Generated recap Markdown and delivery manifests. Commit these files; delivery adapters consume them. |
+| `recaps/` | Generated recap Markdown and delivery manifests. Commit these files; delivery adapters consume them. The public source repo keeps synthetic demo recaps here as CI fixtures. |
 | `skill/` | The my-knowledge retrieval skill for downstream coding agents. |
 | `connectors/` | Agent-facing playbooks for service delivery, starting with Slack recap delivery. |
-| `samples/` | Template demo content (synthetic raw + lint-passing wiki + configs + recaps). Copied into place during launch assembly; never read by the pipeline. |
-| `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/kb/raw_sources.py`. |
+| `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/kb/raw_sources.py`. The public source repo keeps synthetic demo raw files here as CI fixtures. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
-| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`. |
+| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; the public source repo keeps a synthetic getting-started topic here. |
 | `.github/workflows/` | Five workflows (four pipeline + ci) — see [github-actions](github-actions.md). |
 | `docs/*.md` | Public human-facing docs: setup, architecture, X imports, compile runners, recap, upgrading. |
 | `docs/agent/` | This agent-facing documentation set (you are here). |
@@ -60,7 +59,7 @@ wiki/                                 # OKF v0.1 bundle root
 
 - **`raw/`** is **append-only**. Never edit or delete files here; the compile step depends on `raw_path` stability for idempotency.
 - **Declared namespaces only:** `src/kb/raw_sources.py` declares the namespaces the compiler and linter understand. `bookmarks`, `accounts`, `books`, `notes`, and `clips` are auto-compile eligible. `pdfs` are review-gated. `chats` are snapshot-only. Unknown `raw/*` paths must fail closed instead of being compiled by convention.
-- **`wiki/`** is owned by the compile step and is a native **OKF v0.1 bundle**: every note carries a `type`, citations are relative markdown links, and `index.md` files are frontmatter-free except the bundle-root `wiki/index.md` (which declares `okf_version`). Manual edits are fine but must keep `bin/lint.py` green.
+- **`wiki/`** is owned by the compile step and is a native **OKF v0.1 bundle**: every note carries a `type`, citations are relative markdown links, and `index.md` files are frontmatter-free except the bundle-root `wiki/index.md` (which declares `okf_version`). Manual edits are fine but must keep `bin/lint.py` green. Public demo data lives directly in this real layout so setup, docs, and tests all exercise the same shape.
 - Account-mirror source notes land in `wiki/<topic>/sources/` alongside bookmark sources, distinguished by `provenance: first-party` and a logical `mirror: accounts/<handle>` back-pointer.
 - Book-chapter source notes also land in `wiki/<topic>/sources/`, with `source_type: book-chapter` so the linter resolves their `raw_id` under `raw/books/<topic>/`.
 - Notes and clips use their bucket as the destination topic and carry `source_type: markdown-note` or `source_type: web-clip`.

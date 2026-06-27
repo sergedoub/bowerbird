@@ -121,9 +121,10 @@ subscription.
 
 ## Retrieval skill
 
-`skill/my-knowledge/` teaches a coding agent to answer from your compiled wiki
-with navigation-first reads and mandatory citations — "use my marketing
-knowledge" from any project. See [its README](skill/my-knowledge/README.md).
+`skill/bowerbird/` teaches a coding agent to answer from your compiled OKF wiki
+with navigation-first reads and mandatory citations. It can be invoked directly
+with `$bowerbird` or "use Bowerbird", and it still understands natural-language
+requests like "use my marketing knowledge." See [its README](skill/bowerbird/README.md).
 
 ## License
 

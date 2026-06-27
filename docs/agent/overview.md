@@ -24,7 +24,7 @@ All pipelines write into `raw/` directories that are **sacred append-only ground
 
 ## The wiki-use skill
 
-The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.md`. That skill is the runtime consumer of the compiled knowledge base: it performs navigation-first retrieval from `wiki/index.md` to topic indexes, concept files, and their markdown citation links into sources. It reads actual files, cites curated claims with source attribution, and keeps generic model opinion separate from knowledge-base claims.
+The downstream wiki-style agent instructions live in `skill/bowerbird/SKILL.md`. The Bowerbird skill is the runtime read/use surface over the compiled OKF wiki: it performs navigation-first retrieval from `wiki/index.md` to topic indexes, concept files, and their markdown citation links into sources. It reads actual files, cites curated claims with source attribution, and keeps generic model opinion separate from knowledge-base claims.
 
 ## Key identifiers
 
@@ -41,7 +41,7 @@ The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.m
 |----------|------|
 | How does a bookmark become a wiki article? | [pipeline.md](pipeline.md) + `compile/INSTRUCTIONS.md` |
 | What workflows run on what schedule? | [github-actions.md](github-actions.md) |
-| How should an agent use the compiled wiki? | `skill/my-knowledge/SKILL.md` |
+| How should an agent use the compiled wiki? | `skill/bowerbird/SKILL.md` |
 | What does the linter enforce? | [provenance.md](provenance.md) + `src/kb/linter.py` |
 | How do I add a new topic? | `config/topics.toml` (one TOML table) — see [repo-layout.md](repo-layout.md) |
 | How do I add a new account? | `bowerbird accounts add <handle> --topic <topic>` |

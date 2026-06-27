@@ -21,4 +21,4 @@ This is the **agent-facing knowledge base** for the *repository pipeline* — de
 - [GitHub Actions](docs/agent/github-actions.md): The five workflows in `.github/workflows/`, their crons, how they chain via `workflow_run`, the `GITHUB_TOKEN` / `GH_PAT` / `X_TOKENS` secret model, and the recap feed hand-off.
 - [Provenance](docs/agent/provenance.md): The append-only invariant on `raw/`, the linter's enforced rules, the compile contract from `compile/INSTRUCTIONS.md`, deterministic filename rules.
 - [Conventions](docs/agent/conventions.md): Stdlib-only constraint, Python 3.11+ requirement, token rotation gotcha, path-disjointness rule, no-RAG / no-embeddings stance, do/don't rules for agents editing this repo.
-- [My knowledge skill](skill/my-knowledge/SKILL.md): Downstream Karpathy-style wiki-use instructions for agents consuming the compiled knowledge base with navigation-first retrieval and source citations.
+- [Bowerbird skill](skill/bowerbird/SKILL.md): Downstream Karpathy-style wiki-use instructions for agents consuming the compiled OKF knowledge base with navigation-first retrieval and source citations.

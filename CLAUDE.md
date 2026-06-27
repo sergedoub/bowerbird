@@ -47,7 +47,7 @@ The pipeline has **no build step, no product UI, and no third-party runtime depe
 X bookmarks          ──pull────────> raw/bookmarks/<topic>/ ─┐
 configured X accts   ──dump_account> raw/accounts/<handle>/ ─┤
 Markdown/Obsidian    ──future/local> raw/notes/<topic>/ ─────┤
-web clips            ──future/local> raw/clips/<topic>/ ─────┤─compile─> wiki/<topic>/ ──use──> my-knowledge skill
+web clips            ──future/local> raw/clips/<topic>/ ─────┤─compile─> wiki/<topic>/ ──use──> Bowerbird skill
 books                ──ingest_book─> raw/books/<topic>/ ─────┘  (LLM)    (sources/ + concepts/)        (navigation)
 ```
 
@@ -80,8 +80,8 @@ The wiki has **two layers, and one inviolable rule**:
 
 A raw item is "already compiled" iff some source note's `raw_path` frontmatter equals the repo-relative raw path. Legacy notes without `raw_path` fall back to `raw_id`. The compile only touches `wiki/*/` — never `raw/`.
 
-### Stage 3 — Use (`skill/my-knowledge/SKILL.md`)
-A global, topic-aware skill (installed at `~/.claude`, mirrored here) does **navigation-first retrieval**: `wiki/index.md` → topic index → `concepts/` → markdown citation links into `sources/`. It reads actual files (never answers from memory), cites every curated claim inline with author+url, and keeps the model's own generic opinions clearly separated from curated claims.
+### Stage 3 — Use (`skill/bowerbird/SKILL.md`)
+A global, topic-aware Bowerbird skill (installed at `~/.claude`, mirrored here) does **navigation-first retrieval**: `wiki/index.md` → topic index → `concepts/` → markdown citation links into `sources/`. It reads actual files (never answers from memory), cites every curated claim inline with author+url, and keeps the model's own generic opinions clearly separated from curated claims.
 
 ## The extensibility seams
 

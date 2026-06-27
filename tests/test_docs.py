@@ -19,3 +19,14 @@ def test_markdown_frontmatter_is_well_formed():
         assert not any(line.lstrip().startswith("#") for line in body), (
             f"{rel}: markdown heading found inside frontmatter"
         )
+
+
+def test_bowerbird_skill_package_is_current():
+    skill_path = ROOT / "skill" / "bowerbird" / "SKILL.md"
+
+    assert skill_path.is_file()
+    assert not (ROOT / "skill" / "my-knowledge").exists()
+
+    lines = skill_path.read_text(encoding="utf-8").splitlines()
+    assert lines[0].strip() == "---"
+    assert "name: bowerbird" in lines[1:8]

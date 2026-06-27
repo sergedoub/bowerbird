@@ -214,7 +214,15 @@ def group_notes(notes: list[SourceNote]) -> OrderedDict[str, dict[str, Any]]:
 def build_model_prompt(profile: RecapProfile, prompt_text: str, lanes: OrderedDict[str, dict[str, Any]],
                        window: RecapWindow) -> tuple[str, str]:
     digest_parts = []
+    total_new = 0
+    account_lanes = 0
+    topic_lanes = 0
     for lane in lanes.values():
+        total_new += lane["total_new"]
+        if lane["kind"] == "account":
+            account_lanes += 1
+        elif lane["kind"] == "topic":
+            topic_lanes += 1
         note_lines = [
             f"- [{note.date}] {note.text}"
             for note in lane["notes"]
@@ -228,27 +236,60 @@ def build_model_prompt(profile: RecapProfile, prompt_text: str, lanes: OrderedDi
         f"Frequency: {profile.frequency}\n"
         f"Output format: {profile.output_format}\n"
         f"Window: {window.start.isoformat()} through {window.end.isoformat()} "
-        f"(end exclusive)\n\n"
+        f"(end exclusive)\n"
+        f"Date label: {window.label}\n"
+        f"Total new source notes: {total_new}\n"
+        f"Account lanes: {account_lanes}\n"
+        f"Topic lanes: {topic_lanes}\n\n"
         "Compiled wiki lanes with new source notes:\n\n"
         + "\n\n".join(digest_parts)
-        + "\n\nWrite only the recap body. Do not include source citations or frontmatter."
+        + "\n\nWrite the single recap now. Output only the recap body. "
+        "Use one tight line per lane, plus a compact footer with total counts "
+        "and 3-5 keywords or commands. Do not include source citations or frontmatter."
     )
     return prompt_text, user
+
+
+def _first_signal(text: str) -> str:
+    first = next((line.strip(" -") for line in text.splitlines() if line.strip()), "")
+    return first[:220].rstrip()
+
+
+def _footer_counts(total_new: int, account_lanes: int, topic_lanes: int) -> str:
+    parts = [f"{total_new} new note{'s' if total_new != 1 else ''}"]
+    if account_lanes:
+        parts.append(f"{account_lanes} account lane{'s' if account_lanes != 1 else ''}")
+    if topic_lanes:
+        parts.append(f"{topic_lanes} topic lane{'s' if topic_lanes != 1 else ''}")
+    return " | ".join(parts)
 
 
 def deterministic_body(profile: RecapProfile, _prompt_text: str,
                        lanes: OrderedDict[str, dict[str, Any]],
                        window: RecapWindow) -> str:
     """Test/local fallback body generator with no model call."""
-    lines = [f"{profile.name} recap - {window.label}"]
+    slack = profile.output_format == "slack_mrkdwn"
+    title = f"Knowledge Base - {profile.frequency} recap - {window.label}"
+    lines = [f"*{title}*" if slack else f"# {title}"]
+    total_new = 0
+    account_lanes = 0
+    topic_lanes = 0
     for lane in lanes.values():
+        total_new += lane["total_new"]
+        if lane["kind"] == "account":
+            account_lanes += 1
+        elif lane["kind"] == "topic":
+            topic_lanes += 1
+        shown = [_first_signal(note.text) for note in lane["notes"][:2]]
+        signals = [value for value in shown if value]
+        signal = " ".join(signals) if signals else "New source notes were added."
         lines.append("")
-        lines.append(f"*{lane['label']}*")
-        lines.append(f"{lane['total_new']} new source note(s).")
-        for note in lane["notes"][:2]:
-            first = next((line.strip() for line in note.text.splitlines() if line.strip()), "")
-            if first:
-                lines.append(f"- {first[:180]}")
+        if slack:
+            lines.append(f"*{lane['label']}:* {signal}")
+        else:
+            lines.append(f"**{lane['label']}:** {signal}")
+    lines.append("")
+    lines.append(f"_{_footer_counts(total_new, account_lanes, topic_lanes)}_")
     return "\n".join(lines).strip()
 
 

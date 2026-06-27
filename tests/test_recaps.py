@@ -125,6 +125,9 @@ Boris shipped a coding-agent update.
     assert artifact.manifest_entry["deliveries"] == [
         {"type": "slack", "destination": "#augur-updates"}
     ]
+    assert "*Knowledge Base - daily recap - 2026-06-21*" in artifact.content
+    assert "*Boris:* Boris shipped a coding-agent update." in artifact.content
+    assert "_1 new note | 1 account lane_" in artifact.content
 
     manifest = manifest_for(
         [artifact],
@@ -136,7 +139,7 @@ Boris shipped a coding-agent update.
     assert manifest_path(dt.date(2026, 6, 22)) == "recaps/manifests/2026-06-22.json"
 
 
-def test_model_prompt_forbids_body_citations():
+def test_model_prompt_uses_compact_lane_recap_contract():
     profile = _profile()
     files = {
         "wiki/claude-code/sources/2026-06-21-boris.md": """---
@@ -158,6 +161,10 @@ Boris shipped a coding-agent update.
         generated_at="2026-06-22T00:00:00+00:00",
     )
     assert artifact is not None
+    assert "Date label: 2026-06-21" in artifact.content
+    assert "Total new source notes: 1" in artifact.content
+    assert "Use one tight line per lane" in artifact.content
+    assert "compact footer with total counts" in artifact.content
     assert "Do not include source citations or frontmatter." in artifact.content
 
 

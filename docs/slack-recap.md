@@ -41,6 +41,18 @@ Generated Markdown files include `type: Recap` frontmatter with full provenance:
 The human recap body should not include citations or source paths. Provenance
 lives in frontmatter and in the manifest.
 
+The default body style is intentionally compact:
+
+- one title
+- one tight line per selected account or topic lane
+- one footer with total source-note counts, lane counts, and a short keyword or
+  command strip
+
+The recap prompt favors the freshest workflow, habit, command, loop, safety,
+product, or GTM signal in each lane over a complete inventory of source notes.
+If readers need the full trail, they should use the frontmatter and manifest
+provenance to open the source notes.
+
 The manifest is runtime-agnostic:
 
 ```json

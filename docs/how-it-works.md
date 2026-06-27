@@ -113,7 +113,8 @@ sources into selected account and topic lanes, and writes Markdown under
 Each generated recap has `type: Recap` frontmatter with provenance: profile,
 frequency, calendar window, selected lanes, source note paths, totals, prompt
 path, model/provider, generated timestamp, and delivery targets. The human body
-does not carry citations; the provenance lives in frontmatter. A matching
+is a compact digest: one title, one high-signal line per lane, and one footer
+with counts and keywords. It does not carry citations; the provenance lives in frontmatter. A matching
 `recaps/manifests/<run-date>.json` file lists generated files and non-secret
 delivery targets for Slack, email, Guild, or any other adapter.
 

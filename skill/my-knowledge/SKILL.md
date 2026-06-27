@@ -1,6 +1,6 @@
 ---
 name: my-knowledge
-description: Retrieve and apply the user's personal curated knowledge base (X-bookmark-derived, topic-namespaced markdown wiki). Use whenever the user says "use my knowledge" or "use my <topic> knowledge" — e.g. "use my marketing knowledge" — or otherwise asks to draw on their saved / curated / bookmarked knowledge for a task. Navigation-first retrieval (index → concepts → sources); always cite sources and keep generic AI opinions separate from curated claims.
+description: Retrieve and apply the user's personal curated knowledge base (X-bookmark-derived, topic-namespaced markdown wiki). Use whenever the user says "use my knowledge" or "use my <topic> knowledge" — e.g. "use my marketing knowledge" — or otherwise asks to draw on their saved / curated / bookmarked knowledge for a task. Navigation-first retrieval (wiki index → concepts → sources); always cite sources and keep generic AI opinions separate from curated claims.
 ---
 
 # my-knowledge
@@ -16,7 +16,7 @@ store. The wiki is a native Open Knowledge Format (OKF) v0.1 bundle: every note 
 - `concepts/` — synthesized articles (`type: Concept`); every claim cites a source via a relative markdown link, e.g. `[label](../sources/<stem>.md)`
 - `sources/` — faithful notes per bookmarked thread/article, with `type` / `author` / `url` / `date` frontmatter (what an expert actually said)
 
-The repo's root `index.md` lists all available topics.
+The bundle-root `wiki/index.md` lists all available topics.
 
 ## Setup
 
@@ -41,7 +41,7 @@ knowledge for the task at hand.
 1. **Resolve the topic.** Normalize the requested topic to a directory name: lowercase,
    spaces → hyphens (e.g. "iOS dev" → `ios-dev`). Confirm it exists by listing
    `<KNOWLEDGE_BASE_PATH>/wiki`.
-   - If no topic was given, or it doesn't match a directory, read the root `index.md`
+   - If no topic was given, or it doesn't match a directory, read `wiki/index.md`
      (or list `wiki/`) and **ask which topic** — don't guess.
 2. **Read the topic index:** `wiki/<topic>/index.md` for the concept + source map.
 3. **Follow the map:** open the relevant `concepts/*.md`, then follow their markdown

@@ -11,7 +11,7 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 | `raw_sources.py` | Declared raw namespace registry: bucket semantics, compile lifecycle, default source type/provenance. |
 | `tokens.py` | `TokenStore` wraps a `TokenStorage` (Protocol: `load()`, `save(dict)`). `FileTokenStorage` for local; `TokenStore.get_access_token()` handles expiry + `_refresh()`. The refreshed dict is persisted via `storage.save()` — this is what propagates the rotated refresh token. |
 | `x_client.py` | Low-level X API HTTP (stdlib `urllib`). |
-| `search.py`, `articles.py`, `threads.py` | Bookmark fetch, linked-article capture, thread reassembly. |
+| `search.py`, `threads.py` | Bookmark fetch and thread reassembly. X-native article bodies are captured by the pull path when the API returns `article.plain_text`. |
 | `timeline.py` | Account timeline fetch (app-only Bearer; no rotation). |
 | `books.py` | Splits configured Markdown books into chapter-level raw files. |
 | `raw_writer.py` | Writes raw markdown files with deterministic names. Idempotent — re-running can't duplicate. |
@@ -24,7 +24,6 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 | `wizard.py` | The `bowerbird init` setup wizard; all effects injected via `WizardDeps` (offline-testable). |
 | `folders.py` | Bookmark-folder listing/formatting for the CLI and wizard. |
 | `local.py` | Shared local-run wiring for bin scripts: `.env` loading, token store, user-id resolution. |
-| `indexer.py` | Regenerates per-topic `wiki/index.md`. |
 | `linter.py` | `lint(wiki_dir, repo_root=None)` returns `Violation[]`. When `repo_root` is provided, also checks that each source note's `raw_path` resolves to a declared, compile-eligible raw file; legacy notes without `raw_path` fall back to `raw_id` resolution. Companion `okf_conformance(wiki_dir)` adds the OKF `type`-presence floor. See [provenance](provenance.md). |
 | `health.py` | Text-first doctor checks for config, recap file validity, and lint status. |
 
@@ -47,7 +46,7 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `init_wizard.py` | Real-world wiring for the `bowerbird init` wizard (terminal I/O, OAuth subprocess, gh CLI secrets). |
 | `compile.sh` | The pluggable compile runner seam — installs and invokes the agent CLI selected by `COMPILE_RUNNER`. See `docs/compile-runners.md`. |
 | `x_auth_spike.py` | The OAuth flow + raw API helpers (`bowerbird auth`). |
-| `migrate_okf.py` | One-time, idempotent OKF migration: stamps `type` on every note, converts legacy `[[stem]]` citations to relative markdown links, makes `index.md` files OKF-conformant, and writes the bundle-root `wiki/index.md`. Re-running is a no-op. |
+| `migrate_okf.py` | Optional upgrade utility for existing legacy wiki bundles: stamps `type` on every note, converts legacy `[[stem]]` citations to relative markdown links, makes `index.md` files OKF-conformant, and writes the bundle-root `wiki/index.md`. Re-running is a no-op. |
 
 ## End-to-end flow
 

@@ -81,7 +81,7 @@ The wiki has **two layers, and one inviolable rule**:
 A raw item is "already compiled" iff some source note's `raw_path` frontmatter equals the repo-relative raw path. Legacy notes without `raw_path` fall back to `raw_id`. The compile only touches `wiki/*/` — never `raw/`.
 
 ### Stage 3 — Use (`skill/my-knowledge/SKILL.md`)
-A global, topic-aware skill (installed at `~/.claude`, mirrored here) does **navigation-first retrieval**: root `index.md` → topic `wiki/index.md` → `concepts/` → markdown citation links into `sources/`. It reads actual files (never answers from memory), cites every curated claim inline with author+url, and keeps the model's own generic opinions clearly separated from curated claims.
+A global, topic-aware skill (installed at `~/.claude`, mirrored here) does **navigation-first retrieval**: `wiki/index.md` → topic index → `concepts/` → markdown citation links into `sources/`. It reads actual files (never answers from memory), cites every curated claim inline with author+url, and keeps the model's own generic opinions clearly separated from curated claims.
 
 ## The extensibility seams
 
@@ -107,7 +107,7 @@ Token storage is `bin/.x_tokens.json` (`FileTokenStorage`, 0600). In CI the `X_T
 - `account-dump.yml` — daily cron. Runs `dump_account.py` on a trailing window for every handle in `config/accounts.toml` and commits new `raw/accounts/<handle>/` files. Bearer-only, no token rotation.
 - `compile.yml` (`compile-wiki`) — runs `bin/compile.sh`, which installs and headlessly invokes the agent CLI selected by the `COMPILE_RUNNER` repo variable (codex | claude | gemini, default codex/OpenAI) against `compile/PROMPT.md` → `compile/INSTRUCTIONS.md`, gates on `bin/lint.py`, then commits `wiki/` changes. It's **chained from both `pull-bookmarks` and `account-dump` via `workflow_run`** (not push/dispatch) because commits made with `GITHUB_TOKEN` don't fire push/dispatch events.
 - `recap.yml` — daily cron plus `workflow_run` from `compile-wiki`. Runs `bin/recap.py`: writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`, then delivers manifest-listed Slack recaps with `bin/slack_recap.py` when `SLACK_BOT_TOKEN` is configured.
-- `ci.yml` — pytest + lint on code-path changes (includes the root demo fixtures under `config/`, `raw/`, `wiki/`, and `recaps/`).
+- `ci.yml` — pytest + lint on code-path changes. The public source repo keeps generated `raw/`, `wiki/`, and `recaps/` data out of upstream.
 
 The repo writes durable recap files first. Slack delivery consumes the committed
 manifest and recap files; it must not synthesize new recap content. The bundled
@@ -122,10 +122,6 @@ path. The connector contract is deliberately file-first: after `recap.yml`
 writes `recaps/`, the bundled Slack adapter or an external connector runtime
 opens the manifest, verifies each listed file is `type: Recap`, and sends the
 existing body with the dedicated Bowerbird bot token.
-
-## Not yet implemented (stubs that raise `NotImplementedError`)
-
-`kb.indexer.IndexGenerator` (mechanical index generation — index is currently written by the compile LLM) and `kb.articles.ArticleExtractor` (fetch linked essays to markdown; X-native Article bodies *are* already captured in pull via `article.plain_text`). `kb.health.HealthCheck` is implemented as the text-first `bowerbird doctor` surface. Each stub has a deliberately small interface and a docstring explaining the intended design — read it before implementing.
 
 ## Data-loss guardrails specific to this repo
 

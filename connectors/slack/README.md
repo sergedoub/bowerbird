@@ -23,8 +23,8 @@ same manifest contract, but public setup should prove the bundled path first.
   channel IDs, DM IDs, or any value the runtime adapter supports. Prefer channel
   IDs because channel names can be renamed and are ambiguous across Slack views.
 
-Do not post from the user's personal Slack account. Do not use a user token.
-Do not use Guild's Slack app as the Bowerbird identity. Guild can observe or
+Do not post from the user's personal Slack account. Do not use a user token or
+an unrelated Slack app as the Bowerbird identity. External automation may
 orchestrate delivery, but Slack messages should still be sent by the Bowerbird
 bot integration.
 
@@ -87,11 +87,11 @@ content remains the generated recap file.
 
 ## External Adapter Variant
 
-For Guild or another connector runtime, let `.github/workflows/recap.yml`
-trigger a webhook after committing `recaps/`. The external adapter reads the
-manifest, posts through the narrow Bowerbird Slack integration, and records
-delivery status in its own logs. The Slack identity remains the Bowerbird app,
-not the orchestrator's Slack app.
+For another connector runtime, watch or fetch the committed
+`recaps/manifests/<run-date>.json` file after `.github/workflows/recap.yml`
+commits `recaps/`. The external adapter reads the manifest, posts through the
+narrow Bowerbird Slack integration, and records delivery status in its own logs.
+The Slack identity remains the Bowerbird app, not the orchestrator's Slack app.
 
 ## Acceptance Test
 

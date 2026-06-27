@@ -6,9 +6,9 @@ A personal, LLM-compiled knowledge base. Inputs are raw markdown snapshots under
 
 ## Philosophy: Karpathy-style, NO RAG
 
-- The knowledge layer is plain markdown a human (or coding agent) can read and grep — a native **Open Knowledge Format (OKF) v0.1 bundle** (Google's vendor-neutral knowledge format). No embeddings, no vector store, no retrieval-augmented generation pipeline. Search is wiki navigation: `index.md` → markdown citation links → source notes.
+- The knowledge layer is plain markdown a human (or coding agent) can read and grep — a native **Open Knowledge Format (OKF) v0.1 bundle** (Google's vendor-neutral knowledge format). No embeddings, no vector store, no retrieval-augmented generation pipeline. Search is wiki navigation: `wiki/index.md` → topic indexes → markdown citation links → source notes.
 - Compile uses an LLM, but **only as a writer** — never as a runtime retriever. At read time there is no LLM in the loop unless a separate skill chooses to load relevant files itself.
-- See `index.md` (repo root) for the user-facing tour, and `compile/INSTRUCTIONS.md` for the LLM contract.
+- See `README.md` for the user-facing tour, and `compile/INSTRUCTIONS.md` for the LLM contract.
 
 ## The ingestion pipelines
 
@@ -26,7 +26,7 @@ All pipelines write into `raw/` directories that are **sacred append-only ground
 
 ## The wiki-use skill
 
-The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.md`. That skill is the runtime consumer of the compiled knowledge base: it performs navigation-first retrieval from the repo root index to topic indexes, concept files, and their markdown citation links into sources. It reads actual files, cites curated claims with source attribution, and keeps generic model opinion separate from knowledge-base claims.
+The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.md`. That skill is the runtime consumer of the compiled knowledge base: it performs navigation-first retrieval from `wiki/index.md` to topic indexes, concept files, and their markdown citation links into sources. It reads actual files, cites curated claims with source attribution, and keeps generic model opinion separate from knowledge-base claims.
 
 ## Key identifiers
 

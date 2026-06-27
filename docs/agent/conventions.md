@@ -39,7 +39,7 @@ See [overview](overview.md). Markdown files are the database; tokens live in a l
 
 ### OKF-native wiki
 
-`wiki/` is a native **Open Knowledge Format (OKF) v0.1 bundle**, so anything writing to the wiki layer keeps it conformant: every `sources/`/`concepts/` note carries a non-empty `type`; concept citations are relative markdown links into `sources/` (not Obsidian `[[stem]]`); `index.md` files are frontmatter-free except the bundle-root `wiki/index.md`, which declares `okf_version: "0.1"`. This is a floor *under* — never a replacement for — the strict provenance lint; `bin/lint.py` enforces both. The one-time conversion lives in `bin/migrate_okf.py`.
+`wiki/` is a native **Open Knowledge Format (OKF) v0.1 bundle**, so anything writing to the wiki layer keeps it conformant: every `sources/`/`concepts/` note carries a non-empty `type`; concept citations are relative markdown links into `sources/` (not Obsidian `[[stem]]`); `index.md` files are frontmatter-free except the bundle-root `wiki/index.md`, which declares `okf_version: "0.1"`. This is a floor *under* — never a replacement for — the strict provenance lint; `bin/lint.py` enforces both. Existing legacy wiki bundles can be upgraded with `bin/migrate_okf.py`.
 
 ## Gotchas
 

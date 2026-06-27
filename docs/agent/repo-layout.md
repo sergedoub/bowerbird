@@ -7,7 +7,6 @@
 | `README.md` | Public human-facing overview with quick start links. |
 | `AGENTS.md` | Codex-facing repository instructions. Keep at the repo root so Codex discovers it automatically. |
 | `CLAUDE.md` | Claude Code-facing repository instructions. Keep at the repo root so Claude discovers it automatically. |
-| `index.md` | User-facing tour of the wiki. Lists active topics and explains the pipelines. |
 | `pyproject.toml` | Build + pytest config. `name=kb`, `requires-python=">=3.11"`, runtime `dependencies=[]`, dev `pytest>=8`. Source root is `src/`. |
 | `bin/` | CLI entry points (stdlib-only Python scripts). See [pipeline](pipeline.md). |
 | `src/kb/` | Library code — pipelines, clients, linter, models. See [pipeline](pipeline.md). |

@@ -14,7 +14,8 @@ What it does (wiki/ only — it never reads or writes raw/):
      (the only place OKF permits frontmatter on an index).
 
 Re-running is a no-op (notes that already carry `type` and files with no `[[ ]]` are
-skipped). Use --dry-run to preview counts without writing.
+skipped). A missing or empty wiki/ is also a no-op. Use --dry-run to preview counts
+without writing.
 
     python3 bin/migrate_okf.py --dry-run
     python3 bin/migrate_okf.py
@@ -113,7 +114,11 @@ def main() -> None:
     # Optional positional arg: a wiki bundle root to migrate (default: <repo>/wiki).
     positional = [a for a in sys.argv[1:] if not a.startswith("-")]
     wiki_root = Path(positional[0]).resolve() if positional else WIKI
-    assert wiki_root.name == "wiki" and wiki_root.is_dir(), f"expected a wiki/ dir at {wiki_root}"
+    if wiki_root.name != "wiki":
+        raise SystemExit(f"expected a wiki/ dir, got {wiki_root}")
+    if not wiki_root.is_dir():
+        print(f"No wiki directory found at {wiki_root}; nothing to migrate.")
+        return
 
     counts = {"type_sources": 0, "type_concepts": 0, "files_relinked": 0,
               "links_converted": 0, "indexes_stripped": 0}
@@ -123,7 +128,14 @@ def main() -> None:
         if not dry:
             path.write_text(new_text)
 
-    topics = sorted(p.name for p in wiki_root.iterdir() if p.is_dir())
+    def has_topic_files(path: Path) -> bool:
+        return (
+            (path / "index.md").is_file()
+            or any((path / "sources").glob("*.md"))
+            or any((path / "concepts").glob("*.md"))
+        )
+
+    topics = sorted(p.name for p in wiki_root.iterdir() if p.is_dir() and has_topic_files(p))
     for topic in topics:
         topic_dir = wiki_root / topic
         sources_dir = topic_dir / "sources"
@@ -168,14 +180,19 @@ def main() -> None:
     # 4. Bundle-root index with okf_version.
     root_index = wiki_root / "index.md"
     root_existed = root_index.exists()
-    write(root_index, build_root_index(topics))
+    root_index_written = root_existed or bool(topics)
+    if root_index_written:
+        write(root_index, build_root_index(topics))
 
     tag = "DRY RUN — no files written" if dry else "applied"
     print(f"OKF migration ({tag}):")
     print(f"  type stamped:      {counts['type_sources']} sources, {counts['type_concepts']} concepts")
     print(f"  wikilinks->md:     {counts['links_converted']} links across {counts['files_relinked']} files")
     print(f"  index frontmatter: {counts['indexes_stripped']} topic indexes stripped")
-    print(f"  bundle-root index: wiki/index.md {'(updated)' if root_existed else '(created)'} with okf_version 0.1")
+    if root_index_written:
+        print(f"  bundle-root index: wiki/index.md {'(updated)' if root_existed else '(created)'} with okf_version 0.1")
+    else:
+        print("  bundle-root index: skipped (no wiki topics)")
     if unresolved:
         print(f"\n  WARNING: {len(unresolved)} wikilink(s) did not resolve to a source note "
               f"(left untouched — lint will flag):")

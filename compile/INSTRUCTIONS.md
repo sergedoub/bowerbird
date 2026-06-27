@@ -85,7 +85,7 @@ items with no matching source note. If there are none, make no changes and stop.
 
 For account raws, the destination topic is given by the account's `topic` field in
 `config/accounts.toml`. If a post is clearly off-topic for that destination (e.g.
-@bcherny posting about a hike, when his topic is `claude-code`), apply the account's
+`@account_one` posting about a hike, when the destination topic is `ai-tools`), apply the account's
 `off_topic` policy — currently only `"skip"` (drop silently — the raw stays in
 `raw/accounts/` as an archive but no source note is written).
 
@@ -100,7 +100,7 @@ Create `wiki/<topic>/sources/<YYYY-MM-DD>-<short-slug>.md`. The slug:
 
 - **Bookmarks:** derive from content, e.g. `seraleev-app-growth-formula`. The author
   handle is conventionally the first slug token when distinctive.
-- **Account mirrors:** **always** include the handle, e.g. `bcherny-auto-mode-top-tip`.
+- **Account mirrors:** **always** include the handle, e.g. `account-one-auto-mode-tip`.
   This makes "everything from this author" greppable.
 - **Books:** include the author/book/chapter identity, e.g.
   `chris-voss-never-split-difference-ch03-label-it`.
@@ -134,7 +134,7 @@ section_title: <chapter or appendix title>
 `provenance` values:
 
 - `first-party` — the author is the operator/creator/maintainer of the thing the topic
-  is about (e.g. @bcherny on `claude-code`). **Always use this for sources derived from
+  is about (for example, a maintainer account mirrored into that project's topic). **Always use this for sources derived from
   `raw/accounts/<handle>/`.** The skill weights these higher when there's a conflict
   with community takes.
 - `external-expert` — a credible third-party practitioner (default for bookmarks).
@@ -170,7 +170,7 @@ and cite.
 
 For accounts with substantial first-party material, also maintain a dedicated
 **Creator's Notes** concept article — e.g.
-`wiki/claude-code/concepts/creator-notes-bcherny.md` — that aggregates the
+`wiki/ai-tools/concepts/creator-notes-account-one.md` — that aggregates the
 account's durable claims and cross-links to community concepts where relevant. This
 gives the reader a "what does the creator themself say?" view without removing those
 claims from the topic-wide concepts (cite the same source notes from both).

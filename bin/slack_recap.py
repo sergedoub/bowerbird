@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Deliver generated recap files to Slack with the Bowerbird bot token."""
+"""CLI wrapper for bundled Slack recap delivery.
+
+Slack setup assets live under connectors/slack/. Runtime delivery stays in
+bin/ + src/kb/ so GitHub Actions and the bowerbird CLI can call it like the
+other pipeline steps.
+"""
 from __future__ import annotations
 
 import argparse

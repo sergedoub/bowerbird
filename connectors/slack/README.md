@@ -4,6 +4,12 @@ The Slack connector posts generated Bowerbird recap files into Slack as the
 dedicated Bowerbird Slack app. Bowerbird creates recap knowledge in `recaps/`;
 the connector only delivers it.
 
+This directory contains setup instructions and the Slack app manifest. The
+bundled runtime code lives with the rest of the pipeline:
+
+- `bin/slack_recap.py` is the CLI/GitHub Actions entry point.
+- `src/kb/slack_delivery.py` contains the Slack Web API delivery logic.
+
 The bundled public path is GitHub Actions: `.github/workflows/recap.yml`
 generates and commits recap files, then `bin/slack_recap.py` posts each Slack
 delivery entry using `SLACK_BOT_TOKEN`. External connector runtimes can use the

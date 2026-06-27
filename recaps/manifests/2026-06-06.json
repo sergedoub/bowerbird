@@ -21,6 +21,25 @@
           "destination": "#bowerbird-recaps"
         }
       ]
+    },
+    {
+      "profile": "ai-accounts-daily",
+      "file": "recaps/ai-accounts-daily/2026-06-05.md",
+      "format": "slack_mrkdwn",
+      "frequency": "daily",
+      "window_start": "2026-06-05",
+      "window_end": "2026-06-06",
+      "totals": {
+        "source_notes": 4,
+        "account_lanes": 4,
+        "topic_lanes": 0
+      },
+      "deliveries": [
+        {
+          "type": "slack",
+          "destination": "#bowerbird-recaps"
+        }
+      ]
     }
   ]
 }

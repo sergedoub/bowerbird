@@ -19,7 +19,7 @@
 | `connectors/` | Agent-facing playbooks for service delivery, starting with Slack recap delivery. |
 | `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/kb/raw_sources.py`. The public source repo keeps synthetic demo raw files here as CI fixtures. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
-| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; the public source repo keeps a synthetic getting-started topic here. |
+| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; the public source repo keeps synthetic bookmark and account-mirror demo topics here. |
 | `.github/workflows/` | Five workflows (four pipeline + ci) — see [github-actions](github-actions.md). |
 | `docs/*.md` | Public human-facing docs: setup, architecture, X imports, compile runners, recap, upgrading. |
 | `docs/agent/` | This agent-facing documentation set (you are here). |

@@ -1,5 +1,3 @@
---- 
-
 # Overview
 
 A personal, LLM-compiled knowledge base. Inputs are raw markdown snapshots under declared namespaces: X bookmarks and full-account post mirrors at launch, plus notes, clips, and long-form sources through the same raw contract. Outputs are markdown wiki articles with mechanical provenance — every synthesized claim cites a verbatim source.
@@ -49,5 +47,3 @@ The downstream wiki-style agent instructions live in `skill/my-knowledge/SKILL.m
 | How do I add a new account? | `bowerbird accounts add <handle> --topic <topic>` |
 | How do I add a new source origin? | `src/kb/raw_sources.py` first, then writer/importer code |
 | Why no `requirements.txt`? | Stdlib-only — see [conventions.md](conventions.md) |
-
----

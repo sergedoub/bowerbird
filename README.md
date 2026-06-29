@@ -1,34 +1,25 @@
 # Bowerbird
 
-Collect, arrange, display: Bowerbird turns what you save into a personal,
-LLM-compiled markdown knowledge base — and a daily recap so you actually
-revisit it. It starts with X bookmarks and account mirrors, and its raw-source
-contract also fits local notes, web clips, and long-form material.
+**TL;DR:** simple personal knowledge automations built on Karpathy's LLM Wiki,
+Google's new Open Knowledge Format, and content ingestion from X and other
+sources. Curated, fresh context your agents can use.
 
-- **Collect** — import the X bookmark folders you choose, and mirror selected
-  X accounts in full. Raw snapshots land as append-only markdown under declared
-  namespaces such as `raw/bookmarks/`, `raw/accounts/`, `raw/notes/`, and
-  `raw/clips/`.
-- **Arrange** — the active setup agent's model provider (Codex/OpenAI,
-  Claude/Anthropic, or Gemini)
-  compiles raw posts into a two-layer wiki: faithful, attributed source notes
-  plus synthesized concept articles where **every claim cites its source**. A
-  linter enforces that mechanically. The wiki is a native **Open Knowledge
-  Format (OKF) v0.1 bundle**, so any OKF-aware tool can read it — with
-  Bowerbird's stricter provenance lint as a floor on top.
-- **Display** — durable recap files of what's new, delivered by adapters such
-  as the bundled Slack bot-token workflow, email, or another connector.
+Bowerbird turns what you save into a personal, LLM-compiled markdown knowledge
+base. Automatically ingest your X bookmarks, monitor and store every post from
+an account, and that raw-source content gets synthesized and given to your
+agents through connectors.
+
+Examples:
+
+1. Tell Bowerbird to monitor @karpathy and send a daily summary into Slack.
+2. Bookmark an article on X and it is ingested, synthesized, and your Claude or
+   ChatGPT uses a skill to reference it when relevant.
 
 The design is deliberately simple: Python 3.11+ with a stdlib-only runtime,
 markdown files as the database, your GitHub fork as the storage and compute
 (GitHub Actions), no RAG, no embeddings, no vector store. Everything runs on
 credentials you own — your X developer app, your LLM key, and your connector
 services.
-
-The public source repo is clean product code and setup scaffolding. It does not
-ship pre-ingested `raw/`, compiled `wiki/`, or generated `recaps/` data. A
-separate [bowerbird-demo](https://github.com/sergedoub/bowerbird-demo) repo is
-reserved for generated output examples, independent from the source.
 
 ## Quick start
 
@@ -72,6 +63,13 @@ reserved for generated output examples, independent from the source.
 
 Full walkthrough: [docs/setup.md](docs/setup.md).
 
+## Retrieval skill
+
+`skill/bowerbird/` teaches a coding agent to answer from your compiled OKF wiki
+with navigation-first reads and mandatory citations. It can be invoked directly
+with `$bowerbird` or "use Bowerbird", and it still understands natural-language
+requests like "use my marketing knowledge." See [its README](skill/bowerbird/README.md).
+
 ## CLI
 
 ```bash
@@ -92,9 +90,9 @@ bowerbird lint       # provenance + recap guardrail
 bowerbird doctor     # config, recap files, and lint status
 
 # advanced / optional
-bowerbird push-secrets # push staged credentials; marks the repo live when ingest secrets are complete
-bowerbird dump-all     # archive ALL bookmarks (every folder + unsorted) outside the pipeline
-bowerbird ingest-book  # split a Markdown book (config/books.toml) into raw chapter inputs
+bowerbird push-secrets # push staged credentials; mark repo live when ingest secrets are complete
+bowerbird dump-all     # archive ALL bookmarks outside the pipeline
+bowerbird ingest-book  # split a configured Markdown book into raw chapter inputs
 ```
 
 ## Costs
@@ -118,13 +116,6 @@ subscription.
 | [Connectors](connectors/README.md) | Agent playbooks for delivery services, starting with Slack. |
 | [Upgrading your fork](docs/upgrading.md) | `git merge upstream/main` and why it never conflicts. |
 | [`llms.txt`](llms.txt) | Dense agent-facing docset for coding agents working on this repo. |
-
-## Retrieval skill
-
-`skill/bowerbird/` teaches a coding agent to answer from your compiled OKF wiki
-with navigation-first reads and mandatory citations. It can be invoked directly
-with `$bowerbird` or "use Bowerbird", and it still understands natural-language
-requests like "use my marketing knowledge." See [its README](skill/bowerbird/README.md).
 
 ## License
 

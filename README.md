@@ -1,7 +1,7 @@
 # Bowerbird
 
-**TL;DR:** simple personal knowledge automations built on Karpathy's LLM Wiki,
-Google's new Open Knowledge Format, and content ingestion from X and other
+**TL;DR:** simple personal knowledge automations built on Karpathy's [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f),
+Google's new [Open Knowledge Format](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing), and content ingestion from X and other
 sources. Curated, fresh context your agents can use.
 
 Bowerbird turns what you save into a personal, LLM-compiled markdown knowledge

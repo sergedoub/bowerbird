@@ -25,7 +25,6 @@ def add(args: argparse.Namespace) -> int:
             args.handle,
             topic=args.topic,
             label=args.label,
-            off_topic=args.off_topic,
         )
     except ConfigError as e:
         print(f"accounts: {e}", file=sys.stderr)
@@ -60,12 +59,6 @@ def main() -> None:
         help="wiki topic for this account (default: slug of handle)",
     )
     add_parser.add_argument("--label", help="display label for recap profiles")
-    add_parser.add_argument(
-        "--off-topic",
-        choices=("skip", "quarantine"),
-        default="skip",
-        help="policy for posts outside the configured topic",
-    )
     add_parser.set_defaults(func=add)
 
     list_parser = sub.add_parser("list", help="show followed accounts")

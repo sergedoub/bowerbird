@@ -45,17 +45,10 @@ def test_accounts_config_normalizes_handles_and_carries_topic():
         {"handle": "account_one", "topic": "ai-updates"},
         {"handle": "@account_two", "topic": "research"},
     ]})
-    assert [(a.handle, a.topic, a.off_topic) for a in cfg.accounts] == [
-        ("account_one", "ai-updates", "skip"),   # default off_topic policy
-        ("account_two", "research", "skip"),     # leading @ stripped
+    assert [(a.handle, a.topic) for a in cfg.accounts] == [
+        ("account_one", "ai-updates"),
+        ("account_two", "research"),     # leading @ stripped
     ]
-
-
-def test_accounts_config_respects_explicit_off_topic_policy():
-    cfg = AccountsConfig.from_dict({"handles": [
-        {"handle": "account_one", "topic": "ai-updates", "off_topic": "quarantine"},
-    ]})
-    assert cfg.accounts[0].off_topic == "quarantine"
 
 
 def test_accounts_config_allows_no_accounts():
@@ -75,13 +68,6 @@ def test_accounts_config_rejects_duplicates():
 def test_accounts_config_requires_topic():
     with pytest.raises(ConfigError):
         AccountsConfig.from_dict({"handles": [{"handle": "account_one"}]})
-
-
-def test_accounts_config_rejects_unknown_off_topic_policy():
-    with pytest.raises(ConfigError):
-        AccountsConfig.from_dict({"handles": [
-            {"handle": "account_one", "topic": "ai-updates", "off_topic": "explode"},
-        ]})
 
 
 def test_accounts_config_rejects_legacy_string_handles():

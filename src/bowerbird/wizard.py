@@ -97,7 +97,7 @@ def accounts_toml(accounts: list[dict]) -> str:
         ]
         if a.get("label"):
             lines.append(f'label = "{a["label"]}"')
-        lines += ['off_topic = "skip"', ""]
+        lines.append("")
     return "\n".join(lines)
 
 

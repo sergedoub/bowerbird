@@ -92,10 +92,11 @@ path. For legacy notes without `raw_path`, `raw_id` remains a fallback. Only pro
 items with no matching source note. If there are none, make no changes and stop.
 
 For account raws, the destination topic is given by the account's `topic` field in
-`config/accounts.toml`. If a post is clearly off-topic for that destination (e.g.
-`@account_one` posting about a hike, when the destination topic is `ai-tools`), apply the account's
-`off_topic` policy — currently only `"skip"` (drop silently — the raw stays in
-`raw/accounts/` as an archive but no source note is written).
+`config/accounts.toml`. Account mirrors are complete capture: every uncompiled
+`raw/accounts/<handle>/*.md` item must get a faithful source note, even if it is
+terse or conversational. Source-note creation is unconditional for account raws.
+If the account is configured to the wrong topic, still compile the raw into the
+configured topic and fix the durable account config separately.
 
 Book raws already live under `raw/books/<topic>/`; compile them into that topic.
 Notes and clips also use their bucket as the destination topic. If the bucket is

@@ -70,7 +70,7 @@ def test_topics_use_canonical_validation(tmp_path):
 def test_accounts_use_canonical_validation(tmp_path):
     _write_valid_repo(tmp_path)
     (tmp_path / "config" / "accounts.toml").write_text(
-        '[[handles]]\nhandle = "account_one"\ntopic = "ai-updates"\noff_topic = "explode"\n'
+        '[[handles]]\nhandle = "account_one"\n'
     )
     report = HealthCheck().check(
         tmp_path,
@@ -78,7 +78,7 @@ def test_accounts_use_canonical_validation(tmp_path):
         lint_status=LintStatus(0, "provenance OK"),
     )
     assert not report.ok
-    assert any("unknown off_topic policy" in issue for issue in report.issues)
+    assert any("missing topic for handle 'account_one'" in issue for issue in report.issues)
 
 
 def test_lint_failure_is_error(tmp_path):

@@ -84,7 +84,6 @@ folder_ids = ["2057603076853547356"]
 [[handles]]
 handle = "account_one"
 topic  = "ai-updates"
-off_topic = "skip"
 ```
 
 Each account is a `[[handles]]` table:
@@ -93,7 +92,6 @@ Each account is a `[[handles]]` table:
 |-------|----------|-------------|
 | `handle` | yes | X username without the leading `@`. |
 | `topic` | yes | Topic into which distilled source notes are filed (`wiki/<topic>/sources/`). The topic does not need a corresponding bookmarks folder in `topics.toml`. |
-| `off_topic` | no | Policy for posts that don't fit the configured topic. Only `"skip"` is implemented today; `"quarantine"` is reserved. Defaults to `"skip"`. |
 | `label` | no | Display name used by recap profiles. Defaults to a prettified handle. |
 
 **Adding an account:** prefer `bowerbird accounts add <handle> --topic <topic>`

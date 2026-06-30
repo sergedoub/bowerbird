@@ -14,7 +14,6 @@ def test_add_account_to_empty_config():
     assert parsed["handles"] == [{
         "handle": "account_two",
         "topic": "codex",
-        "off_topic": "skip",
         "label": "Guinness",
     }]
 
@@ -24,7 +23,6 @@ def test_add_account_preserves_existing_rows_and_is_idempotent():
 [[handles]]
 handle = "account_one"
 topic = "ai"
-off_topic = "skip"
 label = "Account One"
 """
     first, added = add_account_to_text(original, "account_two", topic="codex")
@@ -41,8 +39,6 @@ label = "Account One"
 def test_add_account_validates_input():
     with pytest.raises(ConfigError):
         add_account_to_text("", "")
-    with pytest.raises(ConfigError):
-        add_account_to_text("", "x", off_topic="explode")
 
 
 def test_slug_topic_normalizes_handles():

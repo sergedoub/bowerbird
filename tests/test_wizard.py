@@ -85,7 +85,7 @@ def test_happy_path_writes_configs_and_secrets():
 
     parsed_accounts = tomllib.loads(world.configs["accounts.toml"])
     assert parsed_accounts["handles"][0] == {
-        "handle": "account_one", "topic": "ai-updates", "off_topic": "skip"}
+        "handle": "account_one", "topic": "ai-updates"}
 
     parsed_recaps = tomllib.loads(world.configs["recaps.toml"])
     assert parsed_recaps["recaps"][0]["name"] == "marketing-daily"
@@ -244,7 +244,7 @@ def test_toml_writers_emit_valid_toml():
     topics = tomllib.loads(topics_toml({"a-b": ["1", "2"], "c": ["3"]}))
     assert topics["topics"]["a-b"]["folder_ids"] == ["1", "2"]
     accounts = tomllib.loads(accounts_toml([{"handle": "h", "topic": "t"}]))
-    assert accounts["handles"][0]["off_topic"] == "skip"
+    assert accounts["handles"][0] == {"handle": "h", "topic": "t"}
     labeled = tomllib.loads(accounts_toml([{"handle": "h", "topic": "t", "label": "Handle"}]))
     assert labeled["handles"][0]["label"] == "Handle"
     recaps = tomllib.loads(recaps_toml([{"name": "marketing-weekly", "frequency": "weekly",

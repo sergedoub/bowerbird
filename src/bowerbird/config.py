@@ -225,22 +225,16 @@ class TopicsConfig:
         return [fid for t in self.topics for fid in t.folder_ids]
 
 
-OFF_TOPIC_POLICIES = ("skip", "quarantine")
-
-
 @dataclass(frozen=True)
 class Account:
     """An X account to mirror in full.
 
     `handle` is the username without the leading '@'. `topic` names the topic into
     which the compile step distills this account's posts (`wiki/<topic>/sources/`).
-    `off_topic` is the policy for posts that don't fit the configured topic — currently
-    only "skip" is implemented; "quarantine" is reserved for a future parking lot.
     `label` is an optional display name used by recap profiles (defaults to the handle).
     """
     handle: str
     topic: str
-    off_topic: str = "skip"
     label: str | None = None
 
 
@@ -253,7 +247,6 @@ class AccountsConfig:
         [[handles]]
         handle = "account_one"
         topic  = "ai-updates"
-        off_topic = "skip"
 
     Normalizes any stray leading '@' on the handle and rejects duplicates (which would
     dump the same account twice). `topic` is required so the compile step knows where
@@ -278,24 +271,18 @@ class AccountsConfig:
             if not isinstance(raw, dict):
                 raise ConfigError(
                     f"accounts config entry must be a table with handle+topic, got {raw!r}"
-                )
+            )
             handle = str(raw.get("handle", "")).lstrip("@").strip()
             topic = str(raw.get("topic", "")).strip()
-            off_topic = str(raw.get("off_topic", "skip")).strip() or "skip"
             if not handle:
                 raise ConfigError(f"missing handle in accounts entry: {raw!r}")
             if not topic:
                 raise ConfigError(f"missing topic for handle '{handle}' in accounts config")
-            if off_topic not in OFF_TOPIC_POLICIES:
-                raise ConfigError(
-                    f"unknown off_topic policy '{off_topic}' for '{handle}' "
-                    f"(expected one of {OFF_TOPIC_POLICIES})"
-                )
             if handle.lower() in seen:
                 raise ConfigError(f"duplicate handle '{handle}' in accounts config")
             seen.add(handle.lower())
             label = str(raw.get("label", "")).strip() or None
-            accounts.append(Account(handle=handle, topic=topic, off_topic=off_topic, label=label))
+            accounts.append(Account(handle=handle, topic=topic, label=label))
         return cls(accounts=tuple(accounts))
 
 

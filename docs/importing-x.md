@@ -121,7 +121,6 @@ bowerbird accounts add your_handle --topic your-topic
 [[handles]]
 handle = "your_handle"
 topic = "your-topic"
-off_topic = "skip"
 ```
 
 Run all configured accounts over the default trailing window:

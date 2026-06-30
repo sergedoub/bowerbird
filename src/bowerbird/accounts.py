@@ -5,7 +5,7 @@ import re
 import tomllib
 from pathlib import Path
 
-from .config import OFF_TOPIC_POLICIES, AccountsConfig, ConfigError
+from .config import AccountsConfig, ConfigError
 
 
 def slug_topic(value: str) -> str:
@@ -38,7 +38,6 @@ def load_account_rows(text: str) -> list[dict[str, str]]:
         row = {
             "handle": str(entry.get("handle", "")).lstrip("@").strip(),
             "topic": str(entry.get("topic", "")).strip(),
-            "off_topic": str(entry.get("off_topic", "skip")).strip() or "skip",
         }
         label = str(entry.get("label", "")).strip()
         if label:
@@ -56,7 +55,6 @@ def render_accounts_toml(rows: list[dict[str, str]]) -> str:
             "[[handles]]",
             f"handle = {_toml_string(row['handle'])}",
             f"topic = {_toml_string(row['topic'])}",
-            f"off_topic = {_toml_string(row.get('off_topic') or 'skip')}",
         ]
         if row.get("label"):
             lines.append(f"label = {_toml_string(row['label'])}")
@@ -70,25 +68,18 @@ def add_account_to_text(
     *,
     topic: str | None = None,
     label: str | None = None,
-    off_topic: str = "skip",
 ) -> tuple[str, bool]:
     normalized = handle.lstrip("@").strip()
     if not normalized:
         raise ConfigError("account handle is required")
     target_topic = slug_topic(topic or normalized)
-    policy = off_topic.strip() or "skip"
-    if policy not in OFF_TOPIC_POLICIES:
-        raise ConfigError(
-            f"unknown off_topic policy '{policy}' for '{normalized}' "
-            f"(expected one of {OFF_TOPIC_POLICIES})"
-        )
 
     rows = load_account_rows(text)
     for row in rows:
         if row["handle"].lower() == normalized.lower():
             return render_accounts_toml(rows), False
 
-    row = {"handle": normalized, "topic": target_topic, "off_topic": policy}
+    row = {"handle": normalized, "topic": target_topic}
     clean_label = (label or "").strip()
     if clean_label:
         row["label"] = clean_label
@@ -102,13 +93,10 @@ def add_account(
     *,
     topic: str | None = None,
     label: str | None = None,
-    off_topic: str = "skip",
 ) -> tuple[bool, str]:
     config_path = Path(path)
     text = config_path.read_text(encoding="utf-8") if config_path.exists() else ""
-    rendered, added = add_account_to_text(
-        text, handle, topic=topic, label=label, off_topic=off_topic
-    )
+    rendered, added = add_account_to_text(text, handle, topic=topic, label=label)
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(rendered, encoding="utf-8")
     normalized = handle.lstrip("@").strip()

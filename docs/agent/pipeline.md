@@ -6,7 +6,7 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 
 | Module | Purpose |
 |--------|---------|
-| `config.py` | TOML loaders. `TopicsConfig.load(path)` returns `Topic[]` with `folder_ids`. `AccountsConfig.load(path)` returns `Account[]` (each with `handle`, `topic`, `off_topic`). Raises `ConfigError` on malformed input. |
+| `config.py` | TOML loaders. `TopicsConfig.load(path)` returns `Topic[]` with `folder_ids`. `AccountsConfig.load(path)` returns `Account[]` (each with `handle`, `topic`). Raises `ConfigError` on malformed input. |
 | `models.py` | Dataclasses for raw items, threads, accounts. |
 | `raw_sources.py` | Declared raw namespace registry: bucket semantics, compile lifecycle, default source type/provenance. |
 | `tokens.py` | `TokenStore` wraps a `TokenStorage` (Protocol: `load()`, `save(dict)`). `FileTokenStorage` for local; `TokenStore.get_access_token()` handles expiry + `_refresh()`. The refreshed dict is persisted via `storage.save()` — this is what propagates the rotated refresh token. |
@@ -103,16 +103,19 @@ These are not just conventions — the linter and the compile step depend on the
 
 ## Accounts config (`config/accounts.toml`)
 
-Each tracked account is a `[[handles]]` table with three fields:
+Each tracked account is a `[[handles]]` table:
 
 ```toml
 [[handles]]
 handle    = "account_one"
 topic     = "ai-updates"   # distilled source notes land in wiki/ai-updates/sources/
-off_topic = "skip"          # policy for posts that don't fit the topic; only "skip" is implemented today
 ```
 
-`topic` is required. The named topic does not need a corresponding bookmarks folder in `topics.toml` — accounts feed the wiki layer directly. `off_topic` defaults to `"skip"`; `"quarantine"` is reserved for a future parking lot.
+`topic` is required. The named topic does not need a corresponding bookmarks
+folder in `topics.toml` — accounts feed the wiki layer directly. Account
+mirrors are complete: every uncompiled raw account item should become a
+faithful source note in the configured topic. Higher-level concepts and recaps
+decide what to cite after the complete source-note layer exists.
 
 Use `bowerbird accounts add <handle> --topic <topic>` for normal account
 adds. For a targeted first import, dispatch

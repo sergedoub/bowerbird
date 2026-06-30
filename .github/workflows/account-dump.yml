@@ -8,7 +8,7 @@ name: account-dump
 #
 # Customization: set the DUMP_WINDOW_DAYS repository variable (default 3). Cron schedules
 # cannot read repository variables — edit the cron line below for your timezone; this is
-# the one accepted fork divergence (see docs/upgrading.md).
+# the one accepted instance divergence (see docs/upgrading.md).
 
 on:
   schedule:

@@ -37,7 +37,7 @@ concurrency:
 jobs:
   compile:
     # Mutating compile is forbidden in the public source repo and requires an
-    # installed fork marked as a live instance, even for manual dispatch.
+    # installed private instance repo marked as live, even for manual dispatch.
     if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:

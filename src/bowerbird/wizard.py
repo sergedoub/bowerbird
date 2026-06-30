@@ -1,4 +1,4 @@
-"""Interactive setup wizard — from a fresh fork to a working instance.
+"""Interactive setup wizard — from a private instance repo to a working instance.
 
 Walks: X app credentials -> OAuth browser flow -> bookmark-folder -> topic mapping ->
 account mirrors -> GitHub Actions secrets. Every effectful edge is injected via
@@ -383,7 +383,7 @@ def run_wizard(io: WizardIO, deps: WizardDeps) -> WizardResult:
     io.say("Done. Next steps:")
     steps = [
         "commit config/ changes and push",
-        "enable GitHub Actions on your fork (Actions tab)",
+        "enable GitHub Actions on your private instance repo (Actions tab)",
         "run pull-bookmarks once with limit_per_folder=3, then run account-dump",
         "confirm compile-wiki goes green and `bowerbird lint` passes",
     ]

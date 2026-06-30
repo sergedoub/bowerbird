@@ -29,9 +29,9 @@ This is a deliberate choice — the pipelines must work in any Python 3.11+ envi
 
 See [provenance](provenance.md). Never edit/delete/rename files under `raw/`.
 
-### Path disjointness (fork upgrade contract)
+### Path disjointness (instance upgrade contract)
 
-Forks upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `compile/recaps/`, `.github/`, `docs/`, `connectors/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `recaps/`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
+Private instance repos upgrade via `git merge upstream/main` (see `docs/upgrading.md`). That only stays conflict-free if upstream changes touch **code paths only** (`src/`, `bin/`, `tests/`, `compile/INSTRUCTIONS.md`, `compile/PROMPT.md`, `compile/recaps/`, `.github/`, `docs/`, `connectors/`, `skill/`) and instance automation writes **data paths only** (`raw/`, `wiki/`, `config/`, `recaps/`). Don't add workflow steps that write to code paths, and don't ship upstream commits that write to data paths. User-tunable workflow values belong in repository variables, not workflow edits (cron lines are the one documented exception).
 
 ### No RAG, no embeddings, no Postgres-backed content
 

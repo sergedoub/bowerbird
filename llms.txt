@@ -6,13 +6,13 @@ This is the **agent-facing knowledge base** for the *repository pipeline* — de
 
 ## Knowledge base
 
-- [Setup guide](docs/setup.md): Fork → `bowerbird init` → `bowerbird doctor` → green workflows → connector recap, with troubleshooting.
+- [Setup guide](docs/setup.md): Private instance repo → `bowerbird init` → `bowerbird doctor` → green workflows → connector recap, with troubleshooting.
 - [AI-guided setup](docs/setup-prompt.md): The copy-paste prompt that has a coding agent run the whole setup interactively with the user.
 - [How it works](docs/how-it-works.md): Public-facing architecture and data-flow guide for humans onboarding to the repo.
 - [Importing from X](docs/importing-x.md): X OAuth, bookmark folder imports, account mirror setup, pay-as-you-go cost table, and GitHub Actions secrets.
 - [Compile runners](docs/compile-runners.md): The pluggable compile seam — choosing claude/codex/gemini, credentials per runner, adding a runner.
 - [Daily recap](docs/slack-recap.md): `recaps/` and manifest contract plus the one-message daily delivery model.
-- [Upgrading](docs/upgrading.md): Fork upgrade path (`git merge upstream/main`), path-disjointness rule, repo variables, the cron exception.
+- [Upgrading](docs/upgrading.md): Private instance upgrade path (`git merge upstream/main`), path-disjointness rule, repo variables, the cron exception.
 - [Slack connector](connectors/slack/README.md): Bot-token delivery contract for turning generated recap files into one Slack recap message.
 - [Publishing a Bowerbird instance](docs/open-source.md): What to review, redact, or separate before making an instance or demo data repo public.
 - [Overview](docs/agent/overview.md): What the repo is, the Karpathy-style philosophy, the raw-source pipeline at 10,000 feet, key identifiers and where to look first.

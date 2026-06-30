@@ -2,8 +2,9 @@
 
 Have a coding agent set Bowerbird up for you, end to end. You don't need to
 clone anything first — paste the prompt below into an agent session running
-**anywhere** (any folder, any project) and it takes it from there: forking,
-cloning, credentials, first pull, and Slack connector setup.
+**anywhere** (any folder, any project) and it takes it from there: creating a
+private instance repo from the public source, cloning, credentials, first pull,
+and Slack connector setup.
 
 Heads-up before you start:
 
@@ -26,10 +27,13 @@ Copy everything below into the agent:
 Set up Bowerbird for me, end to end. You're hearing about it for the first
 time: Bowerbird turns my X (Twitter) bookmarks and selected X accounts into a
 personal, LLM-compiled markdown knowledge base with a daily Slack recap. It
-lives at https://github.com/sergedoub/bowerbird — my fork of it will be both
-the code and my data, and its GitHub Actions are the compute. I may be in a
-completely unrelated directory right now; treat this as a brand-new project
-and I am present for browser steps when you ask.
+lives at https://github.com/sergedoub/bowerbird. That public repo is the source
+repo only. My Bowerbird knowledge base must live in a new private GitHub
+instance repo created from that source: it will contain both the code and my
+data, and its GitHub Actions are the compute. Do not use GitHub's Fork button
+for this personal instance, because forks of a public repository are public. I
+may be in a completely unrelated directory right now; treat this as a brand-new
+project and I am present for browser steps when you ask.
 
 Ground rules:
 - Once cloned, the repo's docs/setup.md is the source of truth — follow its
@@ -82,14 +86,14 @@ Ground rules:
   `bin/.env`, verify by key presence plus non-empty/value shape only, then
   continue.
 - GitHub automation preference: use `gh` or GitHub APIs for every GitHub step
-  they can handle: fork/clone, setting Actions secrets from staged files,
-  setting variables, workflow dispatch, and run watching. Do not use Chrome for
-  GitHub work when terminal auth can do it. GitHub does not offer an API to
-  create a PAT; prefilled PAT URLs still require human web confirmation. If the
-  repo supports a GitHub App installation-token path for secret writeback,
-  prefer that over a PAT. If the current repo still requires `GH_PAT`, keep PAT
-  creation as a minimal user-owned copy handoff, not a long browser-driving
-  task.
+  they can handle: creating the private instance repo, cloning, setting Actions
+  secrets from staged files, setting variables, workflow dispatch, and run
+  watching. Do not use Chrome for GitHub work when terminal auth can do it.
+  GitHub does not offer an API to create a PAT; prefilled PAT URLs still require
+  human web confirmation. If the repo supports a GitHub App installation-token
+  path for secret writeback, prefer that over a PAT. If the current repo still
+  requires `GH_PAT`, keep PAT creation as a minimal user-owned copy handoff, not
+  a long browser-driving task.
 - Never touch the repo's raw/ or wiki/ by hand, and never force-push.
 
 The journey:
@@ -99,14 +103,22 @@ The journey:
 
 1. PREREQUISITES — check python3 (3.11+), git, and the gh CLI
    (installed AND authenticated: gh auth status). Tell me what's missing and
-   how to install it before going further. gh matters: it automates forking,
-   secrets, and workflow runs.
+   how to install it before going further. gh matters: it automates private repo
+   creation, secrets, and workflow runs.
 
-2. FORK & CLONE — fork https://github.com/sergedoub/bowerbird to my account
-   and clone it into the chosen directory (gh repo fork sergedoub/bowerbird
-   --clone does both; without gh, walk me through forking in the browser and
-   git clone). cd into it; confirm origin points at MY fork and the branch
-   is main. My fork is where my knowledge base will accumulate.
+2. PRIVATE INSTANCE REPO & CLONE — create a new private GitHub repo for my
+   Bowerbird instance from https://github.com/sergedoub/bowerbird. Clone the
+   public source into the chosen directory, rename the source remote to
+   `upstream`, create or attach my private repo as `origin`, and push `main`.
+   With `gh`, the canonical shape is:
+   git clone https://github.com/sergedoub/bowerbird.git <chosen-dir>
+   cd <chosen-dir>
+   git remote rename origin upstream
+   gh repo create <me>/<private-instance-repo> --private --source=. --remote=origin --push
+   If I already created the private repo, add it as `origin` and push instead of
+   creating another one. Confirm `origin` points at MY PRIVATE instance repo,
+   `upstream` points at `sergedoub/bowerbird`, and the branch is `main`. My
+   private instance repo is where my knowledge base will accumulate.
 
 3. INSTALL — create a virtualenv, pip install -e '.[dev]', then run
    python3 -m pytest and bowerbird lint. Both must pass. Confirm git status
@@ -156,9 +168,9 @@ The journey:
       scheduled writeback, prefer it: one human install/authorization step, then
       short-lived installation tokens generated programmatically. Only if this
       repo version still requires `GH_PAT`, create a fine-grained PAT scoped
-      only to my Bowerbird fork with repository permission `Secrets: Read and
-      write`. Do not try to API-create the PAT; GitHub requires its browser
-      settings flow.
+      only to my private Bowerbird instance repo with repository permission
+      `Secrets: Read and write`. Do not try to API-create the PAT; GitHub
+      requires its browser settings flow.
       Use a short name under 40 characters, verify exactly one selected repo
       and the final `Secrets: Read and write` permission, remove accidental
       adjacent permissions such as `Codespaces secrets`, then have me click

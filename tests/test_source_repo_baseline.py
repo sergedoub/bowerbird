@@ -1,7 +1,8 @@
 """The source repo starts clean: config templates only, no generated Bowerbird data.
 
-Generated `raw/`, `wiki/`, and `recaps/` output belongs in an installed fork or
-the separate bowerbird-demo repository, not in the product source repo.
+Generated `raw/`, `wiki/`, and `recaps/` output belongs in an installed private
+instance repo or the separate bowerbird-demo repository, not in the product
+source repo.
 """
 import tomllib
 from pathlib import Path

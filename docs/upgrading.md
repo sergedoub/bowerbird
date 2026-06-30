@@ -1,11 +1,12 @@
-# Upgrading Your Fork
+# Upgrading Your Instance
 
-Your fork is both your copy of the code and your knowledge base: the pipeline
-commits your data into it daily. You can never "re-fork to update" — instead,
-updates flow in as a normal git merge:
+Your private instance repo is both your copy of the code and your knowledge
+base: the pipeline commits your data into it daily. Do not use GitHub's Fork
+button for personal Bowerbird instances; forks of a public source repo are
+public. Updates flow in as a normal git merge from the public source remote:
 
 ```bash
-git remote add upstream https://github.com/<upstream-org>/<upstream-repo>.git  # once
+git remote add upstream https://github.com/sergedoub/bowerbird.git  # once
 git fetch upstream
 git merge upstream/main
 git push
@@ -21,10 +22,11 @@ The repo enforces a path-disjointness rule:
   never writes here.
 - **Data paths** — `raw/`, `wiki/`, `config/`, `recaps/` — are owned by your
   instance after setup. The source repo keeps generated data out of upstream;
-  your imports, compile output, recap files, and chosen config live in your fork.
+  your imports, compile output, recap files, and chosen config live in your
+  private instance repo.
 
 Disjoint paths mean `git merge upstream/main` cannot conflict, no matter how
-many daily data commits your fork has accumulated.
+many daily data commits your instance has accumulated.
 
 ## Customization without divergence
 

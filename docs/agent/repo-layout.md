@@ -11,14 +11,14 @@
 | `bin/` | CLI entry points (stdlib-only Python scripts). See [pipeline](pipeline.md). |
 | `src/bowerbird/` | Library code — pipelines, clients, linter, models. See [pipeline](pipeline.md). |
 | `tests/` | Offline pytest suite (no network). |
-| `config/` | TOML configuration. Extensibility seam for topics, accounts, books, models, and recap profiles. The source repo keeps empty templates here; an installed fork writes its chosen config here. |
+| `config/` | TOML configuration. Extensibility seam for topics, accounts, books, models, and recap profiles. The source repo keeps empty templates here; an installed instance writes its chosen config here. |
 | `compile/` | `INSTRUCTIONS.md` (the LLM compile contract), `PROMPT.md` (the shared runner prompt), and `compile/recaps/` prompt files. No generated recap output lives here. |
-| `recaps/` | Generated recap Markdown and delivery manifests. Commit these files in an installed fork; delivery adapters consume them. The source repo does not ship generated recaps. |
+| `recaps/` | Generated recap Markdown and delivery manifests. Commit these files in an installed instance; delivery adapters consume them. The source repo does not ship generated recaps. |
 | `skill/` | The Bowerbird retrieval skill for downstream coding agents. |
 | `connectors/` | Connector setup playbooks and service manifests, starting with Slack. Runtime code stays in `bin/` and `src/bowerbird/` with the rest of the pipeline. |
-| `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/bowerbird/raw_sources.py`. Generated raw files belong in an installed fork or separate data repo. |
+| `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/bowerbird/raw_sources.py`. Generated raw files belong in an installed instance or separate data repo. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
-| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; generated wiki files belong in an installed fork or separate data repo. |
+| `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; generated wiki files belong in an installed instance or separate data repo. |
 | `.github/workflows/` | Pipeline workflows plus ci — see [github-actions](github-actions.md). |
 | `docs/*.md` | Public human-facing docs: setup, architecture, X imports, compile runners, recap, upgrading. |
 | `docs/agent/` | This agent-facing documentation set (you are here). |

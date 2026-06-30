@@ -215,5 +215,5 @@ The default schedule is:
 | `compile-wiki` | After either importer succeeds | `wiki/` commits. |
 | `recap` | Daily or after compile succeeds | `recaps/` commits. |
 
-If you fork this repo, adjust the cron times to match your timezone and expected
-compile duration.
+In your private instance repo, adjust the cron times to match your timezone and
+expected compile duration.

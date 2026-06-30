@@ -28,7 +28,7 @@ The downstream wiki-style agent instructions live in `skill/bowerbird/SKILL.md`.
 
 ## Key identifiers
 
-- **Project:** Bowerbird. Each user's fork is their instance; default branch `main` carries both code and the user's data commits.
+- **Project:** Bowerbird. `sergedoub/bowerbird` is the public source repo. Each user's private instance repo is created from that source; default branch `main` carries both code and the user's data commits.
 - **Language:** Pipeline is Python 3.11+ (CI runs 3.13), stdlib-only runtime (`urllib`, `tomllib`); dev-only dep is `pytest`. Connector agents are external consumers of generated recap files and manifests under `recaps/`, starting with Slack. See `pyproject.toml`.
 - **Knowledge format:** `wiki/` is a native **Open Knowledge Format (OKF) v0.1 bundle** — markdown + YAML frontmatter, a `type` on every note, a markdown-link graph. OKF is a conformance floor; Bowerbird's stricter provenance lint governs above it. See [provenance.md](provenance.md).
 - **Enabled topics/accounts:** whatever the instance's `config/topics.toml` and `config/accounts.toml` declare — read the configs, don't assume.

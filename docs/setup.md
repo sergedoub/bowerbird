@@ -1,12 +1,13 @@
 # Setup Guide
 
-From fork to a working instance: bookmarks flowing in daily, a compiled wiki,
-and a recap in Slack. Expect 30–45 minutes, most of it on the X developer
-portal.
+From private instance repo to a working Bowerbird: bookmarks flowing in daily,
+a compiled wiki, and a recap in Slack. Expect 30–45 minutes, most of it on the
+X developer portal.
 
-> Using a coding agent? Two zero-effort paths: already cloned — run the
-> repo's guided setup skill; not cloned yet — paste the prompt from
-> [docs/setup-prompt.md](setup-prompt.md) into an agent session anywhere.
+> Using a coding agent? Two zero-effort paths: already in a private instance
+> checkout — run the repo's guided setup skill; not cloned yet — paste the
+> prompt from [docs/setup-prompt.md](setup-prompt.md) into an agent session
+> anywhere.
 
 Agent acceleration works best with one coordinator. Subagents can safely read
 docs, check repo health, prepare command lists, and watch workflow runs in
@@ -14,14 +15,16 @@ parallel, but one browser coordinator should own all GitHub/X/Slack/model
 provider pages. Do not split credential-copy work across agents sharing the
 same Chrome profile or clipboard; copy one secret, write it to `bin/.env`,
 verify by key presence plus non-empty/value shape only, then continue. For
-GitHub, prefer terminal/API automation through `gh`: fork/clone, initial
-Actions secrets, variables, workflow dispatch, and run watching should not need
-Chrome if `gh` is authenticated.
+GitHub, prefer terminal/API automation through `gh`: creating the private
+instance repo, cloning, initial Actions secrets, variables, workflow dispatch,
+and run watching should not need Chrome if `gh` is authenticated.
 
 ## 0. Prerequisites
 
-- A GitHub account and a fork of this repository (your fork is your knowledge
-  base — data commits land in it daily).
+- A GitHub account that can create a private instance repository from this
+  public source repository. Do not use GitHub's Fork button for a personal
+  Bowerbird instance: forks of public repositories are public, while your
+  instance is where private data commits land daily.
 - Python 3.11+ locally.
 - An **X developer app** with pay-as-you-go billing enabled
   (<https://developer.x.com/en/portal/dashboard>). This is the one step nothing
@@ -46,7 +49,10 @@ Chrome if `gh` is authenticated.
 ## 1. Run the wizard
 
 ```bash
-git clone https://github.com/<you>/<your-fork>.git && cd <your-fork>
+git clone https://github.com/sergedoub/bowerbird.git <your-instance-repo>
+cd <your-instance-repo>
+git remote rename origin upstream
+gh repo create <you>/<your-instance-repo> --private --source=. --remote=origin --push
 python3 -m venv .venv && source .venv/bin/activate
 python3 -m pip install -e '.[dev]'
 bowerbird init
@@ -54,6 +60,14 @@ bowerbird init
 
 (The virtualenv matters: modern macOS/Linux Pythons are "externally managed"
 and reject bare `pip install` outside one.)
+
+If you cannot use `gh`, create an empty private repo in GitHub's browser UI
+first, then replace the `gh repo create ...` line with:
+
+```bash
+git remote add origin git@github.com:<you>/<your-instance-repo>.git
+git push -u origin main
+```
 
 The wizard collects credentials into a gitignored `bin/.env`, opens the X
 OAuth flow in your browser, lists your bookmark folders so you can choose
@@ -162,7 +176,7 @@ result. For X token recovery, run `bowerbird auth`, then
 | Compile agent (claude / codex / gemini) | `COMPILE_RUNNER` repository variable |
 | Account-mirror window | `DUMP_WINDOW_DAYS` repository variable |
 | Live-instance automation | `BOWERBIRD_LIVE_INSTANCE=true`, set by setup after required ingest secrets exist |
-| Cron times | Workflow files — the one accepted fork edit, see [upgrading](upgrading.md) |
+| Cron times | Workflow files — the one accepted instance edit, see [upgrading](upgrading.md) |
 | Recap labels per account | `label` field in `config/accounts.toml` |
 | Recap profiles | `config/recaps.toml`; prompts live under `compile/recaps/` |
 | Recap delivery | `SLACK_BOT_TOKEN` Actions secret plus Slack destinations in `config/recaps.toml` |
@@ -222,7 +236,7 @@ personal pipeline). The values below are what matter in both.
      but has no secret (leave `X_CLIENT_SECRET` empty then).
    - Callback / Redirect URI — register `http://bowerbird.localhost:8080/callback`
      for CLI auth.
-   - Website URL: anything real (your GitHub fork's URL is fine).
+   - Website URL: anything real (your private instance repo's URL is fine).
 4. **Collect the three values** (the wizard asks for them; don't paste them
    into chats — though an agent with browser control may pipe a Copy-button
    value from the clipboard into the gitignored `bin/.env` without ever

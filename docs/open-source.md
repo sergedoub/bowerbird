@@ -4,10 +4,11 @@ The Bowerbird source repo is meant to stay clean and public: code, docs,
 workflow scaffolding, prompt files, connector setup assets, and empty config
 templates.
 
-A Bowerbird fork or install is different. It can contain private raw material,
+A Bowerbird instance repo is different. It can contain private raw material,
 compiled wiki notes, recap files, selected account handles, Slack destinations,
-and workflow choices. Use this checklist before making an instance or demo data
-repo public.
+and workflow choices. Personal instances should be private repos created from
+the public source, not GitHub forks: forks of public repositories are public.
+Use this checklist before making an instance or demo data repo public.
 
 ## Default Recommendation
 

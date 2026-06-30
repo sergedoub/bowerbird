@@ -30,3 +30,24 @@ def test_bowerbird_skill_package_is_current():
     lines = skill_path.read_text(encoding="utf-8").splitlines()
     assert lines[0].strip() == "---"
     assert "name: bowerbird" in lines[1:8]
+
+
+def test_setup_docs_do_not_recommend_public_github_forks_for_instances():
+    checked = [
+        ROOT / "README.md",
+        ROOT / "docs" / "setup.md",
+        ROOT / "docs" / "setup-prompt.md",
+    ]
+
+    forbidden = (
+        "Fork this repository",
+        "fork this repository",
+        "gh repo fork",
+        "forks, clones",
+        "<your-fork>",
+    )
+    for path in checked:
+        text = path.read_text(encoding="utf-8")
+        for phrase in forbidden:
+            assert phrase not in text, f"{path.relative_to(ROOT)} still says {phrase!r}"
+        assert "private instance repo" in text

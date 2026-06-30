@@ -48,7 +48,8 @@ def repository_identity(
     explicit_repo: str = "",
 ) -> str:
     """Resolve the repository as owner/name from explicit input, CI env, or origin."""
-    source = explicit_repo or (env or os.environ).get("GITHUB_REPOSITORY", "")
+    environ = os.environ if env is None else env
+    source = explicit_repo or environ.get("GITHUB_REPOSITORY", "")
     return normalize_repository(source) or repository_from_origin(repo_root)
 
 

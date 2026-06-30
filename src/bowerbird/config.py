@@ -271,7 +271,7 @@ class AccountsConfig:
             if not isinstance(raw, dict):
                 raise ConfigError(
                     f"accounts config entry must be a table with handle+topic, got {raw!r}"
-            )
+                )
             handle = str(raw.get("handle", "")).lstrip("@").strip()
             topic = str(raw.get("topic", "")).strip()
             if not handle:

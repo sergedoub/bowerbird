@@ -36,10 +36,9 @@ concurrency:
 
 jobs:
   compile:
-    # Manual dispatch is explicit; automatic push/workflow_run compile only runs
-    # after setup marks the fork live, so the public source repo stays inert
-    # until an installed fork has configured ingest and compile credentials.
-    if: ${{ (github.event_name == 'workflow_dispatch' || vars.BOWERBIRD_LIVE_INSTANCE == 'true') && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
+    # Mutating compile is forbidden in the public source repo and requires an
+    # installed fork marked as a live instance, even for manual dispatch.
+    if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

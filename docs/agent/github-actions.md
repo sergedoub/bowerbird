@@ -35,17 +35,17 @@ generation step writes files; delivery adapters consume the manifest. Slack
 delivery runs after the commit, so a Slack failure marks delivery unhealthy
 without removing the generated recap files.
 
-The compile job filters with `BOWERBIRD_LIVE_INSTANCE=true` for automatic
-`push` and `workflow_run` triggers, while manual dispatch remains explicit.
-For chained runs, the upstream import must also have succeeded. This keeps the
-public source repo inert until an installed fork has configured ingest and
-compile credentials.
+Mutating workflows fail closed unless both conditions are true:
 
-The two scheduled import workflows also filter with
-`BOWERBIRD_LIVE_INSTANCE=true`. Source repos carry the automation as product
-code, but only a live instance repo should run paid, personal ingest jobs or
-automatic compile jobs. `bowerbird push-secrets` and `bowerbird init` enable
-the variable once the required X/GitHub ingest secrets are present.
+- `github.repository != 'sergedoub/bowerbird'`
+- `BOWERBIRD_LIVE_INSTANCE=true`
+
+That rule applies to manual dispatch as well as scheduled and chained runs.
+For chained runs, the upstream import must also have succeeded. The public
+source repo carries the workflow definitions as product code, but it must not
+run personal ingest, compile, recap, or delivery jobs. `bowerbird push-secrets`
+and `bowerbird init` enable the live-instance variable once the required
+X/GitHub ingest secrets are present.
 
 ## Recap lane selection
 
@@ -105,7 +105,7 @@ PAT.
 
 | Variable | Used by | Notes |
 |----------|---------|-------|
-| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml`, `compile.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: scheduled personal ingest and automatic compile jobs are skipped, while manual dispatch still works and fails clearly if secrets are absent. |
+| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml`, `compile.yml`, `recap.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: personal ingest, compile, and recap jobs are skipped, including manual dispatch. |
 | `DUMP_WINDOW_DAYS` | `account-dump.yml` | Optional trailing window override; default is 3. |
 | `X_USER_ID` | `pull.yml` | Optional numeric X user id; skips a `/users/me` lookup per pull run. |
 | `COMPILE_RUNNER` / `COMPILE_MODEL` | `compile.yml` | Optional compile runner/model override; `config/models.toml` is preferred for fresh setup. |

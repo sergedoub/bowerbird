@@ -16,6 +16,8 @@ set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+PYTHONPATH=src python3 -m bowerbird.repo_boundary "compile raw into wiki" --repo-root "$ROOT"
+
 CONFIG_RUNNER="$(PYTHONPATH=src python3 - <<'PY'
 from pathlib import Path
 try:

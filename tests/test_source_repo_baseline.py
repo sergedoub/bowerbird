@@ -6,6 +6,7 @@ the separate bowerbird-demo repository, not in the product source repo.
 import tomllib
 from pathlib import Path
 
+from bowerbird.repo_boundary import SOURCE_REPOSITORY
 from bowerbird.config import AccountsConfig, RecapsConfig, TopicsConfig
 from bowerbird.recaps import validate_recap_files
 
@@ -42,3 +43,10 @@ def test_public_package_name_matches_source_package():
     assert pyproject["project"]["scripts"]["bowerbird"] == "bowerbird.cli:main"
     assert (ROOT / "src" / "bowerbird").is_dir()
     assert not (ROOT / "src" / "kb").exists()
+
+
+def test_mutating_workflows_cannot_run_in_source_repo():
+    for name in ("pull.yml", "account-dump.yml", "compile.yml", "recap.yml"):
+        workflow = (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
+        assert f"github.repository != '{SOURCE_REPOSITORY}'" in workflow
+        assert "vars.BOWERBIRD_LIVE_INSTANCE == 'true'" in workflow

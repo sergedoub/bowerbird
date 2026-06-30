@@ -45,7 +45,9 @@ bash bin/compile.sh && python3 bin/lint.py
 
 A passing smoke test = the agent terminated, the working tree contains new or
 updated `wiki/` files for any uncompiled raw items, and lint prints
-`provenance and recaps OK`.
+`provenance and recaps OK`. This is an instance-only command: `bin/compile.sh`
+refuses to run when the checkout resolves to the public source repo
+`sergedoub/bowerbird`.
 
 ## Adding a runner
 

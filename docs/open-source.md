@@ -67,12 +67,17 @@ before making the repo public.
 
 Before making an instance public, review Actions settings and logs:
 
-1. Keep `BOWERBIRD_LIVE_INSTANCE` unset or `false` unless the public repo should
-   actively run paid personal ingest workflows.
-2. Remove or rotate secrets that were used only for private setup.
-3. Check workflow logs for pasted tokens, private channel names, or accidental
+1. The canonical source repository `sergedoub/bowerbird` must never run
+   personal ingest, compile, recap, or secret-push operations. The mutating
+   workflows contain an explicit `github.repository != 'sergedoub/bowerbird'`
+   guard, and local commands such as `bin/compile.sh` and `bowerbird
+   push-secrets` refuse to run against that repository identity.
+2. Keep `BOWERBIRD_LIVE_INSTANCE` unset or `false` unless the repo is an
+   installed instance that should actively run paid personal ingest workflows.
+3. Remove or rotate secrets that were used only for private setup.
+4. Check workflow logs for pasted tokens, private channel names, or accidental
    raw content.
-4. Confirm recap delivery targets in `config/recaps.toml` are public-safe.
+5. Confirm recap delivery targets in `config/recaps.toml` are public-safe.
 
 ## Final Checks
 

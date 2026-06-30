@@ -26,6 +26,10 @@ from bowerbird.secrets_push import (                             # noqa: E402
     LIVE_INSTANCE_VARIABLE,
     push_secrets,
 )
+from bowerbird.repo_boundary import (                             # noqa: E402
+    BoundaryError,
+    require_instance_repository,
+)
 
 
 def read_env() -> dict:
@@ -87,14 +91,18 @@ def main() -> None:
         help="target repository as owner/name; defaults to the git origin remote",
     )
     args = parser.parse_args()
+    try:
+        repo = require_instance_repository(
+            ROOT,
+            "push setup secrets",
+            explicit_repo=args.repo or origin_repo(),
+        )
+    except BoundaryError as exc:
+        sys.exit(str(exc))
     if not shutil.which("gh"):
         sys.exit("push-secrets needs the gh CLI (https://cli.github.com), authenticated.")
     if subprocess.run(["gh", "auth", "status"], capture_output=True).returncode != 0:
         sys.exit("gh is not authenticated — run `gh auth login` first.")
-
-    repo = args.repo or origin_repo()
-    if not repo:
-        sys.exit("could not infer GitHub repo from origin; pass --repo owner/name")
     print(f"target repo: {repo}")
     result = push_secrets(read_env(), read_tokens(),
                           lambda name, value: set_secret(repo, name, value))

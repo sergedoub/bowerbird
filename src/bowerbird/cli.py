@@ -27,6 +27,8 @@ VERBS: dict[str, tuple[str, str]] = {
     "backfill": ("backfill.py", "backfill historical bookmarks with cost controls"),
     "accounts": ("accounts.py", "add or list followed X accounts"),
     "dump-account": ("dump_account.py", "mirror configured X accounts into raw/accounts/"),
+    "searches": ("searches.py", "add or list X Recent Search monitors"),
+    "dump-search": ("dump_search.py", "run configured X Recent Search monitors into raw/searches/"),
     "dump-all": ("dump_all.py", "dump ALL bookmarks (every folder + unsorted) outside the pipeline"),
     "ingest-book": ("ingest_book.py", "split a configured Markdown book into raw chapters"),
     "models": ("models.py", "choose compile and recap model provider"),
@@ -41,6 +43,7 @@ VERBS: dict[str, tuple[str, str]] = {
 # them. Everything else gets a static synopsis here, so asking for help never starts
 # the wizard, runs the linter, or requires credentials.
 ARGPARSE_VERBS = {"auth", "folders", "pull", "backfill", "accounts", "dump-account",
+                  "searches", "dump-search",
                   "ingest-book", "models", "recap", "slack-recap", "push-secrets", "doctor"}
 
 SYNOPSES = {

@@ -22,7 +22,7 @@ class ConfigError(ValueError):
     pass
 
 
-RECAP_FREQUENCIES = ("daily", "weekly")
+RECAP_FREQUENCIES = ("daily", "weekly", "hourly")
 RECAP_FORMATS = ("markdown", "slack_mrkdwn", "email_markdown")
 RECAP_WEEKDAYS = (
     "monday",
@@ -64,6 +64,8 @@ class RecapProfile:
     topics: tuple[str, ...] = ()
     deliveries: tuple[DeliveryTarget, ...] = ()
     weekly_due_day: str = "monday"
+    interval_hours: int = 1
+    include_urls: bool = False
 
 
 @dataclass(frozen=True)
@@ -125,6 +127,12 @@ class RecapsConfig:
                     f"recap profile '{name}' has unknown weekly_due_day '{weekly_due_day}' "
                     f"(expected one of {RECAP_WEEKDAYS})"
                 )
+            interval_hours = _positive_int(raw.get("interval_hours", 1), f"recap profile '{name}' interval_hours")
+            if frequency == "hourly" and 24 % interval_hours != 0:
+                raise ConfigError(
+                    f"recap profile '{name}' interval_hours must divide 24 for UTC windows"
+                )
+            include_urls = bool(raw.get("include_urls", False))
 
             accounts = tuple(
                 value.lstrip("@").strip().lower()
@@ -157,9 +165,21 @@ class RecapsConfig:
                     topics=topics,
                     deliveries=deliveries,
                     weekly_due_day=weekly_due_day,
+                    interval_hours=interval_hours,
+                    include_urls=include_urls,
                 )
             )
         return cls(profiles=tuple(profiles))
+
+
+def _positive_int(raw: object, label: str) -> int:
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"{label} must be an integer") from exc
+    if value <= 0:
+        raise ConfigError(f"{label} must be positive")
+    return value
 
 
 def _string_list(profile_name: str, field: str, raw: object) -> tuple[str, ...]:
@@ -284,6 +304,92 @@ class AccountsConfig:
             label = str(raw.get("label", "")).strip() or None
             accounts.append(Account(handle=handle, topic=topic, label=label))
         return cls(accounts=tuple(accounts))
+
+
+@dataclass(frozen=True)
+class SearchMonitor:
+    """An X Recent Search monitor that writes raw/searches/<name>/."""
+
+    name: str
+    topic: str
+    query: str
+    label: str | None = None
+    lookback_hours: int = 24
+    max_results: int = 10
+    max_pages: int = 1
+
+
+@dataclass(frozen=True)
+class SearchesConfig:
+    """X keyword/search monitors configured in config/searches.toml."""
+
+    searches: tuple[SearchMonitor, ...]
+
+    @classmethod
+    def load(cls, path: str | Path) -> "SearchesConfig":
+        return cls.from_dict(tomllib.loads(Path(path).read_text()))
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SearchesConfig":
+        raw_searches = data.get("searches", [])
+        if not raw_searches:
+            return cls(searches=())
+        if not isinstance(raw_searches, list):
+            raise ConfigError("searches config must use [[searches]] tables")
+
+        searches: list[SearchMonitor] = []
+        seen: set[str] = set()
+        for raw in raw_searches:
+            if not isinstance(raw, dict):
+                raise ConfigError(f"search config entry must be a table, got {raw!r}")
+            name = str(raw.get("name", "")).strip()
+            topic = str(raw.get("topic", "")).strip()
+            query = str(raw.get("query", "")).strip()
+            if not name:
+                raise ConfigError("search monitor missing name")
+            if not _slug(name):
+                raise ConfigError(
+                    f"search monitor '{name}' must be a lowercase slug with letters, numbers, and hyphens"
+                )
+            if name in seen:
+                raise ConfigError(f"duplicate search monitor '{name}'")
+            seen.add(name)
+            if not topic:
+                raise ConfigError(f"search monitor '{name}' missing topic")
+            if not _slug(topic):
+                raise ConfigError(
+                    f"search monitor '{name}' topic '{topic}' must be a lowercase slug"
+                )
+            if not query:
+                raise ConfigError(f"search monitor '{name}' missing query")
+            lookback_hours = _positive_int(
+                raw.get("lookback_hours", 24),
+                f"search monitor '{name}' lookback_hours",
+            )
+            if lookback_hours > 168:
+                raise ConfigError(
+                    f"search monitor '{name}' lookback_hours cannot exceed Recent Search's 7-day window"
+                )
+            max_results = _positive_int(
+                raw.get("max_results", 10),
+                f"search monitor '{name}' max_results",
+            )
+            if max_results < 10 or max_results > 100:
+                raise ConfigError(f"search monitor '{name}' max_results must be between 10 and 100")
+            max_pages = _positive_int(raw.get("max_pages", 1), f"search monitor '{name}' max_pages")
+            label = str(raw.get("label", "")).strip() or None
+            searches.append(
+                SearchMonitor(
+                    name=name,
+                    topic=topic,
+                    query=query,
+                    label=label,
+                    lookback_hours=lookback_hours,
+                    max_results=max_results,
+                    max_pages=max_pages,
+                )
+            )
+        return cls(searches=tuple(searches))
 
 
 @dataclass(frozen=True)

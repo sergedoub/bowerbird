@@ -1,0 +1,90 @@
+name: search-dump
+
+# X Recent Search monitors -> raw/searches/<monitor>/.
+# This uses the same app-only X_BEARER_TOKEN as account-dump and commits only
+# append-only raw search snapshots. Downstream compile/recap chaining remains
+# workflow_run-based like the other ingest workflows.
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Optional single search monitor to import"
+        required: false
+        type: string
+      max_results:
+        description: "Optional cap for this run"
+        required: false
+        type: string
+      max_pages:
+        description: "Optional page cap for this run"
+        required: false
+        type: string
+      lookback_hours:
+        description: "Optional first-run lookback override"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: search-dump
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check search dump setup
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: |
+          if [ -z "$X_BEARER_TOKEN" ]; then
+            echo "X_BEARER_TOKEN is not configured. Finish setup or set the repository secret before running search-dump." >&2
+            exit 1
+          fi
+
+      - name: Dump configured searches
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          NAME: ${{ github.event.inputs.name || '' }}
+          MAX_RESULTS: ${{ github.event.inputs.max_results || '' }}
+          MAX_PAGES: ${{ github.event.inputs.max_pages || '' }}
+          LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '' }}
+        run: |
+          args=()
+          if [ -n "$NAME" ]; then
+            args+=(--name "$NAME")
+          fi
+          if [ -n "$MAX_RESULTS" ]; then
+            args+=(--max-results "$MAX_RESULTS")
+          fi
+          if [ -n "$MAX_PAGES" ]; then
+            args+=(--max-pages "$MAX_PAGES")
+          fi
+          if [ -n "$LOOKBACK_HOURS" ]; then
+            args+=(--lookback-hours "$LOOKBACK_HOURS")
+          fi
+          python3 bin/dump_search.py "${args[@]}"
+
+      - name: Commit any new raw files
+        run: |
+          if [ -n "$(git status --porcelain raw/searches)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add raw/searches
+            git commit -m "chore: dump new search posts"
+            git push
+          else
+            echo "No new search posts."
+          fi

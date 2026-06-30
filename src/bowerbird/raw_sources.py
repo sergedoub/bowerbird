@@ -58,6 +58,13 @@ RAW_NAMESPACES: dict[str, RawNamespace] = {
         default_source_type="x-post",
         default_provenance="first-party",
     ),
+    "searches": RawNamespace(
+        name="searches",
+        bucket_kind=BUCKET_MAPPED,
+        compile_state=COMPILE_AUTO,
+        default_source_type="x-post",
+        default_provenance="community",
+    ),
     "books": RawNamespace(
         name="books",
         bucket_kind=BUCKET_TOPIC,

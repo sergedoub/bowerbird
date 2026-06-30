@@ -34,8 +34,8 @@ WEEKDAYS = {
 
 @dataclass(frozen=True)
 class RecapWindow:
-    start: dt.date
-    end: dt.date
+    start: dt.date | dt.datetime
+    end: dt.date | dt.datetime
     label: str
 
 
@@ -48,6 +48,7 @@ class SourceNote:
     label: str
     date: str
     text: str
+    url: str = ""
 
 
 @dataclass(frozen=True)
@@ -86,27 +87,60 @@ def label_slug(slug: str) -> str:
     return " ".join(part[:1].upper() + part[1:] for part in slug.split("-"))
 
 
-def window_for(profile: RecapProfile, run_date: dt.date) -> RecapWindow | None:
+def _as_utc_datetime(value: dt.date | dt.datetime) -> dt.datetime:
+    if isinstance(value, dt.datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=dt.UTC)
+        return value.astimezone(dt.UTC)
+    return dt.datetime.combine(value, dt.time.min, tzinfo=dt.UTC)
+
+
+def _as_date(value: dt.date | dt.datetime) -> dt.date:
+    if isinstance(value, dt.datetime):
+        return _as_utc_datetime(value).date()
+    return value
+
+
+def _hourly_label(start: dt.datetime) -> str:
+    return start.strftime("%Y-%m-%dT%H-00Z")
+
+
+def window_for(profile: RecapProfile, run_date: dt.date | dt.datetime) -> RecapWindow | None:
     """Return the calendar window this run should generate for a profile.
 
     `run_date` is the exclusive window end in UTC calendar terms. A daily run on
     2026-06-24 summarizes 2026-06-23. A weekly run due Monday summarizes the
     previous Monday-through-Sunday window.
     """
+    if profile.frequency == "hourly":
+        moment = _as_utc_datetime(run_date)
+        interval = profile.interval_hours
+        hour = (moment.hour // interval) * interval
+        start_dt = moment.replace(hour=hour, minute=0, second=0, microsecond=0)
+        end_dt = start_dt + dt.timedelta(hours=interval)
+        return RecapWindow(start=start_dt, end=end_dt, label=_hourly_label(start_dt))
+
+    run_day = _as_date(run_date)
     if profile.frequency == "daily":
-        start = run_date - dt.timedelta(days=1)
-        return RecapWindow(start=start, end=run_date, label=start.isoformat())
+        start = run_day - dt.timedelta(days=1)
+        return RecapWindow(start=start, end=run_day, label=start.isoformat())
     due_day = WEEKDAYS[profile.weekly_due_day]
-    if run_date.weekday() != due_day:
+    if run_day.weekday() != due_day:
         return None
-    start = run_date - dt.timedelta(days=7)
-    end_label = run_date - dt.timedelta(days=1)
-    return RecapWindow(start=start, end=run_date, label=end_label.isoformat())
+    start = run_day - dt.timedelta(days=7)
+    end_label = run_day - dt.timedelta(days=1)
+    return RecapWindow(start=start, end=run_day, label=end_label.isoformat())
+
+
+def _git_time(value: dt.date | dt.datetime) -> str:
+    if isinstance(value, dt.datetime):
+        return _as_utc_datetime(value).strftime("%Y-%m-%d %H:%M:%S +0000")
+    return f"{value.isoformat()} 00:00:00 +0000"
 
 
 def added_source_paths(repo_root: str | Path, window: RecapWindow) -> list[str]:
-    since = f"{window.start.isoformat()} 00:00:00 +0000"
-    until = f"{window.end.isoformat()} 00:00:00 +0000"
+    since = _git_time(window.start)
+    until = _git_time(window.end)
     out = subprocess.run(
         [
             "git",
@@ -134,6 +168,7 @@ def _note_from_path(path: str, text: str, account_labels: dict[str, str]) -> Sou
     mirror = fm.get("mirror", "")
     date = fm.get("date") or Path(path).name[:10]
     body = strip_frontmatter(text)[:MAX_BODY_CHARS]
+    url = fm.get("url") or fm.get("source_url") or ""
     if mirror.startswith("accounts/"):
         key = mirror.removeprefix("accounts/").strip("/")
         return SourceNote(
@@ -144,6 +179,7 @@ def _note_from_path(path: str, text: str, account_labels: dict[str, str]) -> Sou
             label=account_labels.get(key) or label_slug(key),
             date=date,
             text=body,
+            url=url,
         )
     return SourceNote(
         path=path,
@@ -153,6 +189,7 @@ def _note_from_path(path: str, text: str, account_labels: dict[str, str]) -> Sou
         label=label_slug(topic),
         date=date,
         text=body,
+        url=url,
     )
 
 
@@ -223,10 +260,10 @@ def build_model_prompt(profile: RecapProfile, prompt_text: str, lanes: OrderedDi
             account_lanes += 1
         elif lane["kind"] == "topic":
             topic_lanes += 1
-        note_lines = [
-            f"- [{note.date}] {note.text}"
-            for note in lane["notes"]
-        ]
+        note_lines = []
+        for note in lane["notes"]:
+            url = f" url={note.url}" if profile.include_urls and note.url else ""
+            note_lines.append(f"- [{note.date}]{url} {note.text}")
         digest_parts.append(
             f"### {lane['kind']}: {lane['label']} ({lane['key']}, "
             f"total_new={lane['total_new']})\n" + "\n".join(note_lines)
@@ -283,6 +320,10 @@ def deterministic_body(profile: RecapProfile, _prompt_text: str,
         shown = [_first_signal(note.text) for note in lane["notes"][:2]]
         signals = [value for value in shown if value]
         signal = " ".join(signals) if signals else "New source notes were added."
+        if profile.include_urls:
+            urls = [note.url for note in lane["notes"][:2] if note.url]
+            if urls:
+                signal = f"{signal} " + " ".join(urls)
         lines.append("")
         if slack:
             lines.append(f"*{lane['label']}:* {signal}")
@@ -317,6 +358,7 @@ def _frontmatter(profile: RecapProfile, window: RecapWindow, lanes: OrderedDict[
         f"model_provider: {_yaml_value(model.provider)}",
         f"model: {_yaml_value(model.recap_model_effective)}",
         f"prompt_path: {_yaml_value(profile.prompt_path)}",
+        f"include_urls: {_yaml_value(profile.include_urls)}",
         "totals:",
         f"  source_notes: {len(source_paths)}",
         f"  account_lanes: {len(account_lanes)}",
@@ -418,17 +460,19 @@ def build_recap_artifacts(
     return artifacts
 
 
-def manifest_for(artifacts: list[RecapArtifact], *, run_date: dt.date, generated_at: str) -> dict[str, Any]:
+def manifest_for(artifacts: list[RecapArtifact], *, run_date: dt.date | str, generated_at: str) -> dict[str, Any]:
+    run_label = run_date.isoformat() if hasattr(run_date, "isoformat") else str(run_date)
     return {
         "type": "RecapManifest",
-        "run_date": run_date.isoformat(),
+        "run_date": run_label,
         "generated_at": generated_at,
         "recaps": [artifact.manifest_entry for artifact in artifacts],
     }
 
 
-def manifest_path(run_date: dt.date) -> str:
-    return f"recaps/manifests/{run_date.isoformat()}.json"
+def manifest_path(run_date: dt.date | str) -> str:
+    run_label = run_date.isoformat() if hasattr(run_date, "isoformat") else str(run_date)
+    return f"recaps/manifests/{run_label}.json"
 
 
 REQUIRED_RECAP_KEYS = {

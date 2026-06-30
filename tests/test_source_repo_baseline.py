@@ -6,11 +6,23 @@ the separate bowerbird-demo repository, not in the product source repo.
 import tomllib
 from pathlib import Path
 
-from bowerbird.repo_boundary import SOURCE_REPOSITORY
+import pytest
+
 from bowerbird.config import AccountsConfig, RecapsConfig, TopicsConfig
 from bowerbird.recaps import validate_recap_files
+from bowerbird.repo_boundary import (
+    SOURCE_REPOSITORY,
+    is_source_repository,
+    repository_identity,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+pytestmark = pytest.mark.skipif(
+    not is_source_repository(repository_identity(ROOT)),
+    reason="source-repo baseline checks only apply to the product source checkout",
+)
 
 
 def test_source_repo_has_no_generated_bowerbird_data():

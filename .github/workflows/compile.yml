@@ -9,7 +9,7 @@ name: compile-wiki
 # See docs/compile-runners.md for each runner's credential requirements.
 #
 # Triggers:
-#   - workflow_run: chains automatically after EITHER the bookmarks pull OR the account
+#   - workflow_run: chains automatically after bookmarks pull, account dump, OR search
 #     dump completes (native, no PAT — GITHUB_TOKEN commits don't fire push/dispatch
 #     events, so workflow_run is the way to chain). Both raw roots feed the same wiki,
 #     so either trigger is sufficient to warrant a compile.
@@ -24,7 +24,7 @@ on:
     paths:
       - "raw/**"
   workflow_run:
-    workflows: ["pull-bookmarks", "account-dump"]
+    workflows: ["pull-bookmarks", "account-dump", "search-dump"]
     types: [completed]
 
 permissions:

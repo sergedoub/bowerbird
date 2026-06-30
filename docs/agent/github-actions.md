@@ -1,6 +1,6 @@
 # GitHub Actions
 
-Five workflows live in `.github/workflows/`. Two are cron-triggered content
+Six workflows live in `.github/workflows/`. Three are cron-triggered content
 pipelines, one is the LLM compile step, one writes file-first recaps, and
 `ci.yml` runs the offline test suite + lint on code, docs, and compile-contract
 changes. The pipelines
@@ -14,8 +14,9 @@ infinite loops).
 |------|---------|-----|
 | `pull.yml` | Daily cron `0 23 * * *` + manual | Runs `bin/pull.py` (all configured topics), persists rotated token to `X_TOKENS` via `GH_PAT`, commits new `raw/bookmarks/` files with `GITHUB_TOKEN`. Manual setup dispatch accepts `limit_per_folder=3`; full history requires explicit `import_all=true`. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true` and use forward-only stop-at-existing behavior. |
 | `account-dump.yml` | Daily cron `0 22 * * *` + manual | Runs `bin/dump_account.py --days ${DUMP_WINDOW_DAYS:-3}` for all configured accounts, or a targeted manual import with `handle`/`days` inputs. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. Commits new `raw/accounts/` files with `GITHUB_TOKEN`. |
-| `compile.yml` | `workflow_run` chained from **either** `pull-bookmarks` or `account-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — installs and invokes the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md`, per the contract in `compile/INSTRUCTIONS.md`. Processes declared auto-compile raw namespaces. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
-| `recap.yml` | Daily cron `30 1 * * *`; `workflow_run` from `compile-wiki`; manual | Runs `bin/recap.py`: reads `config/recaps.toml`, generates `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`, commits only `recaps/`, then runs the bundled Slack adapter for manifest-listed Slack deliveries. |
+| `search-dump.yml` | Every 4 hours `0 */4 * * *` + manual | Runs `bin/dump_search.py` for configured X Recent Search monitors in `config/searches.toml`. Uses `X_BEARER_TOKEN`, commits new `raw/searches/` files with `GITHUB_TOKEN`, and keeps per-monitor caps for cost control. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. |
+| `compile.yml` | `workflow_run` chained from `pull-bookmarks`, `account-dump`, or `search-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — installs and invokes the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md`, per the contract in `compile/INSTRUCTIONS.md`. Processes declared auto-compile raw namespaces. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
+| `recap.yml` | Daily cron `30 1 * * *`; `workflow_run` from `compile-wiki`; manual | Runs `bin/recap.py`: reads `config/recaps.toml`, generates due daily/hourly/weekly `recaps/<profile>/<label>.md` and `recaps/manifests/<run-label>.json`, commits only `recaps/`, then runs the bundled Slack adapter for manifest-listed Slack deliveries. |
 | `ci.yml` | push/PR on code, docs, and compile-contract paths + manual | `pytest` + `bin/lint.py`. |
 
 ## Chaining model
@@ -23,13 +24,14 @@ infinite loops).
 ```
 pull-bookmarks  ──┐
                   ├──▶ compile-wiki
-account-dump    ──┘
+account-dump    ──┤
+search-dump     ──┘
 
-recap ──▶ recaps/<profile>/<date>.md
-      └─▶ recaps/manifests/<run-date>.json ──▶ delivery adapters
+recap ──▶ recaps/<profile>/<label>.md
+      └─▶ recaps/manifests/<run-label>.json ──▶ delivery adapters
 ```
 
-Either upstream pipeline completing successfully triggers `compile-wiki`.
+Any upstream ingest pipeline completing successfully triggers `compile-wiki`.
 `recap.yml` can run after a successful compile or on its own schedule. The
 generation step writes files; delivery adapters consume the manifest. Slack
 delivery runs after the commit, so a Slack failure marks delivery unhealthy
@@ -78,6 +80,7 @@ locally.
 |----------|-----------|-------|
 | `pull.yml` | `write` | — (uses `GH_PAT` separately for `X_TOKENS` secret writeback) |
 | `account-dump.yml` | `write` | — |
+| `search-dump.yml` | `write` | — |
 | `compile.yml` | `write` | — |
 | `recap.yml` | `write` | `SLACK_BOT_TOKEN` for bundled Slack delivery |
 
@@ -93,7 +96,7 @@ PAT.
 | Secret | Used by | Notes |
 |--------|---------|-------|
 | `X_TOKENS` | `pull.yml` | JSON dict containing OAuth2 user-context tokens. **Mutable** — `pull.py` rewrites it on every refresh via `GH_PAT`. |
-| `X_BEARER_TOKEN` | `account-dump.yml` | Static app-only Bearer for the timeline endpoint. No rotation. |
+| `X_BEARER_TOKEN` | `account-dump.yml`, `search-dump.yml` | Static app-only Bearer for timeline and Recent Search endpoints. No rotation. |
 | `GH_PAT` | `pull.yml` | Fine-grained PAT scoped to write the `X_TOKENS` repo secret. Required because `GITHUB_TOKEN` cannot write its own repo's secrets. |
 | `OPENAI_API_KEY` | `compile.yml`, `recap.yml` | Credentials when the selected provider is Codex/OpenAI. |
 | `CODEX_ACCESS_TOKEN` | `compile.yml` | Optional Enterprise Codex access token alternative. |
@@ -105,7 +108,7 @@ PAT.
 
 | Variable | Used by | Notes |
 |----------|---------|-------|
-| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml`, `compile.yml`, `recap.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: personal ingest, compile, and recap jobs are skipped, including manual dispatch. |
+| `BOWERBIRD_LIVE_INSTANCE` | `pull.yml`, `account-dump.yml`, `search-dump.yml`, `compile.yml`, `recap.yml` | Set to `true` by setup after required ingest secrets exist. Missing/false means the repo is treated as source/template code: personal ingest, compile, and recap jobs are skipped, including manual dispatch. |
 | `DUMP_WINDOW_DAYS` | `account-dump.yml` | Optional trailing window override; default is 3. |
 | `X_USER_ID` | `pull.yml` | Optional numeric X user id; skips a `/users/me` lookup per pull run. |
 | `COMPILE_RUNNER` / `COMPILE_MODEL` | `compile.yml` | Optional compile runner/model override; `config/models.toml` is preferred for fresh setup. |

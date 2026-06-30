@@ -16,6 +16,9 @@ The path shape is only storage. The namespace registry is the contract:
   the **same** `wiki/<topic>/` tree the bookmarks feed, with `provenance:
   first-party` and a `mirror:` back-pointer so the account's voice shows up naturally
   alongside community sources, with attribution clear.
+- **Search monitors** — `raw/searches/<monitor>/*.md` — posts captured by configured
+  X Recent Search monitors (see `config/searches.toml`). These get distilled into the
+  configured topic for that monitor, with `provenance: community` by default.
 - **Books** — `raw/books/<topic>/*.md` — chapter-level long-form material from
   manually configured Markdown books. Default `provenance: external-expert`.
   Treat each raw book chapter as one source note so fidelity stays high and concepts
@@ -81,6 +84,7 @@ Scan the auto-compile raw roots:
 
 - `raw/bookmarks/<topic>/*.md` — for each topic directory.
 - `raw/accounts/<handle>/*.md` — for each account in `config/accounts.toml`.
+- `raw/searches/<monitor>/*.md` — for each search in `config/searches.toml`.
 - `raw/books/<topic>/*.md` — for each topic directory.
 - `raw/notes/<topic>/*.md` — for each topic directory.
 - `raw/clips/<topic>/*.md` — for each topic directory.
@@ -98,6 +102,11 @@ terse or conversational. Source-note creation is unconditional for account raws.
 If the account is configured to the wrong topic, still compile the raw into the
 configured topic and fix the durable account config separately.
 
+For search raws, the destination topic is given by the monitor's `topic` field in
+`config/searches.toml`. Treat each matched post as a community signal: capture what the
+author said faithfully, do not infer intent beyond the post text, and keep the original
+post URL visible in the source note.
+
 Book raws already live under `raw/books/<topic>/`; compile them into that topic.
 Notes and clips also use their bucket as the destination topic. If the bucket is
 `inbox`, `misc`, `unknown`, or otherwise not a trustworthy topic, do not auto-compile;
@@ -111,6 +120,8 @@ Create `wiki/<topic>/sources/<YYYY-MM-DD>-<short-slug>.md`. The slug:
   handle is conventionally the first slug token when distinctive.
 - **Account mirrors:** **always** include the handle, e.g. `account-one-auto-mode-tip`.
   This makes "everything from this author" greppable.
+- **Search monitors:** include the monitor or author when useful, e.g.
+  `llm-wiki-founder-asks-for-examples`.
 - **Books:** include the author/book/chapter identity, e.g.
   `chris-voss-never-split-difference-ch03-label-it`.
 - **Notes:** derive from the note title or first durable claim.
@@ -126,7 +137,7 @@ url: <source_url from the raw frontmatter>
 date: <the date portion of created_at from raw>
 raw_path: <repo-relative raw path, e.g. raw/notes/claude-code/2026-06-17__agent-loop.md>
 raw_id: <the id from the raw filename, e.g. 2010013060333769098>
-origin: <bookmarks | accounts | books | notes | clips>
+origin: <bookmarks | accounts | searches | books | notes | clips>
 source_type: <x-post | book-chapter | markdown-note | web-clip>
 provenance: <see below>
 topic: <topic>

@@ -27,6 +27,8 @@ def _profile(**overrides):
         "topics": (),
         "deliveries": (DeliveryTarget("slack", "#augur-updates"),),
         "weekly_due_day": "monday",
+        "interval_hours": 1,
+        "include_urls": False,
     }
     values.update(overrides)
     return RecapProfile(**values)
@@ -53,6 +55,19 @@ def test_daily_and_weekly_calendar_windows():
         label="2026-06-07",
     )
     assert window_for(weekly, dt.date(2026, 6, 9)) is None
+
+    hourly = _profile(
+        name="llm-wiki",
+        frequency="hourly",
+        accounts=(),
+        topics=("llm-wiki",),
+        interval_hours=4,
+    )
+    assert window_for(hourly, dt.datetime(2026, 6, 30, 9, 42, tzinfo=dt.UTC)) == RecapWindow(
+        start=dt.datetime(2026, 6, 30, 8, 0, tzinfo=dt.UTC),
+        end=dt.datetime(2026, 6, 30, 12, 0, tzinfo=dt.UTC),
+        label="2026-06-30T08-00Z",
+    )
 
 
 def test_load_source_notes_and_selectors_split_accounts_from_topics():
@@ -166,6 +181,37 @@ Account One shipped a coding-agent update.
     assert "Use one tight line per lane" in artifact.content
     assert "compact footer with total counts" in artifact.content
     assert "Do not include source citations or frontmatter." in artifact.content
+
+
+def test_model_prompt_can_include_source_urls():
+    profile = _profile(
+        name="llm-wiki",
+        accounts=(),
+        topics=("llm-wiki",),
+        include_urls=True,
+    )
+    files = {
+        "wiki/llm-wiki/sources/2026-06-30-alice.md": """---
+date: 2026-06-30
+url: https://x.com/alice/status/100
+topic: llm-wiki
+---
+
+Alice asked for LLM wiki examples.
+""",
+    }
+    notes = load_source_notes(list(files), files.__getitem__)
+    artifact = build_recap_artifact(
+        profile,
+        notes,
+        window=RecapWindow(dt.date(2026, 6, 30), dt.date(2026, 7, 1), "2026-06-30"),
+        read_prompt=lambda _path: "Include URLs.",
+        synthesize=lambda p, prompt, lanes, window: build_model_prompt(p, prompt, lanes, window)[1],
+        model=ModelConfig(provider="openai"),
+        generated_at="2026-06-30T00:00:00+00:00",
+    )
+    assert artifact is not None
+    assert "url=https://x.com/alice/status/100" in artifact.content
 
 
 def test_validate_recap_files_checks_frontmatter_and_manifest(tmp_path):

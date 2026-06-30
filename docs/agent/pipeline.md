@@ -6,17 +6,19 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 
 | Module | Purpose |
 |--------|---------|
-| `config.py` | TOML loaders. `TopicsConfig.load(path)` returns `Topic[]` with `folder_ids`. `AccountsConfig.load(path)` returns `Account[]` (each with `handle`, `topic`). Raises `ConfigError` on malformed input. |
+| `config.py` | TOML loaders. `TopicsConfig.load(path)` returns `Topic[]` with `folder_ids`. `AccountsConfig.load(path)` returns `Account[]` (each with `handle`, `topic`). `SearchesConfig.load(path)` returns X Recent Search monitors. Raises `ConfigError` on malformed input. |
 | `models.py` | Dataclasses for raw items, threads, accounts. |
 | `raw_sources.py` | Declared raw namespace registry: bucket semantics, compile lifecycle, default source type/provenance. |
 | `tokens.py` | `TokenStore` wraps a `TokenStorage` (Protocol: `load()`, `save(dict)`). `FileTokenStorage` for local; `TokenStore.get_access_token()` handles expiry + `_refresh()`. The refreshed dict is persisted via `storage.save()` — this is what propagates the rotated refresh token. |
 | `x_client.py` | Low-level X API HTTP (stdlib `urllib`). |
 | `search.py`, `threads.py` | Bookmark fetch and thread reassembly. X-native article bodies are captured by the pull path when the API returns `article.plain_text`. |
 | `timeline.py` | Account timeline fetch (app-only Bearer; no rotation). |
+| `search_dump.py` | X Recent Search fetch (app-only Bearer; no rotation). |
 | `books.py` | Splits configured Markdown books into chapter-level raw files. |
 | `raw_writer.py` | Writes raw markdown files with deterministic names. Idempotent — re-running can't duplicate. |
 | `pull.py` | Library entry point for the bookmark pipeline; orchestrates client → threads → writer. |
 | `account_dump.py` | Library entry point for the account-mirror pipeline. |
+| `searches.py` | Helpers for managing `config/searches.toml`. |
 | `routing.py` | Maps folder ID → topic (for the pull pipeline). |
 | `recaps.py` | Builds file-first recap artifacts and manifests from selected wiki source notes. Pure over injected reads and synthesis. |
 | `recap_llm.py` | Hosted model call edge for recap body generation. Stdlib-only `urllib`; tests inject deterministic synthesis. |
@@ -35,11 +37,13 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 |--------|--------------|
 | `pull.py` | Daily bookmark pull. Reads `config/topics.toml`, fetches new bookmarks from allowlisted folders, reassembles threads, captures linked articles, writes to `raw/bookmarks/<topic>/`. Persists the rotated token via the active `TokenStorage`. |
 | `dump_account.py` | Daily account mirror. Reads `config/accounts.toml`, fetches the trailing window (default 3 days) of each handle's posts + replies, writes to `raw/accounts/<handle>/`. App-only Bearer. |
+| `searches.py` | Adds/lists X Recent Search monitors in `config/searches.toml`. |
+| `dump_search.py` | Scheduled search monitor import. Reads `config/searches.toml`, fetches bounded Recent Search pages, writes to `raw/searches/<monitor>/`. App-only Bearer. |
 | `ingest_book.py` | Manual book ingest. Reads `config/books.toml`, splits one Markdown book by chapter/appendix, writes to `raw/books/<topic>/`. |
 | `dump_all.py` | Archive helper for dumping all bookmark folders plus unsorted bookmarks outside the compile pipeline. |
 | `backfill.py` | One-off backfill — pulls historical bookmarks past the daily window. |
 | `lint.py` | Walks every `wiki/<topic>/` and runs `bowerbird.linter.lint(wiki, repo_root=ROOT)` plus `bowerbird.linter.okf_conformance(wiki)` (the OKF `type` floor), then validates committed recap files/manifests. Exits 0 (prints `provenance and recaps OK`) or 1. |
-| `recap.py` | Runs `bowerbird recap`: reads `config/recaps.toml`, scans git-added `wiki/*/sources/*.md` notes for due calendar windows, writes `recaps/<profile>/<date>.md` and `recaps/manifests/<run-date>.json`. |
+| `recap.py` | Runs `bowerbird recap`: reads `config/recaps.toml`, scans git-added `wiki/*/sources/*.md` notes for due calendar windows, writes `recaps/<profile>/<label>.md` and `recaps/manifests/<run-label>.json`. |
 | `slack_recap.py` | Runs `bowerbird slack-recap`: reads the latest recap manifest, opens manifest-listed recap files, and posts Slack delivery targets with `SLACK_BOT_TOKEN` as the dedicated Bowerbird bot. |
 | `doctor.py` | Checks config, recap file validity, and provenance lint status. Supports `--json` for agents. |
 | `folders.py` | Lists the authenticated user's bookmark folders (names + ids). |
@@ -50,15 +54,15 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 ## End-to-end flow
 
 ```
-[ X bookmarks      ]     [ X account timeline ]     [ Markdown books ]     [ Notes / clips ]
-   │ bin/pull.py            │ bin/dump_account.py       │ bin/ingest_book.py
-   │ (rotating token)       │ (app-only Bearer)          │ (manual local)
-   ▼                        ▼                           ▼
-raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw/{notes,clips}/<topic>/*.md
-        │                         │                         │
-        └──────────┬──────────────┴──────────────┬──────────┘
+[ X bookmarks      ] [ X account timeline ] [ X Recent Search ] [ Markdown books ] [ Notes / clips ]
+   │ bin/pull.py        │ bin/dump_account.py  │ bin/dump_search.py │ bin/ingest_book.py
+   │ (rotating token)   │ (app-only Bearer)     │ (app-only Bearer)  │ (manual local)
+   ▼                    ▼                       ▼                  ▼
+raw/bookmarks/<topic> raw/accounts/<handle> raw/searches/<monitor> raw/books/<topic> raw/{notes,clips}/<topic>
+        │                         │                 │               │
+        └──────────┬──────────────┴─────────────────┴───────────────┘
                    │ workflow_run chain
-                   │ (either pull-bookmarks OR account-dump triggers compile)
+                   │ (pull-bookmarks, account-dump, or search-dump triggers compile)
                    ▼
           .github/workflows/compile.yml
           └─► bin/compile.sh (agent CLI selected by COMPILE_RUNNER:
@@ -76,12 +80,12 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
               │ exit 1 → fail the run
               ▼
           .github/workflows/recap.yml
-          (daily or after compile: bin/recap.py groups new wiki
+          (daily, hourly, weekly, or after compile: bin/recap.py groups new wiki
            source notes into configured account and topic lanes)
               │
               ▼
-          recaps/<profile>/<date>.md
-          recaps/manifests/<run-date>.json
+          recaps/<profile>/<label>.md
+          recaps/manifests/<run-label>.json
               │
               ▼
           delivery adapters
@@ -92,12 +96,13 @@ raw/bookmarks/<topic>/*.md raw/accounts/<handle>/*.md raw/books/<topic>/*.md raw
 
 - **Raw bookmark file:** `raw/bookmarks/<topic>/<YYYY-MM-DD>__<tweet-id>.md`. The id after `__` is the dedup key.
 - **Raw account post file:** `raw/accounts/<handle>/<YYYY-MM-DD>__<tweet-id>.md`. Same shape.
+- **Raw search post file:** `raw/searches/<monitor>/<YYYY-MM-DD>__<tweet-id>.md`. Same shape; the monitor maps to a topic through `config/searches.toml`.
 - **Raw book chapter file:** `raw/books/<topic>/<YYYY-MM-DD>__<book-id>-chNN.md`. Appendix sections use `<book-id>-appendix`.
 - **Raw file:** `raw/<namespace>/<bucket>/<YYYY-MM-DD>__<id>.md`. Namespace rules live in `src/bowerbird/raw_sources.py`; bucket is usually the topic, except namespaces such as `accounts` where the bucket is resolved through config.
 - **Wiki source note:** `wiki/<topic>/sources/<YYYY-MM-DD>-<short-slug>.md`. Frontmatter `raw_path` points to the raw file and `raw_id` keeps the local dedup key. Account-mirror source notes additionally carry `provenance: first-party` and a `mirror: accounts/<handle>` back-pointer.
 - **Wiki concept article:** `wiki/<topic>/concepts/<theme-slug>.md`. Carries `type: Concept`; cites sources via relative markdown links, `[label](../sources/<source-stem>.md)`.
-- **Recap file:** `recaps/<profile>/<YYYY-MM-DD>.md`. Carries `type: Recap` frontmatter with profile, window, selected lanes, source note paths, totals, prompt, model/provider, timestamp, and delivery targets.
-- **Recap manifest:** `recaps/manifests/<run-date>.json`. Runtime-agnostic delivery handoff listing generated recap files and non-secret targets.
+- **Recap file:** `recaps/<profile>/<label>.md`. Daily and weekly labels are dates; hourly labels are UTC windows such as `YYYY-MM-DDTHH-00Z`. Carries `type: Recap` frontmatter with profile, window, selected lanes, source note paths, totals, prompt, model/provider, timestamp, and delivery targets.
+- **Recap manifest:** `recaps/manifests/<run-label>.json`. Runtime-agnostic delivery handoff listing generated recap files and non-secret targets.
 
 These are not just conventions — the linter and the compile step depend on them. Don't rename files mechanically; the `raw_path` / `raw_id` glue is what makes the system idempotent.
 
@@ -121,6 +126,28 @@ Use `bowerbird accounts add <handle> --topic <topic>` for normal account
 adds. For a targeted first import, dispatch
 `gh workflow run account-dump.yml -f handle=<handle> -f days=3`; the workflow
 commits new `raw/accounts/<handle>/` files and chains `compile-wiki`.
+
+## Searches config (`config/searches.toml`)
+
+Each configured X Recent Search monitor is a `[[searches]]` table:
+
+```toml
+[[searches]]
+name = "llm-wiki"
+topic = "llm-wiki"
+query = '"llm wiki" lang:en -is:retweet -is:reply'
+lookback_hours = 24
+max_results = 10
+max_pages = 1
+```
+
+`name` becomes the raw bucket under `raw/searches/<name>/`. `topic` is where compile
+files the resulting source notes. `query` is passed to X Recent Search as-is. The caps
+bound cost and attention; if a response still has `next_token` after `max_pages`, the run
+warns that the monitor saturated and keeps the newest captured posts.
+
+Use `bowerbird searches add <name> --topic <topic> --query '<query>'` to add a monitor,
+then dispatch `search-dump.yml` or run `python3 bin/dump_search.py --name <name>`.
 
 ## Books config (`config/books.toml`)
 

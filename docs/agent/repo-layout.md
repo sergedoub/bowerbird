@@ -19,7 +19,7 @@
 | `raw/<namespace>/<bucket>/` | Sacred append-only raw inputs. Namespace semantics and compile eligibility are declared in `src/bowerbird/raw_sources.py`. Generated raw files belong in an installed fork or separate data repo. |
 | `wiki/index.md` | Bundle-root index of the OKF v0.1 bundle; declares `okf_version: "0.1"`. |
 | `wiki/<topic>/` | Compiled topic wiki: sources, concepts, and index. A topic subtree of the OKF bundle rooted at `wiki/`; generated wiki files belong in an installed fork or separate data repo. |
-| `.github/workflows/` | Five workflows (four pipeline + ci) — see [github-actions](github-actions.md). |
+| `.github/workflows/` | Pipeline workflows plus ci — see [github-actions](github-actions.md). |
 | `docs/*.md` | Public human-facing docs: setup, architecture, X imports, compile runners, recap, upgrading. |
 | `docs/agent/` | This agent-facing documentation set (you are here). |
 | `llms.txt` | Index for the agent-facing docs. |
@@ -34,6 +34,9 @@ raw/
 ├── accounts/
 │   └── account_one/
 │       └── <YYYY-MM-DD>__<id>.md     # verbatim account mirror content
+├── searches/
+│   └── llm-wiki/
+│       └── <YYYY-MM-DD>__<id>.md     # verbatim X Recent Search match
 ├── books/
 │   └── negotiation/
 │       └── <YYYY-MM-DD>__<book-id>-chNN.md  # verbatim book chapter content
@@ -57,9 +60,10 @@ wiki/                                 # OKF v0.1 bundle root
 ```
 
 - **`raw/`** is **append-only**. Never edit or delete files here; the compile step depends on `raw_path` stability for idempotency.
-- **Declared namespaces only:** `src/bowerbird/raw_sources.py` declares the namespaces the compiler and linter understand. `bookmarks`, `accounts`, `books`, `notes`, and `clips` are auto-compile eligible. `pdfs` are review-gated. `chats` are snapshot-only. Unknown `raw/*` paths must fail closed instead of being compiled by convention.
+- **Declared namespaces only:** `src/bowerbird/raw_sources.py` declares the namespaces the compiler and linter understand. `bookmarks`, `accounts`, `searches`, `books`, `notes`, and `clips` are auto-compile eligible. `pdfs` are review-gated. `chats` are snapshot-only. Unknown `raw/*` paths must fail closed instead of being compiled by convention.
 - **`wiki/`** is owned by the compile step and is a native **OKF v0.1 bundle**: every note carries a `type`, citations are relative markdown links, and `index.md` files are frontmatter-free except the bundle-root `wiki/index.md` (which declares `okf_version`). Manual edits are fine but must keep `bin/lint.py` green.
 - Account-mirror source notes land in `wiki/<topic>/sources/` alongside bookmark sources, distinguished by `provenance: first-party` and a logical `mirror: accounts/<handle>` back-pointer.
+- Search source notes land in the topic configured for the monitor in `config/searches.toml`, distinguished by `origin: searches` and `provenance: community`.
 - Book-chapter source notes also land in `wiki/<topic>/sources/`, with `source_type: book-chapter` so the linter resolves their `raw_id` under `raw/books/<topic>/`.
 - Notes and clips use their bucket as the destination topic and carry `source_type: markdown-note` or `source_type: web-clip`.
 
@@ -116,10 +120,29 @@ destination = "#bowerbird-recaps"
 ```
 
 Presence of a profile means enabled. A profile selects account and/or topic
-lanes from compiled `wiki/*/sources/*.md` notes, chooses `daily` or `weekly`
-calendar windows, points at a prompt under `compile/recaps/`, and lists
+lanes from compiled `wiki/*/sources/*.md` notes, chooses `daily`, `hourly`, or `weekly`
+UTC windows, points at a prompt under `compile/recaps/`, and lists
 non-secret delivery targets. `bowerbird recap` writes generated files under
 `recaps/<profile>/` plus `recaps/manifests/`.
+
+Hourly profiles set `interval_hours` to a divisor of 24 for stable UTC windows.
+Set `include_urls = true` when the recap prompt needs clickable source URLs.
+
+### `config/searches.toml`
+
+```toml
+[[searches]]
+name = "llm-wiki"
+topic = "llm-wiki"
+query = '"llm wiki" lang:en -is:retweet -is:reply'
+lookback_hours = 24
+max_results = 10
+max_pages = 1
+```
+
+Search monitor config is optional and not shipped as an active source-repo sample.
+`name` becomes the raw bucket under `raw/searches/<name>/`; `topic` controls where
+compile files the source notes. `query` is a literal X Recent Search query.
 
 ### `config/books.toml`
 

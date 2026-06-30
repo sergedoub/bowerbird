@@ -159,6 +159,19 @@ def test_raw_path_resolves_generic_note_source(tmp_path):
     assert lint(wiki, repo_root=root) == []
 
 
+def test_raw_path_resolves_search_source(tmp_path):
+    root, wiki = _repo(tmp_path, raws=[])
+    raw = root / "raw" / "searches" / "llm-wiki"
+    raw.mkdir(parents=True)
+    (raw / "2026-06-30__100.md").write_text("raw body")
+    (wiki / "sources" / "search.md").write_text(
+        "---\nauthor: '@alice'\nurl: https://x.com/alice/status/100\ndate: 2026-06-30\n"
+        "raw_path: raw/searches/llm-wiki/2026-06-30__100.md\n---\nbody\n"
+    )
+    (wiki / "concepts" / "c.md").write_text("[[search]]\n")
+    assert lint(wiki, repo_root=root) == []
+
+
 def test_raw_path_missing_file_is_flagged(tmp_path):
     root, wiki = _repo(tmp_path, raws=[])
     (wiki / "sources" / "note.md").write_text(

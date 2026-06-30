@@ -1,7 +1,14 @@
 """TopicsConfig + TopicRouter: validation and folder->topic routing."""
 import pytest
 
-from bowerbird.config import AccountsConfig, BooksConfig, ConfigError, RecapsConfig, TopicsConfig
+from bowerbird.config import (
+    AccountsConfig,
+    BooksConfig,
+    ConfigError,
+    RecapsConfig,
+    SearchesConfig,
+    TopicsConfig,
+)
 from bowerbird.routing import TopicRouter
 
 
@@ -149,6 +156,22 @@ def test_recaps_config_supports_weekly_topic_profiles():
     assert profile.deliveries == ()
 
 
+def test_recaps_config_supports_hourly_interval_profiles():
+    cfg = RecapsConfig.from_dict({"recaps": [{
+        "name": "llm-wiki",
+        "frequency": "hourly",
+        "interval_hours": 4,
+        "topics": ["llm-wiki"],
+        "prompt": "compile/recaps/llm-wiki.md",
+        "format": "slack_mrkdwn",
+        "include_urls": True,
+    }]})
+    profile = cfg.profiles[0]
+    assert profile.frequency == "hourly"
+    assert profile.interval_hours == 4
+    assert profile.include_urls is True
+
+
 def test_recaps_config_rejects_bad_profiles():
     assert RecapsConfig.from_dict({}).profiles == ()
     with pytest.raises(ConfigError, match="lowercase slug"):
@@ -161,7 +184,15 @@ def test_recaps_config_rejects_bad_profiles():
     with pytest.raises(ConfigError, match="unknown frequency"):
         RecapsConfig.from_dict({"recaps": [{
             "name": "marketing",
+            "frequency": "minutely",
+            "topics": ["marketing"],
+            "prompt": "compile/recaps/default.md",
+        }]})
+    with pytest.raises(ConfigError, match="divide 24"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
             "frequency": "hourly",
+            "interval_hours": 5,
             "topics": ["marketing"],
             "prompt": "compile/recaps/default.md",
         }]})
@@ -177,4 +208,43 @@ def test_recaps_config_rejects_bad_profiles():
             "name": "marketing",
             "frequency": "daily",
             "prompt": "compile/recaps/default.md",
+        }]})
+
+
+def test_searches_config_loads_monitors():
+    cfg = SearchesConfig.from_dict({"searches": [{
+        "name": "llm-wiki",
+        "topic": "llm-wiki",
+        "query": '"llm wiki" lang:en -is:retweet -is:reply',
+        "label": "llm wiki",
+        "lookback_hours": 24,
+        "max_results": 10,
+        "max_pages": 1,
+    }]})
+    monitor = cfg.searches[0]
+    assert monitor.name == "llm-wiki"
+    assert monitor.topic == "llm-wiki"
+    assert monitor.max_results == 10
+    assert monitor.max_pages == 1
+
+
+def test_searches_config_rejects_bad_monitors():
+    assert SearchesConfig.from_dict({}).searches == ()
+    with pytest.raises(ConfigError, match="lowercase slug"):
+        SearchesConfig.from_dict({"searches": [{
+            "name": "LLM Wiki",
+            "topic": "llm-wiki",
+            "query": '"llm wiki"',
+        }]})
+    with pytest.raises(ConfigError, match="missing query"):
+        SearchesConfig.from_dict({"searches": [{
+            "name": "llm-wiki",
+            "topic": "llm-wiki",
+        }]})
+    with pytest.raises(ConfigError, match="between 10 and 100"):
+        SearchesConfig.from_dict({"searches": [{
+            "name": "llm-wiki",
+            "topic": "llm-wiki",
+            "query": '"llm wiki"',
+            "max_results": 5,
         }]})

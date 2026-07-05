@@ -70,7 +70,11 @@ class ModelConfig:
 
     @property
     def compile_model_effective(self) -> str:
-        return self.compile_model.strip() or self.model.strip()
+        return (
+            self.compile_model.strip()
+            or self.model.strip()
+            or provider_for(self.provider).default_model
+        )
 
     @property
     def recap_model_effective(self) -> str:

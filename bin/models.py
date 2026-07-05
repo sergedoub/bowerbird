@@ -75,9 +75,8 @@ def main() -> None:
     print(f"  provider:       {provider.label} ({provider.key})")
     print(f"  compile runner: {provider.compile_runner}")
     print(f"  model override: {updated.model or '(provider default)'}")
-    if updated.compile_model or updated.recap_model:
-        print(f"  compile model:  {updated.compile_model or updated.model or '(provider default)'}")
-        print(f"  recap model:    {updated.recap_model or updated.model or provider.default_model}")
+    print(f"  compile model:  {updated.compile_model_effective}")
+    print(f"  recap model:    {updated.recap_model_effective}")
     print(f"  API key secret: {provider.api_key_name}")
     print(f"  key page:       {provider.api_key_url}")
     print()

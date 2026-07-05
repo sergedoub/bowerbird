@@ -27,6 +27,13 @@ def test_model_config_round_trips():
     assert parsed.recap_model_effective == "gpt-5.4"
 
 
+def test_compile_model_uses_provider_default_when_unset():
+    parsed = parse_model_config('[model]\nprovider = "openai"\n')
+
+    assert parsed.compile_model_effective == "gpt-5.4-mini"
+    assert parsed.recap_model_effective == "gpt-5.4-mini"
+
+
 def test_parse_rejects_split_compile_and_recap_providers():
     with pytest.raises(ValueError, match="recap provider"):
         parse_model_config(

@@ -15,7 +15,7 @@ infinite loops).
 | `pull.yml` | Daily cron `0 23 * * *` + manual | Runs `bin/pull.py` (all configured topics), persists rotated token to `X_TOKENS` via `GH_PAT`, commits new `raw/bookmarks/` files with `GITHUB_TOKEN`. Manual setup dispatch accepts `limit_per_folder=3`; full history requires explicit `import_all=true`. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true` and use forward-only stop-at-existing behavior. |
 | `account-dump.yml` | Daily cron `0 22 * * *` + manual | Runs `bin/dump_account.py --days ${DUMP_WINDOW_DAYS:-3}` for all configured accounts, or a targeted manual import with `handle`/`days` inputs. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. Commits new `raw/accounts/` files with `GITHUB_TOKEN`. |
 | `search-dump.yml` | Every 4 hours `0 */4 * * *` + manual | Runs `bin/dump_search.py` for configured X Recent Search monitors in `config/searches.toml`. Uses `X_BEARER_TOKEN`, commits new `raw/searches/` files with `GITHUB_TOKEN`, and keeps per-monitor caps for cost control. Scheduled runs require `BOWERBIRD_LIVE_INSTANCE=true`. |
-| `compile.yml` | `workflow_run` chained from `pull-bookmarks`, `account-dump`, or `search-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — installs and invokes the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md`, per the contract in `compile/INSTRUCTIONS.md`. Processes declared auto-compile raw namespaces. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
+| `compile.yml` | `workflow_run` chained from `pull-bookmarks`, `account-dump`, or `search-dump` (on success); `push` to `raw/**`; manual | Runs `bin/compile.sh` — first builds a deterministic manifest of uncompiled declared raw paths and relevant topic files. Empty manifests exit before any LLM login/install. Nonempty manifests invoke the agent CLI selected by `config/models.toml` or the `COMPILE_RUNNER` repo variable (codex \| claude \| gemini) headlessly with `compile/PROMPT.md` plus the manifest, per the contract in `compile/INSTRUCTIONS.md`. Runs `bin/lint.py` as guardrail. Commits `wiki/` updates. See `docs/compile-runners.md`. |
 | `recap.yml` | Daily cron `30 1 * * *`; `workflow_run` from `compile-wiki`; manual | Runs `bin/recap.py`: reads `config/recaps.toml`, generates due daily/hourly/weekly `recaps/<profile>/<label>.md` and `recaps/manifests/<run-label>.json`, commits only `recaps/`, then runs the bundled Slack adapter for manifest-listed Slack deliveries. |
 | `ci.yml` | push/PR on code, docs, and compile-contract paths + manual | `pytest` + `bin/lint.py`. |
 
@@ -32,6 +32,8 @@ recap ──▶ recaps/<profile>/<label>.md
 ```
 
 Any upstream ingest pipeline completing successfully triggers `compile-wiki`.
+The compile job still runs its deterministic manifest precheck, so an upstream
+job that found no new declared raw work does not spend model tokens.
 `recap.yml` can run after a successful compile or on its own schedule. The
 generation step writes files; delivery adapters consume the manifest. Slack
 delivery runs after the commit, so a Slack failure marks delivery unhealthy
@@ -116,7 +118,7 @@ PAT.
 ## Operational gotchas
 
 - A failed `pull.py` that fetched a new refresh token but crashed before persisting it **locks out future runs**. The workflow is structured so that persistence happens immediately after refresh; don't reorder.
-- `compile.yml` has a `push:` trigger for `raw/**` so human/PAT-pushed notes and clips compile once `BOWERBIRD_LIVE_INSTANCE=true`. GITHUB_TOKEN commits from upstream workflows still do not fire push events, so the X pipelines continue to chain through `workflow_run`.
+- `compile.yml` has a `push:` trigger for `raw/**` so human/PAT-pushed notes and clips compile once `BOWERBIRD_LIVE_INSTANCE=true`. GITHUB_TOKEN commits from upstream workflows still do not fire push events, so the X pipelines continue to chain through `workflow_run`. In both cases, `bin/compile_manifest.py` limits the LLM run to uncompiled raw paths and same-topic context.
 - If `bin/lint.py` exits 1 inside compile, the LLM's commits do not ship and the workflow fails — read the run log to see which `Violation` kinds fired (`missing_frontmatter`, `uncited_concept`, `broken_link`, `missing_raw`).
 - Renaming any workflow breaks the `workflow_run` chain (it matches by `workflows: ["pull-bookmarks"]` etc.). Update both the producer name and every consumer's `workflows:` array together.
 - GitHub Actions generate recap files. If Slack delivery changes, inspect the

@@ -78,6 +78,23 @@ obviously editorial (e.g. a short framing sentence), never a substantive claim.
 
 ## What to do each run
 
+### 0. Respect the compile manifest when present
+
+Most automated runs include a `BOWERBIRD COMPILE MANIFEST` appended to the
+prompt. Treat it as the authoritative work scope for that run:
+
+- Process every path listed under `new_raw`.
+- Use each item's `topic`, `namespace`, `source_type`, and `provenance` fields
+  instead of rediscovering routing from scratch.
+- You may inspect the listed `relevant_files` and bounded
+  `existing_source_paths` sample for the same topic so you can merge claims into
+  the right source, concept, and index files.
+- Do not rescan `raw/` looking for additional work.
+- Do not open unrelated wiki topics unless `bin/lint.py` reports a violation
+  that requires a cross-topic fix.
+
+If no manifest is provided, use the fallback scan rules below.
+
 ### 1. Find uncompiled raw items
 
 Scan the auto-compile raw roots:

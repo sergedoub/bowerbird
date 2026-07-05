@@ -4,11 +4,15 @@ The compile step — the LLM that turns `raw/` files into `wiki/` notes — is
 pluggable. The job it performs is agent-agnostic:
 
 1. Run a coding agent headlessly inside the repo checkout.
-2. Give it `compile/PROMPT.md` as the task (which points at the full contract
-   in `compile/INSTRUCTIONS.md`).
-3. The agent reads new raw files, writes wiki source notes and concept
+2. Build a deterministic manifest of uncompiled raw paths plus relevant topic
+   files.
+3. If that manifest is empty, exit before installing or logging into an agent
+   CLI.
+4. Give the agent `compile/PROMPT.md` plus the manifest as the task (the prompt
+   points at the full contract in `compile/INSTRUCTIONS.md`).
+5. The agent reads the manifest-scoped raw files, writes wiki source notes and concept
    articles, and leaves its edits in the working tree.
-4. `bin/lint.py` gates the result: the commit only ships if every claim cites
+6. `bin/lint.py` gates the result: the commit only ships if every claim cites
    a source and every link resolves — no matter which agent ran.
 
 ## Choosing a runner
@@ -48,6 +52,9 @@ updated `wiki/` files for any uncompiled raw items, and lint prints
 `provenance and recaps OK`. This is an instance-only command: `bin/compile.sh`
 refuses to run when the checkout resolves to the public source repo
 `sergedoub/bowerbird`.
+
+Use `python3 bin/compile_manifest.py --count` first when you only want to check
+whether a smoke test would invoke a model.
 
 ## Adding a runner
 

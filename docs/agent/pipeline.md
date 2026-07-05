@@ -15,6 +15,7 @@ End-to-end flow from raw inputs to cited wiki concepts. Declared raw namespaces,
 | `timeline.py` | Account timeline fetch (app-only Bearer; no rotation). |
 | `search_dump.py` | X Recent Search fetch (app-only Bearer; no rotation). |
 | `books.py` | Splits configured Markdown books into chapter-level raw files. |
+| `compile_plan.py` | Deterministic compile preflight. Finds uncompiled declared raw items, resolves their destination topics, and emits the bounded manifest passed to the LLM runner. |
 | `raw_writer.py` | Writes raw markdown files with deterministic names. Idempotent — re-running can't duplicate. |
 | `pull.py` | Library entry point for the bookmark pipeline; orchestrates client → threads → writer. |
 | `account_dump.py` | Library entry point for the account-mirror pipeline. |
@@ -40,6 +41,7 @@ All `bin/*.py` are stdlib-only CLI scripts. Run them with `python3 bin/<name>.py
 | `searches.py` | Adds/lists X Recent Search monitors in `config/searches.toml`. |
 | `dump_search.py` | Scheduled search monitor import. Reads `config/searches.toml`, fetches bounded Recent Search pages, writes to `raw/searches/<monitor>/`. App-only Bearer. |
 | `ingest_book.py` | Manual book ingest. Reads `config/books.toml`, splits one Markdown book by chapter/appendix, writes to `raw/books/<topic>/`. |
+| `compile_manifest.py` | Prints the compile manifest, prompt block, or uncompiled count. Used by `compile.sh` to skip zero-work runs and scope nonzero LLM runs. |
 | `dump_all.py` | Archive helper for dumping all bookmark folders plus unsorted bookmarks outside the compile pipeline. |
 | `backfill.py` | One-off backfill — pulls historical bookmarks past the daily window. |
 | `lint.py` | Walks every `wiki/<topic>/` and runs `bowerbird.linter.lint(wiki, repo_root=ROOT)` plus `bowerbird.linter.okf_conformance(wiki)` (the OKF `type` floor), then validates committed recap files/manifests. Exits 0 (prints `provenance and recaps OK`) or 1. |
@@ -65,11 +67,13 @@ raw/bookmarks/<topic> raw/accounts/<handle> raw/searches/<monitor> raw/books/<to
                    │ (pull-bookmarks, account-dump, or search-dump triggers compile)
                    ▼
           .github/workflows/compile.yml
-          └─► bin/compile.sh (agent CLI selected by COMPILE_RUNNER:
-              codex | claude | gemini)
+          └─► bin/compile.sh
+              builds a deterministic compile manifest
+              skips before LLM login/install when there is no work
+              invokes the agent CLI selected by COMPILE_RUNNER:
+              codex | claude | gemini
               reads compile/PROMPT.md -> compile/INSTRUCTIONS.md
-              scans all raw roots:
-                declared auto-compile raw namespaces
+              passes only uncompiled raw paths plus relevant topic files
               writes wiki/sources/*.md
               updates wiki/concepts/*.md
               regenerates wiki/index.md
@@ -173,7 +177,8 @@ source with strict provenance.
 
 Every step is restartable:
 - `raw_writer` checks file existence by deterministic name before writing.
-- `compile` scans declared auto-compile raw namespaces, then skips any path already referenced as `raw_path` in a `wiki/sources/*.md`.
+- `compile_manifest` scans declared auto-compile raw namespaces deterministically, then skips any path already referenced as `raw_path` in a `wiki/sources/*.md`.
+- `compile.sh` exits before the LLM runner when the manifest has zero uncompiled raw items.
 - `ingest_book` writes deterministic chapter ids, so re-running the same book skips existing raw chapter files.
 - `lint` is a pure function over the filesystem state.
 

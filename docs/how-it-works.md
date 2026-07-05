@@ -32,8 +32,9 @@ raw/bookmarks/<topic>/  raw/accounts/<handle>/   raw/<namespace>/<bucket>/
                  |
                  v
         .github/workflows/compile.yml
-        bin/compile.sh runs the agent CLI selected by COMPILE_RUNNER
-        (codex | claude | gemini) against compile/INSTRUCTIONS.md
+        bin/compile_manifest.py builds a bounded work plan
+        bin/compile.sh runs the selected agent CLI
+        (codex | claude | gemini) against that manifest + compile/INSTRUCTIONS.md
                  |
                  v
         wiki/<topic>/sources/
@@ -141,8 +142,21 @@ bypass `raw/` or write directly to `wiki/`.
 ## Compile
 
 The compile step is intentionally separate from ingestion. It scans declared,
-compile-eligible raw namespaces, skips any raw path that already appears in a
-wiki source note, and writes:
+compile-eligible raw namespaces with deterministic code before any LLM is
+started, skips any raw path that already appears in a wiki source note, and
+builds a manifest containing only:
+
+- uncompiled raw paths.
+- destination topics.
+- existing topic index and concept paths, plus a bounded same-topic source path
+  sample relevant to those items.
+
+If the manifest is empty, the workflow exits before installing or logging into
+an agent CLI. If it contains work, `bin/compile.sh` appends the manifest to the
+compile prompt and instructs the agent to use it as the authoritative scope
+rather than rescanning all of `raw/`.
+
+The agent then writes:
 
 - `wiki/<topic>/sources/<date>-<slug>.md`: faithful source notes.
 - `wiki/<topic>/concepts/<theme>.md`: synthesized concept pages.
@@ -152,8 +166,9 @@ The contract lives in `compile/INSTRUCTIONS.md`. The key rule is that every
 substantive wiki claim must cite a source note — written as a relative markdown link
 into `sources/`, which doubles as the OKF graph edge between concept and source.
 
-`python3 bin/lint.py` enforces the provenance rules before wiki changes are
-committed.
+`python3 bin/lint.py` still runs over the whole wiki before changes are
+committed. The manifest bounds the model context; the linter remains the global
+provenance guardrail.
 
 ## Recap
 

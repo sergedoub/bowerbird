@@ -18,6 +18,13 @@ cd "$ROOT"
 
 PYTHONPATH=src python3 -m bowerbird.repo_boundary "compile raw into wiki" --repo-root "$ROOT"
 
+NEW_RAW_COUNT="$(PYTHONPATH=src python3 bin/compile_manifest.py --count)"
+echo "compile manifest: $NEW_RAW_COUNT uncompiled raw item(s)"
+if [ "$NEW_RAW_COUNT" = "0" ]; then
+  echo "No uncompiled raw items; skipping LLM compile."
+  exit 0
+fi
+
 CONFIG_RUNNER="$(PYTHONPATH=src python3 - <<'PY'
 from pathlib import Path
 try:
@@ -50,6 +57,9 @@ if [ -z "$RUNNER" ]; then
 fi
 
 echo "compile runner: $RUNNER"
+SCOPE_PROMPT="$(PYTHONPATH=src python3 bin/compile_manifest.py --prompt)"
+PROMPT="${PROMPT}
+${SCOPE_PROMPT}"
 
 case "$RUNNER" in
   claude)

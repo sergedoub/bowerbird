@@ -26,6 +26,7 @@ from bowerbird.secrets_push import (                             # noqa: E402
     LIVE_INSTANCE_VARIABLE,
     push_secrets,
 )
+from bowerbird.github_secrets import set_github_secret           # noqa: E402
 from bowerbird.repo_boundary import (                             # noqa: E402
     BoundaryError,
     require_instance_repository,
@@ -60,11 +61,7 @@ def origin_repo() -> str:
 
 
 def set_secret(repo: str, name: str, value: str) -> bool:
-    cmd = ["gh", "secret", "set", name]
-    if repo:
-        cmd += ["--repo", repo]
-    proc = subprocess.run(cmd, cwd=ROOT,
-                          input=value.encode(), capture_output=True)
+    proc = set_github_secret(name, value, cwd=ROOT, repo=repo)
     if proc.returncode != 0:
         sys.stderr.write(f"  gh failed for {name}: {proc.stderr.decode().strip()}\n")
     return proc.returncode == 0

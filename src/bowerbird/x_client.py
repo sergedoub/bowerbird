@@ -33,7 +33,8 @@ class XBookmarkClient:
             url += "?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(url, method="GET")
         req.add_header("Authorization", f"Bearer {self._tokens.get_access_token()}")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # URL is rooted at the fixed HTTPS X API_BASE.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             return json.load(resp)
 
     def folders(self) -> list[dict]:

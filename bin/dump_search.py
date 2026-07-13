@@ -36,14 +36,9 @@ def main() -> None:
     parser.add_argument("--lookback-hours", type=int, help="override first-run lookback")
     args = parser.parse_args()
 
-    load_local_env()
-    bearer = os.environ.get("X_BEARER_TOKEN")
-    if not bearer:
-        sys.exit("X_BEARER_TOKEN not set (GitHub secret, or bin/.env locally).")
-
     try:
         cfg = SearchesConfig.load(os.path.join(ROOT, "config", "searches.toml"))
-    except (FileNotFoundError, ConfigError) as exc:
+    except ConfigError as exc:
         sys.exit(f"search config error: {exc}")
     monitors = [m for m in cfg.searches if (not args.name or m.name == args.name)]
     if not monitors:
@@ -51,6 +46,11 @@ def main() -> None:
             sys.exit(f"search monitor '{args.name}' not in config/searches.toml")
         print("No searches configured in config/searches.toml.")
         return
+
+    load_local_env()
+    bearer = os.environ.get("X_BEARER_TOKEN")
+    if not bearer:
+        sys.exit("X_BEARER_TOKEN not set (GitHub secret, or bin/.env locally).")
 
     client = RecentSearchClient(bearer)
     writer = RawWriter(os.path.join(ROOT, "raw"))

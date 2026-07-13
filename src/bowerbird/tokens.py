@@ -62,7 +62,8 @@ def _http_token_poster(client_id: str, client_secret: str | None) -> Callable[[d
         if client_secret:
             basic = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
             req.add_header("Authorization", f"Basic {basic}")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # TOKEN_URL is a fixed HTTPS X API endpoint.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             return json.load(resp)
 
     return post

@@ -1,5 +1,9 @@
 # Bowerbird
 
+[![CI](https://github.com/sergedoub/bowerbird/actions/workflows/ci.yml/badge.svg)](https://github.com/sergedoub/bowerbird/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **TL;DR:** simple personal knowledge automations built on Karpathy's [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f),
 Google's new [Open Knowledge Format](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing), and content ingestion from X and other
 sources. Curated, fresh context your agents can use.

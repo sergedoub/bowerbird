@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/sergedoub/bowerbird/security/advisories/new
+    about: Report suspected vulnerabilities privately; do not open a public issue.
+  - name: Setup and support guidance
+    url: https://github.com/sergedoub/bowerbird/blob/main/SUPPORT.md
+    about: Read the support guidance before filing a reproducible bug.

@@ -10,7 +10,6 @@ before being replaced; credentials already present in the env file are kept as d
 """
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -31,9 +30,14 @@ BASE_SECRET_NAMES = ("X_CLIENT_ID", "X_CLIENT_SECRET", "X_BEARER_TOKEN", "X_TOKE
 
 @dataclass
 class WizardIO:
-    """Terminal seam: ask/say/confirm. Tests script `answers`; bin wires input()/print()."""
+    """Terminal seam: visible and secret prompts plus output."""
     ask: Callable[[str], str]
     say: Callable[[str], None]
+    ask_secret: Callable[[str], str] | None = None
+
+    def secret(self, prompt: str) -> str:
+        """Read a secret through the hidden channel when the terminal provides one."""
+        return (self.ask_secret or self.ask)(prompt)
 
     def confirm(self, prompt: str, *, default: bool = True) -> bool:
         suffix = " [Y/n] " if default else " [y/N] "
@@ -153,8 +157,9 @@ def _collect_credentials(io: WizardIO, deps: WizardDeps) -> dict:
                        ("X_CLIENT_SECRET", "OAuth2 client secret (empty for public client)"),
                        ("X_BEARER_TOKEN", "app-only bearer token")):
         current = env.get(key, "")
-        prompt = f"{label}" + (f" [keep saved value]" if current else "") + ": "
-        value = io.ask(prompt).strip()
+        prompt = f"{label}" + (" [keep saved value]" if current else "") + ": "
+        read = io.ask if key == "X_CLIENT_ID" else io.secret
+        value = read(prompt).strip()
         if value:
             env[key] = value
         elif not current and key != "X_CLIENT_SECRET":
@@ -285,9 +290,9 @@ def _ask_secret(io: WizardIO, env: dict, key: str) -> str:
     agent piping a Copy-button credential straight into bin/.env). Enter keeps
     the staged value; typing replaces it."""
     if env.get(key):
-        value = io.ask(f"{key} [saved value found — Enter to keep]: ").strip()
+        value = io.secret(f"{key} [saved value found — Enter to keep]: ").strip()
     else:
-        value = io.ask(f"{key} (empty to set up later): ").strip()
+        value = io.secret(f"{key} (empty to set up later): ").strip()
     if value:
         env[key] = value
     return env.get(key, "")

@@ -47,7 +47,8 @@ def make_get(token_store: TokenStore):
         url = API + path + ("?" + urllib.parse.urlencode(params) if params else "")
         req = urllib.request.Request(url, method="GET")
         req.add_header("Authorization", f"Bearer {token_store.get_access_token()}")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # URL is rooted at the fixed HTTPS X API_BASE; path/query cannot replace its authority.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             return json.load(resp)
     return get
 
@@ -136,7 +137,7 @@ def main() -> None:
             break
         params["pagination_token"] = nxt
 
-    print(f"\n--- dump complete ---")
+    print("\n--- dump complete ---")
     print(f"bookmarks seen:   {total}")
     print(f"files written:    {written}")
     print(f"skipped (exists): {skipped}")

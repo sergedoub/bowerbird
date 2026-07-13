@@ -1,0 +1,69 @@
+header:
+  schema-version: 2.2.0
+  last-updated: '2026-07-13'
+  last-reviewed: '2026-07-13'
+  url: https://raw.githubusercontent.com/sergedoub/bowerbird/main/security-insights.yml
+  comment: >-
+    This file describes the public Bowerbird source repository. Private
+    Bowerbird instance repositories are operated and secured by their owners.
+
+project:
+  name: Bowerbird
+  homepage: https://github.com/sergedoub/bowerbird
+  administrators:
+    - name: Serge Doub
+      social: https://github.com/sergedoub
+      primary: true
+  repositories:
+    - name: bowerbird
+      url: https://github.com/sergedoub/bowerbird
+      comment: >-
+        Public source, documentation, tests, and reusable automation for the
+        Bowerbird personal knowledge pipeline.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    policy: https://github.com/sergedoub/bowerbird/security/policy
+    comment: >-
+      Report vulnerabilities through GitHub private vulnerability reporting.
+      Do not include credentials or private instance content.
+    in-scope:
+      - Bowerbird source code and command-line tools
+      - Reusable GitHub Actions workflows shipped by the public repository
+      - Authentication, token storage, secret handling, and repository-boundary controls
+      - Defects that could expose, corrupt, or modify private instance data
+    out-of-scope:
+      - Third-party services unless Bowerbird causes the vulnerability
+      - Private instance configuration, access control, credentials, data, or availability
+      - Automated scanner output without reproducible security impact
+  documentation:
+    code-of-conduct: https://github.com/sergedoub/bowerbird/blob/main/CODE_OF_CONDUCT.md
+    quickstart-guide: https://github.com/sergedoub/bowerbird#quick-start
+    detailed-guide: https://github.com/sergedoub/bowerbird/blob/main/docs/setup.md
+    support-policy: https://github.com/sergedoub/bowerbird/blob/main/SUPPORT.md
+
+repository:
+  url: https://github.com/sergedoub/bowerbird
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: true
+  no-third-party-packages: false
+  core-team:
+    - name: Serge Doub
+      social: https://github.com/sergedoub
+      primary: true
+  license:
+    url: https://github.com/sergedoub/bowerbird/blob/main/LICENSE
+    expression: MIT
+  documentation:
+    contributing-guide: https://github.com/sergedoub/bowerbird/blob/main/CONTRIBUTING.md
+    review-policy: https://github.com/sergedoub/bowerbird/blob/main/CONTRIBUTING.md#open-a-pull-request
+    security-policy: https://github.com/sergedoub/bowerbird/security/policy
+  security:
+    assessments:
+      self:
+        name: Initial project security posture review
+        date: '2026-07-13'
+        comment: >-
+          The maintainer has documented the project's current security scope
+          and reporting process. No independent security assessment is claimed.

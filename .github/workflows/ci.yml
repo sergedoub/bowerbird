@@ -1,25 +1,61 @@
 name: ci
 
-# Offline test suite + provenance lint on code, docs, and compile-contract changes.
+# Offline test suite across every supported Python minor + provenance lint.
 
 on:
   push:
-    paths: ["src/**", "bin/**", "tests/**", "docs/**", "connectors/**", "skill/**", "config/**", "raw/**", "wiki/**", "compile/**", "recaps/**", "README.md", "AGENTS.md", "CLAUDE.md", "llms.txt", "pyproject.toml", ".github/workflows/**"]
   pull_request:
-    paths: ["src/**", "bin/**", "tests/**", "docs/**", "connectors/**", "skill/**", "config/**", "raw/**", "wiki/**", "compile/**", "recaps/**", "README.md", "AGENTS.md", "CLAUDE.md", "llms.txt", "pyproject.toml", ".github/workflows/**"]
   workflow_dispatch: {}
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  quality:
+    name: static analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: "3.13"
-      - run: python3 -m pip install -e '.[dev]'
-      - run: python3 -m pytest
-      - run: python3 bin/lint.py
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+      - name: Install development dependencies
+        run: python3 -m pip install -e '.[dev]'
+      - name: Run Ruff
+        run: python3 -m ruff check src bin tests
+      - name: Run Bandit
+        run: python3 -m bandit -r src bin -ll -iii
+
+  test:
+    name: tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install development dependencies
+        run: python3 -m pip install -e '.[dev]'
+      - name: Run offline tests with source coverage
+        run: python3 -m pytest
+
+  provenance:
+    name: provenance lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+      - name: Lint compiled knowledge provenance
+        run: python3 bin/lint.py

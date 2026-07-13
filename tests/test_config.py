@@ -8,6 +8,7 @@ from bowerbird.config import (
     RecapsConfig,
     SearchesConfig,
     TopicsConfig,
+    resolve_recap_prompt_path,
 )
 from bowerbird.routing import TopicRouter
 
@@ -23,6 +24,12 @@ def test_loads_topics_and_maps_folders():
 def test_topic_without_folders_is_an_error():
     with pytest.raises(ConfigError):
         TopicsConfig.from_dict({"topics": {"marketing": {"folder_ids": []}}})
+
+
+@pytest.mark.parametrize("topic", ["../escape", "a/b", "a\\b", "Uppercase"])
+def test_topics_config_rejects_unsafe_topic_names(topic):
+    with pytest.raises(ConfigError, match="lowercase slug"):
+        TopicsConfig.from_dict({"topics": {topic: {"folder_ids": ["1"]}}})
 
 
 def test_folder_in_two_topics_is_an_error():
@@ -77,6 +84,26 @@ def test_accounts_config_requires_topic():
         AccountsConfig.from_dict({"handles": [{"handle": "account_one"}]})
 
 
+@pytest.mark.parametrize("handle", ["../escape", "a/b", "a\\b", "name with spaces", "x" * 16])
+def test_accounts_config_rejects_unsafe_or_invalid_handles(handle):
+    with pytest.raises(ConfigError, match="valid X handle"):
+        AccountsConfig.from_dict({"handles": [{"handle": handle, "topic": "ai-updates"}]})
+
+
+@pytest.mark.parametrize("topic", ["../escape", "a/b", "a\\b", "Uppercase"])
+def test_accounts_config_rejects_unsafe_topics(topic):
+    with pytest.raises(ConfigError, match="lowercase slug"):
+        AccountsConfig.from_dict({"handles": [{"handle": "valid_name", "topic": topic}]})
+
+
+def test_accounts_config_accepts_x_handle_boundary_shapes():
+    cfg = AccountsConfig.from_dict({"handles": [
+        {"handle": "a", "topic": "one"},
+        {"handle": "A_1234567890123", "topic": "two"},
+    ]})
+    assert [account.handle for account in cfg.accounts] == ["a", "A_1234567890123"]
+
+
 def test_accounts_config_rejects_legacy_string_handles():
     """Legacy `handles = ["account_one"]` form no longer parses — explicit topic is now required."""
     with pytest.raises(ConfigError):
@@ -121,6 +148,18 @@ def test_books_config_rejects_missing_fields_bad_ids_and_duplicates():
                 "source_path": "b.md",
             },
         ]})
+
+
+def test_books_config_rejects_unsafe_topic():
+    with pytest.raises(ConfigError, match="lowercase slug"):
+        BooksConfig.from_dict({"books": [{
+            "book_id": "safe-book",
+            "topic": "../../escape",
+            "title": "Safe Book",
+            "author": "A. Author",
+            "published_date": "2026-01-01",
+            "source_path": "book.md",
+        }]})
 
 
 def test_recaps_config_loads_profiles_selectors_and_deliveries():
@@ -211,6 +250,58 @@ def test_recaps_config_rejects_bad_profiles():
         }]})
 
 
+@pytest.mark.parametrize("prompt", [
+    "/compile/recaps/default.md",
+    "compile/recaps/../../../etc/passwd",
+    "compile/recaps/../outside.md",
+    "compile/recaps\\..\\outside.md",
+    "compile/recaps/",
+])
+def test_recaps_config_rejects_absolute_and_traversing_prompt_paths(prompt):
+    with pytest.raises(ConfigError, match="beneath compile/recaps"):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
+            "frequency": "daily",
+            "topics": ["marketing"],
+            "prompt": prompt,
+        }]})
+
+
+@pytest.mark.parametrize("field,value", [
+    ("accounts", "../escape"),
+    ("topics", "../../escape"),
+])
+def test_recaps_config_rejects_unsafe_selectors(field, value):
+    with pytest.raises(ConfigError):
+        RecapsConfig.from_dict({"recaps": [{
+            "name": "marketing",
+            "frequency": "daily",
+            field: [value],
+            "prompt": "compile/recaps/default.md",
+        }]})
+
+
+def test_resolve_recap_prompt_accepts_nested_in_tree_file(tmp_path):
+    prompt = tmp_path / "compile" / "recaps" / "custom" / "daily.md"
+    prompt.parent.mkdir(parents=True)
+    prompt.write_text("Prompt")
+
+    assert resolve_recap_prompt_path(
+        tmp_path, "compile/recaps/custom/daily.md"
+    ) == prompt.resolve()
+
+
+def test_resolve_recap_prompt_rejects_symlink_to_external_file(tmp_path):
+    prompt_root = tmp_path / "compile" / "recaps"
+    prompt_root.mkdir(parents=True)
+    external = tmp_path / "secret.md"
+    external.write_text("secret")
+    (prompt_root / "linked.md").symlink_to(external)
+
+    with pytest.raises(ConfigError, match="resolves outside"):
+        resolve_recap_prompt_path(tmp_path, "compile/recaps/linked.md")
+
+
 def test_searches_config_loads_monitors():
     cfg = SearchesConfig.from_dict({"searches": [{
         "name": "llm-wiki",
@@ -226,6 +317,12 @@ def test_searches_config_loads_monitors():
     assert monitor.topic == "llm-wiki"
     assert monitor.max_results == 10
     assert monitor.max_pages == 1
+
+
+def test_missing_searches_config_loads_as_an_empty_optional_feature(tmp_path):
+    cfg = SearchesConfig.load(tmp_path / "searches.toml")
+
+    assert cfg.searches == ()
 
 
 def test_searches_config_rejects_bad_monitors():

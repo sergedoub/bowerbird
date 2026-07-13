@@ -38,7 +38,8 @@ class TimelineClient:
             req = urllib.request.Request(url, method="GET")
             req.add_header("Authorization", f"Bearer {self._bearer}")
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                # Production callers build URLs from the fixed HTTPS X API_BASE.
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
                     return json.load(resp)
             except urllib.error.HTTPError as e:
                 if e.code == 429 and attempt < MAX_RETRIES - 1:
@@ -50,7 +51,7 @@ class TimelineClient:
         raise RuntimeError("unreachable")
 
     def resolve_user_id(self, handle: str) -> str:
-        path = f"users/by/username/{urllib.parse.quote(handle)}"
+        path = f"users/by/username/{urllib.parse.quote(handle, safe='')}"
         data = self._get(API_BASE + path).get("data")
         if not data:
             raise ValueError(f"no such X account: @{handle}")

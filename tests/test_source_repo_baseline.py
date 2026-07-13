@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from bowerbird.config import AccountsConfig, RecapsConfig, TopicsConfig
+from bowerbird.config import AccountsConfig, RecapsConfig, SearchesConfig, TopicsConfig
 from bowerbird.recaps import validate_recap_files
 from bowerbird.repo_boundary import (
     SOURCE_REPOSITORY,
@@ -45,6 +45,9 @@ def test_source_config_templates_parse_with_real_validators():
     accounts = AccountsConfig.load(ROOT / "config" / "accounts.toml")
     assert accounts.accounts == ()
 
+    searches = SearchesConfig.load(ROOT / "config" / "searches.toml")
+    assert searches.searches == ()
+
     recaps = RecapsConfig.load(ROOT / "config" / "recaps.toml")
     assert recaps.profiles == ()
 
@@ -59,7 +62,13 @@ def test_public_package_name_matches_source_package():
 
 
 def test_mutating_workflows_cannot_run_in_source_repo():
-    for name in ("pull.yml", "account-dump.yml", "compile.yml", "recap.yml"):
+    for name in (
+        "pull.yml",
+        "account-dump.yml",
+        "search-dump.yml",
+        "compile.yml",
+        "recap.yml",
+    ):
         workflow = (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
         assert f"github.repository != '{SOURCE_REPOSITORY}'" in workflow
         assert "vars.BOWERBIRD_LIVE_INSTANCE == 'true'" in workflow

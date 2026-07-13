@@ -3,9 +3,10 @@ name: compile-wiki
 # LLM compile: new raw bookmarks + account mirrors -> two-layer wiki (sources + cited
 # concepts), per compile/INSTRUCTIONS.md, with bin/lint.py as the provenance guardrail.
 #
-# The agent invocation is pluggable: bin/compile.sh installs and runs the agent CLI
-# selected by config/models.toml or the COMPILE_RUNNER repository variable
-# (codex | claude | gemini). The lint gate and the commit step below are shared and runner-independent.
+# The agent invocation is pluggable: the workflow installs a pinned agent CLI selected
+# by config/models.toml or the COMPILE_RUNNER repository variable (codex | claude |
+# gemini). The compile job has read-only repository access and receives credentials for
+# only that provider. A fresh publish job validates and commits the resulting wiki patch.
 # See docs/compile-runners.md for each runner's credential requirements.
 #
 # Triggers:
@@ -17,6 +18,9 @@ name: compile-wiki
 #     or clips pushed by a human/PAT, once the repo is marked as a live instance.
 #     GITHUB_TOKEN commits from upstream workflows still rely on workflow_run.
 #   - workflow_dispatch: manual (also the escape hatch for raw added by a human/PAT push).
+#
+# Source-repo policy: this workflow stays disabled in sergedoub/bowerbird. It is
+# checked in so installed private instance repositories can enable it during setup.
 
 on:
   workflow_dispatch: {}
@@ -28,10 +32,11 @@ on:
     types: [completed]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: compile-wiki
+  # All instance workflows that push main share this lock to avoid non-fast-forward races.
+  group: bowerbird-repository-writer
   cancel-in-progress: false
 
 jobs:
@@ -40,41 +45,180 @@ jobs:
     # installed private instance repo marked as live, even for manual dispatch.
     if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.scope.outputs.changed }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: "3.13"
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "22"
 
-      - name: Compile raw -> wiki
+      - name: Resolve compile runner
+        id: runner
         env:
           COMPILE_RUNNER: ${{ vars.COMPILE_RUNNER }}
+        run: |
+          echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          count="$(PYTHONPATH=src python3 bin/compile_manifest.py --count)"
+          if [ "$count" = "0" ]; then
+            echo "name=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          runner="$COMPILE_RUNNER"
+          if [ -z "$runner" ]; then
+            runner="$(PYTHONPATH=src python3 - <<'PY'
+          from pathlib import Path
+          from bowerbird.model_config import parse_model_config
+
+          path = Path("config/models.toml")
+          print(parse_model_config(path.read_text()).compile_runner if path.exists() else "")
+          PY
+          )"
+          fi
+          case "$runner" in
+            claude|codex|gemini) ;;
+            "") echo "No compile runner configured." >&2; exit 64 ;;
+            *) echo "Unknown compile runner: $runner" >&2; exit 64 ;;
+          esac
+          echo "name=$runner" >> "$GITHUB_OUTPUT"
+
+      - name: Install Claude Code
+        if: ${{ steps.runner.outputs.name == 'claude' }}
+        run: npm install --global --no-audit --no-fund @anthropic-ai/claude-code@2.1.207
+
+      - name: Compile with Claude
+        if: ${{ steps.runner.outputs.name == 'claude' }}
+        env:
+          COMPILE_RUNNER: claude
           COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: bash bin/compile.sh
+
+      - name: Install Codex CLI
+        if: ${{ steps.runner.outputs.name == 'codex' }}
+        run: npm install --global --no-audit --no-fund @openai/codex@0.144.3
+
+      - name: Compile with Codex
+        if: ${{ steps.runner.outputs.name == 'codex' }}
+        env:
+          COMPILE_RUNNER: codex
+          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           CODEX_ACCESS_TOKEN: ${{ secrets.CODEX_ACCESS_TOKEN }}
+        run: bash bin/compile.sh
+
+      - name: Install Gemini CLI
+        if: ${{ steps.runner.outputs.name == 'gemini' }}
+        run: npm install --global --no-audit --no-fund @google/gemini-cli@0.50.0
+
+      - name: Compile with Gemini
+        if: ${{ steps.runner.outputs.name == 'gemini' }}
+        env:
+          COMPILE_RUNNER: gemini
+          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: bash bin/compile.sh
 
-      - name: Lint (guardrail)
+      - name: Enforce compile write scope
+        id: scope
+        env:
+          BASE_SHA: ${{ steps.runner.outputs.base_sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$BASE_SHA" ]; then
+            echo "Compile runner changed git history; refusing to publish." >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import subprocess
+
+          commands = (
+              ("git", "diff", "--name-only", "-z", "HEAD"),
+              ("git", "ls-files", "--others", "--exclude-standard", "-z"),
+          )
+          changed = set()
+          for command in commands:
+              output = subprocess.check_output(command)
+              changed.update(path for path in output.split(b"\0") if path)
+          unexpected = sorted(path for path in changed if not path.startswith(b"wiki/"))
+          if unexpected:
+              rendered = "\n".join(path.decode(errors="backslashreplace") for path in unexpected)
+              raise SystemExit(f"Compile runner changed files outside wiki/:\n{rendered}")
+          PY
+          if [ -d wiki ] && find wiki -type l -print -quit | grep -q .; then
+            echo "Compile runner created a symlink under wiki/; refusing to publish." >&2
+            exit 1
+          fi
+          if [ -d wiki ] || [ -n "$(git ls-files -- wiki)" ]; then
+            git add -A -- wiki
+          fi
+          if git diff --cached --quiet -- wiki; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No wiki changes."
+          else
+            git diff --cached --binary --full-index HEAD -- wiki > compile.patch
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload validated wiki patch
+        if: ${{ steps.scope.outputs.changed == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compiled-wiki-patch
+          path: compile.patch
+          retention-days: 1
+
+  publish:
+    name: validate and publish wiki
+    needs: compile
+    if: ${{ needs.compile.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+
+      - name: Download validated wiki patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: compiled-wiki-patch
+
+      - name: Apply wiki patch
+        run: |
+          git apply --index --whitespace=error compile.patch
+          python3 - <<'PY'
+          import subprocess
+
+          output = subprocess.check_output(("git", "diff", "--cached", "--name-only", "-z"))
+          unexpected = sorted(
+              path for path in output.split(b"\0") if path and not path.startswith(b"wiki/")
+          )
+          if unexpected:
+              rendered = "\n".join(path.decode(errors="backslashreplace") for path in unexpected)
+              raise SystemExit(f"Patch contains files outside wiki/:\n{rendered}")
+          PY
+
+      - name: Lint provenance
         run: python3 bin/lint.py
 
       - name: Commit wiki changes
         env:
-          PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_TOKEN: ${{ github.token }}
         run: |
-          if [ -n "$(git status --porcelain wiki)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add wiki
-            git commit -m "compile: update wiki from new raw"
-            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
-          else
-            echo "No wiki changes."
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -c core.hooksPath=/dev/null commit -m "compile: update wiki from new raw"
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main

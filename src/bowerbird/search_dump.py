@@ -31,7 +31,8 @@ class RecentSearchClient:
             req = urllib.request.Request(url, method="GET")
             req.add_header("Authorization", f"Bearer {self._bearer}")
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                # URL is rooted at the fixed HTTPS X Recent Search endpoint.
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
                     return json.load(resp)
             except urllib.error.HTTPError as exc:
                 if exc.code == 429 and attempt < MAX_RETRIES - 1:

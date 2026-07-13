@@ -1,0 +1,62 @@
+name: Feature request
+description: Propose an improvement to Bowerbird
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the problem first, then the smallest useful solution. Do not include private-instance data or credentials.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: This request preserves a standard-library-only Python runtime, or explains why that constraint should be reconsidered.
+          required: true
+        - label: This request does not expose personal Bowerbird instance data.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem or limitation should Bowerbird address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe the observable behavior you want, without prescribing unnecessary implementation detail.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - X ingestion
+        - Other content ingestion
+        - Compile and provenance
+        - Retrieval skill
+        - Recaps and connectors
+        - Setup and upgrades
+        - GitHub Actions
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds or other designs you considered.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add sanitized examples, links, or other relevant context.

@@ -1,6 +1,7 @@
 # Bowerbird
 
 [![CI](https://github.com/sergedoub/bowerbird/actions/workflows/ci.yml/badge.svg)](https://github.com/sergedoub/bowerbird/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/sergedoub/bowerbird/graph/badge.svg)](https://codecov.io/gh/sergedoub/bowerbird)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 

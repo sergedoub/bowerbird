@@ -62,8 +62,6 @@ jobs:
 
       - name: Resolve compile runner
         id: runner
-        env:
-          COMPILE_RUNNER: ${{ vars.COMPILE_RUNNER }}
         run: |
           echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           count="$(PYTHONPATH=src python3 bin/compile_manifest.py --count)"
@@ -71,19 +69,20 @@ jobs:
             echo "name=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          runner="$COMPILE_RUNNER"
-          if [ -z "$runner" ]; then
-            runner="$(PYTHONPATH=src python3 - <<'PY'
+          runner="$(PYTHONPATH=src python3 - <<'PY'
           from pathlib import Path
           from bowerbird.model_config import parse_model_config
 
           path = Path("config/models.toml")
-          print(parse_model_config(path.read_text()).compile_runner if path.exists() else "")
+          stage = parse_model_config(path.read_text()).compile
+          if stage.route == "openrouter":
+              print("openrouter")
+          else:
+              print({"anthropic": "claude", "openai": "codex", "gemini": "gemini"}.get(stage.provider, ""))
           PY
           )"
-          fi
           case "$runner" in
-            claude|codex|gemini) ;;
+            claude|codex|gemini|openrouter) ;;
             "") echo "No compile runner configured." >&2; exit 64 ;;
             *) echo "Unknown compile runner: $runner" >&2; exit 64 ;;
           esac
@@ -96,8 +95,6 @@ jobs:
       - name: Compile with Claude
         if: ${{ steps.runner.outputs.name == 'claude' }}
         env:
-          COMPILE_RUNNER: claude
-          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: bash bin/compile.sh
@@ -109,8 +106,6 @@ jobs:
       - name: Compile with Codex
         if: ${{ steps.runner.outputs.name == 'codex' }}
         env:
-          COMPILE_RUNNER: codex
-          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           CODEX_ACCESS_TOKEN: ${{ secrets.CODEX_ACCESS_TOKEN }}
         run: bash bin/compile.sh
@@ -122,9 +117,13 @@ jobs:
       - name: Compile with Gemini
         if: ${{ steps.runner.outputs.name == 'gemini' }}
         env:
-          COMPILE_RUNNER: gemini
-          COMPILE_MODEL: ${{ vars.COMPILE_MODEL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: bash bin/compile.sh
+
+      - name: Compile with OpenRouter
+        if: ${{ steps.runner.outputs.name == 'openrouter' }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: bash bin/compile.sh
 
       - name: Enforce compile write scope

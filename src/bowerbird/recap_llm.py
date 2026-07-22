@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Mapping
 
+from .llm_gateway import ModelGatewayError, complete
 from .model_config import ModelConfig, provider_for
 
 
@@ -48,11 +49,17 @@ def generate_recap_body(
     *,
     env: Mapping[str, str] | None = None,
 ) -> str:
-    provider = provider_for(config.provider)
+    stage = config.recap
     runtime_env = os.environ if env is None else env
+    if stage.route == "openrouter":
+        try:
+            return complete(stage, system_prompt, user_prompt, env=runtime_env).text
+        except ModelGatewayError as exc:
+            raise RecapModelError(str(exc)) from exc
+
+    provider = provider_for(stage.provider)
     api_key = runtime_env.get(provider.api_key_name, "").strip()
-    if not api_key:
-        raise RecapModelError(f"{provider.api_key_name} is required for recap generation")
+    if not api_key: raise RecapModelError(f"{provider.api_key_name} is required for recap generation")
 
     if provider.key == "openai":
         return _openai(config, api_key, system_prompt, user_prompt)

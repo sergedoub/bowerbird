@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 
 from .model_config import (
     ModelConfig,
+    StageConfig,
+    default_model_config,
     detect_setup_provider,
     model_config_toml,
     provider_for,
@@ -300,7 +302,7 @@ def _ask_secret(io: WizardIO, env: dict, key: str) -> str:
 
 def _select_model_provider(io: WizardIO, deps: WizardDeps, env: dict) -> ModelConfig:
     existing = deps.read_config("models.toml")
-    current = ModelConfig(provider=detect_setup_provider())
+    current = default_model_config(detect_setup_provider())
     if _has_config_values(existing):
         try:
             from .model_config import parse_model_config
@@ -320,12 +322,12 @@ def _select_model_provider(io: WizardIO, deps: WizardDeps, env: dict) -> ModelCo
     answer = io.ask(f"Provider [{default_provider.key}]: ").strip()
     provider = provider_for(answer or default_provider.key)
     model = io.ask("Model id (Enter for provider default): ").strip()
-    config = ModelConfig(provider=provider.key, model=model)
+    config = ModelConfig(
+        compile=default_model_config(provider.key).compile if not model else StageConfig("compile", "direct", model, provider.key),
+        recap=default_model_config(provider.key).recap if not model else StageConfig("recap", "direct", model, provider.key),
+    )
     deps.write_config("models.toml", model_config_toml(config))
-    env["COMPILE_RUNNER"] = provider.compile_runner
     env["RECAP_PROVIDER"] = provider.key
-    if config.recap_model_effective:
-        env["RECAP_MODEL"] = config.recap_model_effective
     return config
 
 

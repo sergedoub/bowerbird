@@ -1,12 +1,6 @@
 import pytest
 
-from bowerbird.model_config import (
-    ModelConfig,
-    detect_setup_provider,
-    model_config_toml,
-    parse_model_config,
-    provider_for,
-)
+from bowerbird.model_config import ModelConfig, StageConfig, detect_setup_provider, model_config_toml, parse_model_config, provider_for
 
 
 def test_provider_aliases_and_detection_default_to_openai():
@@ -18,24 +12,21 @@ def test_provider_aliases_and_detection_default_to_openai():
 
 
 def test_model_config_round_trips():
-    original = ModelConfig(provider="openai", model="gpt-5.4")
+    original = ModelConfig(StageConfig("compile", "direct", "gpt-5.4", "openai"), StageConfig("recap", "direct", "gpt-5.4", "openai"))
     parsed = parse_model_config(model_config_toml(original))
     assert parsed == original
-    assert parsed.compile_runner == "codex"
     assert parsed.api_key_name == "OPENAI_API_KEY"
     assert parsed.compile_model_effective == "gpt-5.4"
     assert parsed.recap_model_effective == "gpt-5.4"
 
 
 def test_compile_model_uses_provider_default_when_unset():
-    parsed = parse_model_config('[model]\nprovider = "openai"\n')
-
-    assert parsed.compile_model_effective == "gpt-5.4-mini"
-    assert parsed.recap_model_effective == "gpt-5.4-mini"
+    with pytest.raises(ValueError, match="legacy"):
+        parse_model_config('[model]\nprovider = "openai"\n')
 
 
 def test_parse_rejects_split_compile_and_recap_providers():
-    with pytest.raises(ValueError, match="recap provider"):
+    with pytest.raises(ValueError, match="legacy"):
         parse_model_config(
             """
 [model]

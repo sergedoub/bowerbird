@@ -47,11 +47,12 @@ jobs:
           from bowerbird.model_config import parse_model_config
 
           path = Path("config/models.toml")
-          print(parse_model_config(path.read_text()).provider if path.exists() else "openai")
+          stage = parse_model_config(path.read_text()).recap
+          print("openrouter" if stage.route == "openrouter" else stage.provider)
           PY
           )"
           case "$provider" in
-            openai|anthropic|gemini) ;;
+            openai|anthropic|gemini|openrouter) ;;
             *) echo "Unknown recap provider: $provider" >&2; exit 64 ;;
           esac
           echo "name=$provider" >> "$GITHUB_OUTPUT"
@@ -73,8 +74,13 @@ jobs:
       - name: Generate recap files with Gemini
         if: ${{ steps.provider.outputs.name == 'gemini' }}
         env:
-          BOWERBIRD_MODEL_PROVIDER: gemini
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 bin/recap.py
+
+      - name: Generate recap files with OpenRouter
+        if: ${{ steps.provider.outputs.name == 'openrouter' }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python3 bin/recap.py
 
       - name: Commit recap files

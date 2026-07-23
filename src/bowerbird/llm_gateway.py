@@ -35,11 +35,13 @@ def _url(stage: StageConfig) -> str:
 
 
 def complete(stage: StageConfig, system: str, user: str, *, env: Mapping[str, str] | None = None,
-             post: Any | None = None) -> ModelResult:
+             post: Any | None = None, max_tokens: int | None = None) -> ModelResult:
     runtime = os.environ if env is None else env
     key = runtime.get(stage.api_key_name, "").strip()
     if not key: raise ModelGatewayError(f"{stage.api_key_name} is required for {stage.name}")
     payload: dict[str, Any] = {"model": stage.model, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "stream": False}
+    if max_tokens is not None:
+        payload["max_tokens"] = max_tokens
     if stage.route == "openrouter":
         payload["models"] = list(stage.fallback_models)
         payload["provider"] = {"allow_fallbacks": stage.allow_provider_fallbacks, "data_collection": "allow"}

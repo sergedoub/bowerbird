@@ -53,7 +53,13 @@ def generate_recap_body(
     runtime_env = os.environ if env is None else env
     if stage.route == "openrouter":
         try:
-            return complete(stage, system_prompt, user_prompt, env=runtime_env).text
+            return complete(
+                stage,
+                system_prompt,
+                user_prompt,
+                env=runtime_env,
+                max_tokens=1200,
+            ).text
         except ModelGatewayError as exc:
             raise RecapModelError(str(exc)) from exc
 

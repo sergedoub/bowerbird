@@ -59,6 +59,7 @@ jobs:
 
       - name: Generate recap files with OpenAI
         if: ${{ steps.provider.outputs.name == 'openai' }}
+        timeout-minutes: 10
         env:
           BOWERBIRD_MODEL_PROVIDER: openai
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -66,6 +67,7 @@ jobs:
 
       - name: Generate recap files with Anthropic
         if: ${{ steps.provider.outputs.name == 'anthropic' }}
+        timeout-minutes: 10
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BOWERBIRD_MODEL_PROVIDER: anthropic
@@ -73,12 +75,14 @@ jobs:
 
       - name: Generate recap files with Gemini
         if: ${{ steps.provider.outputs.name == 'gemini' }}
+        timeout-minutes: 10
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python3 bin/recap.py
 
       - name: Generate recap files with OpenRouter
         if: ${{ steps.provider.outputs.name == 'openrouter' }}
+        timeout-minutes: 10
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python3 bin/recap.py

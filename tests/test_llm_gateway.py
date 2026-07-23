@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import urllib.error
 
 import pytest
@@ -26,3 +27,23 @@ def test_complete_preserves_upstream_http_error_detail() -> None:
 
     assert "HTTP 402 Payment Required" in str(error.value)
     assert "Insufficient credits" in str(error.value)
+
+
+def test_complete_sends_output_token_limit() -> None:
+    stage = StageConfig("recap", "openrouter", "deepseek/deepseek-v4-flash")
+    captured: dict[str, object] = {}
+
+    def succeed(request: object) -> object:
+        captured.update(json.loads(request.data.decode("utf-8")))  # type: ignore[attr-defined]
+        return {"choices": [{"message": {"content": "Recap"}}]}
+
+    complete(
+        stage,
+        "system",
+        "user",
+        env={"OPENROUTER_API_KEY": "test"},
+        post=succeed,
+        max_tokens=1200,
+    )
+
+    assert captured["max_tokens"] == 1200

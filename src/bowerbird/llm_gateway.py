@@ -48,7 +48,13 @@ def complete(stage: StageConfig, system: str, user: str, *, env: Mapping[str, st
         if post is None:
             with urllib.request.urlopen(request, timeout=120) as response: data = json.loads(response.read().decode())
         else: data = post(request)
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as exc:
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:1200].strip()
+        suffix = f": {detail}" if detail else ""
+        raise ModelGatewayError(
+            f"model request failed: HTTP {exc.code} {exc.reason}{suffix}"
+        ) from exc
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise ModelGatewayError(f"model request failed: {exc}") from exc
     try: text = data["choices"][0]["message"]["content"].strip()
     except (KeyError, IndexError, TypeError, AttributeError) as exc: raise ModelGatewayError("model response did not include text") from exc

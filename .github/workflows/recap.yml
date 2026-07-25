@@ -5,6 +5,9 @@ name: recap
 # recaps/<profile>/<date>.md plus recaps/manifests/<run-date>.json, and commits
 # only recaps/. The bundled Slack adapter consumes the committed manifest; it
 # does not synthesize recap knowledge.
+#
+# Source-repo policy: this workflow stays disabled in sergedoub/bowerbird. It is
+# checked in so installed private instance repositories can enable it during setup.
 
 on:
   schedule:
@@ -18,7 +21,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: recap
+  # All instance workflows that push main share this lock to avoid non-fast-forward races.
+  group: bowerbird-repository-writer
   cancel-in-progress: false
 
 jobs:
@@ -26,25 +30,57 @@ jobs:
     if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
-      - name: Generate recap files
+      - name: Resolve recap provider
+        id: provider
+        run: |
+          provider="$(PYTHONPATH=src python3 - <<'PY'
+          from pathlib import Path
+          from bowerbird.model_config import parse_model_config
+
+          path = Path("config/models.toml")
+          print(parse_model_config(path.read_text()).provider if path.exists() else "openai")
+          PY
+          )"
+          case "$provider" in
+            openai|anthropic|gemini) ;;
+            *) echo "Unknown recap provider: $provider" >&2; exit 64 ;;
+          esac
+          echo "name=$provider" >> "$GITHUB_OUTPUT"
+
+      - name: Generate recap files with OpenAI
+        if: ${{ steps.provider.outputs.name == 'openai' }}
+        env:
+          BOWERBIRD_MODEL_PROVIDER: openai
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python3 bin/recap.py
+
+      - name: Generate recap files with Anthropic
+        if: ${{ steps.provider.outputs.name == 'anthropic' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BOWERBIRD_MODEL_PROVIDER: anthropic
+        run: python3 bin/recap.py
+
+      - name: Generate recap files with Gemini
+        if: ${{ steps.provider.outputs.name == 'gemini' }}
+        env:
+          BOWERBIRD_MODEL_PROVIDER: gemini
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python3 bin/recap.py
 
       - name: Commit recap files
         id: commit
         env:
-          PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "$(git status --porcelain -- recaps)" ]; then
             git config user.name "github-actions[bot]"

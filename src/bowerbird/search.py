@@ -45,7 +45,8 @@ class SearchClient:
             req = urllib.request.Request(url, method="GET")
             req.add_header("Authorization", f"Bearer {self._bearer}")
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                # URL is built only from fixed HTTPS X search endpoints and encoded query data.
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
                     return json.load(resp)
             except urllib.error.HTTPError as e:
                 if e.code == 429 and attempt < MAX_RETRIES - 1:

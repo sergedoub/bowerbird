@@ -7,6 +7,7 @@ subprocess), the bookmark client, and GitHub secrets via the gh CLI.
 """
 from __future__ import annotations
 
+import getpass
 import os
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from bowerbird.local import load_env_file, make_token_store, resolve_user_id  # noqa: E402
+from bowerbird.github_secrets import set_github_secret  # noqa: E402
 from bowerbird.wizard import WizardDeps, WizardIO, run_wizard   # noqa: E402
 from bowerbird.x_client import XBookmarkClient                  # noqa: E402
 
@@ -69,8 +71,7 @@ def gh_available() -> bool:
 
 
 def set_secret(name: str, value: str) -> bool:
-    proc = subprocess.run(["gh", "secret", "set", name, "--body", value],
-                          cwd=ROOT, capture_output=True)
+    proc = set_github_secret(name, value, cwd=ROOT)
     return proc.returncode == 0
 
 
@@ -93,7 +94,7 @@ def write_config(name: str, text: str) -> None:
 
 def main() -> None:
     load_env_file(ENV_PATH)
-    io = WizardIO(ask=input, say=print)
+    io = WizardIO(ask=input, ask_secret=getpass.getpass, say=print)
     deps = WizardDeps(
         oauth_flow=oauth_flow,
         load_tokens=load_tokens,

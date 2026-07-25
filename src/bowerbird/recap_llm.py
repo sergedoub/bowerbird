@@ -19,6 +19,28 @@ class RecapModelError(RuntimeError):
     pass
 
 
+_MODEL_API_HOSTS = frozenset(
+    {
+        "api.anthropic.com",
+        "api.openai.com",
+        "generativelanguage.googleapis.com",
+    }
+)
+
+
+def _require_model_api_url(url: str) -> None:
+    """Reject any model request that could send a provider key off-host."""
+    parsed = urllib.parse.urlsplit(url)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in _MODEL_API_HOSTS
+        or parsed.port not in (None, 443)
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        raise RecapModelError("model API URL must use an approved HTTPS provider host")
+
+
 def generate_recap_body(
     config: ModelConfig,
     system_prompt: str,
@@ -42,10 +64,12 @@ def generate_recap_body(
 
 
 def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
+    _require_model_api_url(url)
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        # _require_model_api_url enforces HTTPS and the exact provider-host allowlist.
+        with urllib.request.urlopen(req, timeout=120) as resp:  # nosec B310
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:1200]

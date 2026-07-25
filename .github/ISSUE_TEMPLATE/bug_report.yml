@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible problem in Bowerbird
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Remove credentials, private content, account lists, channel IDs, and private repository links before submitting. Report security vulnerabilities privately through the Security policy instead.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: I removed secrets and private-instance data from this report.
+          required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where does this happen?
+      options:
+        - Public source checkout
+        - Private Bowerbird instance
+        - Both
+        - Unsure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Bowerbird version or commit
+      description: Provide a release, commit SHA, or the date you last updated from main.
+      placeholder: v0.1.0 or abc1234
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Python and operating system
+      placeholder: Python 3.12.4 on macOS 15.5
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest deterministic sequence that reproduces the problem.
+      placeholder: |
+        1. Run ...
+        2. Configure ... with synthetic values
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Paste relevant error output and bowerbird doctor results. Redact all secrets and private data.
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add anything else that helps reproduce or understand the issue.

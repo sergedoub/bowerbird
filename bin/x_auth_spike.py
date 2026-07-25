@@ -35,10 +35,14 @@ import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(ROOT, "src"))
+
+from bowerbird.x_api_url import API_BASE, build_x_api_url  # noqa: E402
+
 AUTHORIZE_URL = "https://x.com/i/oauth2/authorize"
 TOKEN_URL = "https://api.x.com/2/oauth2/token"
-API_BASE = "https://api.x.com/2/"
-HERE = os.path.dirname(os.path.abspath(__file__))
 TOKENS_FILE = os.environ.get("TOKENS_FILE", os.path.join(HERE, ".x_tokens.json"))
 ENV_FILE = os.path.join(HERE, ".env")
 DEFAULT_SCOPES = "bookmark.read tweet.read users.read offline.access"
@@ -83,7 +87,8 @@ def token_request(form: dict, c: dict) -> dict:
         basic = b64url_basic(c["client_id"], c["client_secret"])
         req.add_header("Authorization", f"Basic {basic}")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # TOKEN_URL is a fixed HTTPS X API endpoint.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             return json.load(resp)
     except urllib.error.HTTPError as e:
         body = e.read().decode(errors="replace")
@@ -233,19 +238,14 @@ def cmd_refresh(_args) -> None:
 
 
 def _get(path: str, query: str | None) -> None:
+    url = build_x_api_url(path, query)
     tok = load_tokens()
     access = tok.get("access_token")
-    if path.startswith("http"):
-        url = path
-    else:
-        url = API_BASE + path.lstrip("/")
-    if query:
-        sep = "&" if "?" in url else "?"
-        url += sep + urllib.parse.urlencode({"query": query})
     req = urllib.request.Request(url, method="GET")
     req.add_header("Authorization", f"Bearer {access}")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # build_x_api_url restricts authenticated requests to HTTPS api.x.com:443/v2.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             print(f"HTTP {resp.status}  {url}")
             print(json.dumps(json.load(resp), indent=2)[:6000])
     except urllib.error.HTTPError as e:
@@ -256,7 +256,10 @@ def _get(path: str, query: str | None) -> None:
 
 
 def cmd_get(args) -> None:
-    _get(args.path, args.query)
+    try:
+        _get(args.path, args.query)
+    except ValueError as exc:
+        sys.exit(f"Invalid X API path: {exc}")
 
 
 def cmd_me(_args) -> None:
@@ -274,7 +277,8 @@ def cmd_search(args) -> None:
     req = urllib.request.Request(url, method="GET")
     req.add_header("Authorization", f"Bearer {bearer}")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # URL is rooted at the fixed HTTPS X API_BASE; the query is form-encoded.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             data = json.load(resp)
             print(f"HTTP {resp.status}  {url}")
             print("result_count:", data.get("meta", {}).get("result_count"))

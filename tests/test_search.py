@@ -7,7 +7,7 @@ import urllib.error
 
 import pytest
 
-from bowerbird.search import SEARCH_ALL, SEARCH_RECENT, SearchClient
+from bowerbird.search import SEARCH_ALL, SearchClient
 
 
 def _http_error(code: int) -> urllib.error.HTTPError:

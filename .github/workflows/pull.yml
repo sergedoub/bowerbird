@@ -9,6 +9,9 @@ name: pull-bookmarks
 # Customization: set the X_USER_ID repository variable to skip the /users/me lookup
 # (optional). Cron schedules cannot read repository variables — edit the cron line below
 # to match your timezone; this is the one accepted instance divergence (see docs/upgrading.md).
+#
+# Source-repo policy: this workflow stays disabled in sergedoub/bowerbird. It is
+# checked in so installed private instance repositories can enable it during setup.
 
 on:
   schedule:
@@ -28,7 +31,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: pull-bookmarks
+  # All instance workflows that push main share this lock to avoid non-fast-forward races.
+  group: bowerbird-repository-writer
   cancel-in-progress: false
 
 jobs:
@@ -36,11 +40,13 @@ jobs:
     if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: "3.13"
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
 
       - name: Check bookmark pull setup
         env:
@@ -92,6 +98,8 @@ jobs:
         run: gh secret set X_TOKENS --repo "${{ github.repository }}" < bin/.x_tokens.json
 
       - name: Commit any new raw files
+        env:
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           rm -f bin/.x_tokens.json
           if [ -n "$(git status --porcelain raw/bookmarks)" ]; then
@@ -99,7 +107,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add raw/bookmarks
             git commit -m "chore: pull new bookmarks"
-            git push
+            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
           else
             echo "No new bookmarks."
           fi

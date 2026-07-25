@@ -62,6 +62,49 @@ def scripted_io(answers):
     return WizardIO(ask=ask, say=transcript.append), transcript
 
 
+def test_secret_prompt_uses_the_hidden_input_channel():
+    visible_prompts = []
+    hidden_prompts = []
+    io = WizardIO(
+        ask=lambda prompt: visible_prompts.append(prompt) or "visible",
+        ask_secret=lambda prompt: hidden_prompts.append(prompt) or "hidden",
+        say=lambda _message: None,
+    )
+
+    assert io.secret("API key: ") == "hidden"
+    assert visible_prompts == []
+    assert hidden_prompts == ["API key: "]
+
+
+def test_wizard_hides_x_credentials_pat_and_provider_key():
+    world = FakeWorld(folders=[])
+    answers = iter([
+        "client-id", "client-secret", "bearer-token",
+        "",  # finish manual folder ids
+        "",  # finish accounts
+        "", "",  # provider and model defaults
+        "pat-token", "openai-key",
+    ])
+    hidden_prompts = []
+
+    def answer(_prompt):
+        return next(answers)
+
+    def answer_secret(prompt):
+        hidden_prompts.append(prompt)
+        return next(answers)
+
+    io = WizardIO(ask=answer, ask_secret=answer_secret, say=lambda _message: None)
+    run_wizard(io, world.deps())
+
+    joined = "\n".join(hidden_prompts)
+    assert "OAuth2 client secret" in joined
+    assert "app-only bearer token" in joined
+    assert "GH_PAT" in joined
+    assert "OPENAI_API_KEY" in joined
+    assert "OAuth2 client id" not in joined
+
+
 def test_happy_path_writes_configs_and_secrets():
     world = FakeWorld(folders=[{"id": "111", "name": "Marketing"},
                                {"id": "222", "name": "Memes"}])

@@ -13,7 +13,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from bowerbird.config import AccountsConfig, ConfigError, RecapsConfig  # noqa: E402
+from bowerbird.config import (  # noqa: E402
+    AccountsConfig,
+    ConfigError,
+    RecapsConfig,
+    resolve_recap_prompt_path,
+)
 from bowerbird.model_config import ModelConfig, detect_setup_provider, parse_model_config  # noqa: E402
 from bowerbird.recap_llm import generate_recap_body  # noqa: E402
 from bowerbird.recaps import (  # noqa: E402
@@ -72,6 +77,10 @@ def account_labels() -> dict[str, str]:
 
 def read_repo_file(path: str) -> str:
     return (Path(ROOT) / path).read_text(encoding="utf-8")
+
+
+def read_recap_prompt(path: str) -> str:
+    return resolve_recap_prompt_path(ROOT, path).read_text(encoding="utf-8")
 
 
 def write_artifact(artifact: RecapArtifact) -> None:
@@ -211,7 +220,7 @@ def main(argv: list[str] | None = None) -> None:
             profile,
             notes,
             window=window,
-            read_prompt=read_repo_file,
+            read_prompt=read_recap_prompt,
             synthesize=synthesize,
             model=model,
             generated_at=generated_at,

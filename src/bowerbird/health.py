@@ -11,7 +11,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-from .config import AccountsConfig, ConfigError, RecapsConfig, TopicsConfig
+from .config import (
+    AccountsConfig,
+    ConfigError,
+    RecapsConfig,
+    TopicsConfig,
+    resolve_recap_prompt_path,
+)
 from .recaps import validate_recap_files
 
 
@@ -107,11 +113,14 @@ def _check_recaps_config(repo_root: Path) -> HealthItem:
         return _item("config_recaps", "error", f"config/recaps.toml {_config_error(exc)}",
                      path=str(path))
 
-    missing_prompts = [
-        profile.prompt_path
-        for profile in config.profiles
-        if not (repo_root / profile.prompt_path).is_file()
-    ]
+    try:
+        missing_prompts = [
+            profile.prompt_path
+            for profile in config.profiles
+            if not resolve_recap_prompt_path(repo_root, profile.prompt_path).is_file()
+        ]
+    except ConfigError as exc:
+        return _item("config_recaps", "error", f"config/recaps.toml {exc}", path=str(path))
     if missing_prompts:
         return _item(
             "config_recaps",

@@ -52,7 +52,8 @@ def resolve_user_id(token_store: TokenStore) -> str:
         return os.environ["X_USER_ID"]
     req = urllib.request.Request("https://api.x.com/2/users/me", method="GET")
     req.add_header("Authorization", f"Bearer {token_store.get_access_token()}")
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    # Fixed HTTPS X API endpoint; no caller-controlled scheme or authority.
+    with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
         return json.load(resp)["data"]["id"]
 
 

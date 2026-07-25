@@ -1,4 +1,6 @@
 """RawWriter: deterministic naming, real frontmatter+body, and idempotent re-writes."""
+import pytest
+
 from bowerbird.models import RawAddress, RawDoc
 from bowerbird.raw_writer import RawWriter
 
@@ -64,3 +66,95 @@ def test_rewrite_is_idempotent(tmp_path):
     second = w.write(_doc())  # same id -> no-op
     assert second is None
     assert first.read_text() == before  # untouched
+
+
+@pytest.mark.parametrize("field,value", [
+    ("topic", "../escape"),
+    ("topic", "/tmp/escape"),
+    ("topic", "one/two/three"),
+    ("topic", "unknown/bucket"),
+    ("namespace", "../escape"),
+    ("namespace", "/tmp/escape"),
+    ("bucket", "../../escape"),
+    ("bucket", "a/b"),
+    ("id", "../../escape"),
+    ("id", "/tmp/escape"),
+])
+def test_path_rejects_unsafe_components(tmp_path, field, value):
+    original = _doc()
+    address = None
+    topic = original.topic
+    raw_id = original.id
+    if field in {"namespace", "bucket"}:
+        address = RawAddress(
+            namespace=value if field == "namespace" else "notes",
+            bucket=value if field == "bucket" else "marketing",
+        )
+    elif field == "topic":
+        topic = value
+    else:
+        raw_id = value
+    doc = RawDoc(
+        topic=topic,
+        id=raw_id,
+        created_at=original.created_at,
+        frontmatter=original.frontmatter,
+        body=original.body,
+        address=address,
+    )
+
+    with pytest.raises(ValueError, match=f"raw {field}"):
+        RawWriter(tmp_path).path_for(doc)
+
+
+def test_path_rejects_undeclared_namespace(tmp_path):
+    original = _doc()
+    doc = RawDoc(
+        topic=original.topic,
+        id=original.id,
+        created_at=original.created_at,
+        frontmatter=original.frontmatter,
+        body=original.body,
+        address=RawAddress(namespace="unknown", bucket="marketing"),
+    )
+
+    with pytest.raises(ValueError, match="not declared"):
+        RawWriter(tmp_path).path_for(doc)
+
+
+@pytest.mark.parametrize("created_at", ["", "../../../../escape", "/tmp/escape", "2026-02-30"])
+def test_path_rejects_invalid_or_unsafe_created_at(tmp_path, created_at):
+    original = _doc()
+    doc = RawDoc(
+        topic=original.topic,
+        id=original.id,
+        created_at=created_at,
+        frontmatter=original.frontmatter,
+        body=original.body,
+    )
+
+    with pytest.raises(ValueError, match="raw created_at"):
+        RawWriter(tmp_path).path_for(doc)
+
+
+def test_path_rejects_existing_symlink_that_escapes_root(tmp_path):
+    raw_root = tmp_path / "raw"
+    outside = tmp_path / "outside"
+    raw_root.mkdir()
+    outside.mkdir()
+    (raw_root / "marketing").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="outside the configured raw root"):
+        RawWriter(raw_root).path_for(_doc())
+
+
+def test_path_accepts_existing_id_shapes(tmp_path):
+    for raw_id in ("2010013060333769098", "obsidian-agent-loop-8f31c2a9", "id.v2_test-1"):
+        doc = RawDoc(
+            topic="marketing",
+            id=raw_id,
+            created_at="2026-01-10T00:00:00Z",
+            frontmatter={},
+            body="body",
+        )
+        assert RawWriter(tmp_path).path_for(doc).name == f"2026-01-10__{raw_id}.md"

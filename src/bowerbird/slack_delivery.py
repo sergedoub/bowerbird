@@ -107,7 +107,8 @@ def post_to_slack(bot_token: str, destination: str, text: str) -> SlackPostResul
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    # Request targets the fixed HTTPS Slack chat.postMessage endpoint.
+    with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310
         if response.status < 200 or response.status >= 300:
             raise SlackDeliveryError(f"Slack API responded HTTP {response.status}")
         result = json.loads(response.read().decode("utf-8"))

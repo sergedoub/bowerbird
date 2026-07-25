@@ -4,6 +4,9 @@ name: search-dump
 # This uses the same app-only X_BEARER_TOKEN as account-dump and commits only
 # append-only raw search snapshots. Downstream compile/recap chaining remains
 # workflow_run-based like the other ingest workflows.
+#
+# Source-repo policy: this workflow stays disabled in sergedoub/bowerbird. It is
+# checked in so installed private instance repositories can enable it during setup.
 
 on:
   schedule:
@@ -31,19 +34,24 @@ permissions:
   contents: write
 
 concurrency:
-  group: search-dump
+  # All instance workflows that push main share this lock to avoid non-fast-forward races.
+  group: bowerbird-repository-writer
   cancel-in-progress: false
 
 jobs:
   dump:
-    if: ${{ github.event_name != 'schedule' || vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
+    # Mutating search ingest is forbidden in the public source repo and requires
+    # an installed private instance repo marked as live, including manual runs.
+    if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: "3.13"
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
 
       - name: Check search dump setup
         env:
@@ -78,13 +86,15 @@ jobs:
           python3 bin/dump_search.py "${args[@]}"
 
       - name: Commit any new raw files
+        env:
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "$(git status --porcelain raw/searches)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add raw/searches
             git commit -m "chore: dump new search posts"
-            git push
+            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
           else
             echo "No new search posts."
           fi

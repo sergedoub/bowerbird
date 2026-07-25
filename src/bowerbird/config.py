@@ -39,6 +39,46 @@ def _slug(value: str) -> bool:
     return bool(re.fullmatch(r"[a-z0-9][a-z0-9-]*", value))
 
 
+def _x_handle(value: str) -> bool:
+    """Return whether *value* has X's username shape (without a leading @)."""
+    return bool(re.fullmatch(r"[A-Za-z0-9_]{1,15}", value))
+
+
+def _validate_recap_prompt_path(profile_name: str, prompt_path: str) -> None:
+    """Validate the repo-relative, POSIX path stored in recaps.toml."""
+    path = Path(prompt_path)
+    if (
+        path.is_absolute()
+        or "\\" in prompt_path
+        or path.parts[:2] != ("compile", "recaps")
+        or len(path.parts) < 3
+        or any(part in {".", ".."} for part in path.parts)
+    ):
+        raise ConfigError(
+            f"recap profile '{profile_name}' prompt must be a relative path "
+            "beneath compile/recaps/ without traversal"
+        )
+
+
+def resolve_recap_prompt_path(repo_root: str | Path, prompt_path: str) -> Path:
+    """Resolve a configured prompt and require its target to remain in compile/recaps.
+
+    Callers use the returned canonical path for the read. Resolving both paths also
+    rejects an in-tree symlink whose target is outside the prompt directory.
+    """
+    _validate_recap_prompt_path("configured", prompt_path)
+    resolved_repo_root = Path(repo_root).resolve()
+    prompt_root = (resolved_repo_root / "compile" / "recaps").resolve()
+    if not prompt_root.is_relative_to(resolved_repo_root):
+        raise ConfigError("compile/recaps/ resolves outside the repository")
+    resolved = (resolved_repo_root / prompt_path).resolve()
+    if resolved == prompt_root or not resolved.is_relative_to(prompt_root):
+        raise ConfigError(
+            f"recap prompt '{prompt_path}' resolves outside compile/recaps/"
+        )
+    return resolved
+
+
 @dataclass(frozen=True)
 class DeliveryTarget:
     """A non-secret delivery target for a generated recap file."""
@@ -116,10 +156,7 @@ class RecapsConfig:
             prompt_path = str(raw.get("prompt", "")).strip()
             if not prompt_path:
                 raise ConfigError(f"recap profile '{name}' missing prompt")
-            if not prompt_path.startswith("compile/recaps/"):
-                raise ConfigError(
-                    f"recap profile '{name}' prompt must live under compile/recaps/"
-                )
+            _validate_recap_prompt_path(name, prompt_path)
 
             weekly_due_day = str(raw.get("weekly_due_day", "monday")).strip().lower() or "monday"
             if weekly_due_day not in RECAP_WEEKDAYS:
@@ -144,6 +181,16 @@ class RecapsConfig:
                 for value in _string_list(name, "topics", raw.get("topics", []))
                 if value.strip()
             )
+            invalid_accounts = [value for value in accounts if not _x_handle(value)]
+            if invalid_accounts:
+                raise ConfigError(
+                    f"recap profile '{name}' account '{invalid_accounts[0]}' must be a valid X handle"
+                )
+            invalid_topics = [value for value in topics if not _slug(value)]
+            if invalid_topics:
+                raise ConfigError(
+                    f"recap profile '{name}' topic '{invalid_topics[0]}' must be a lowercase slug"
+                )
             if not accounts and not topics:
                 raise ConfigError(f"recap profile '{name}' must select at least one account or topic")
             if len(set(accounts)) != len(accounts):
@@ -226,6 +273,10 @@ class TopicsConfig:
         topics: list[Topic] = []
         seen_folders: dict[str, str] = {}
         for name, body in raw.items():
+            if not _slug(name):
+                raise ConfigError(
+                    f"topic '{name}' must be a lowercase slug with letters, numbers, and hyphens"
+                )
             folder_ids = tuple(body.get("folder_ids", []))
             if not folder_ids:
                 raise ConfigError(f"topic '{name}' has no folder_ids")
@@ -296,8 +347,16 @@ class AccountsConfig:
             topic = str(raw.get("topic", "")).strip()
             if not handle:
                 raise ConfigError(f"missing handle in accounts entry: {raw!r}")
+            if not _x_handle(handle):
+                raise ConfigError(
+                    f"handle '{handle}' must be a valid X handle (1-15 letters, numbers, or underscores)"
+                )
             if not topic:
                 raise ConfigError(f"missing topic for handle '{handle}' in accounts config")
+            if not _slug(topic):
+                raise ConfigError(
+                    f"topic '{topic}' for handle '{handle}' must be a lowercase slug"
+                )
             if handle.lower() in seen:
                 raise ConfigError(f"duplicate handle '{handle}' in accounts config")
             seen.add(handle.lower())
@@ -327,7 +386,10 @@ class SearchesConfig:
 
     @classmethod
     def load(cls, path: str | Path) -> "SearchesConfig":
-        return cls.from_dict(tomllib.loads(Path(path).read_text()))
+        config_path = Path(path)
+        if not config_path.exists():
+            return cls(searches=())
+        return cls.from_dict(tomllib.loads(config_path.read_text()))
 
     @classmethod
     def from_dict(cls, data: dict) -> "SearchesConfig":
@@ -451,6 +513,10 @@ class BooksConfig:
             if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", book_id):
                 raise ConfigError(
                     f"book_id '{book_id}' must be a lowercase slug with letters, numbers, and hyphens"
+                )
+            if not _slug(topic):
+                raise ConfigError(
+                    f"topic '{topic}' for book '{book_id}' must be a lowercase slug"
                 )
             if provenance not in ("first-party", "external-expert", "community"):
                 raise ConfigError(

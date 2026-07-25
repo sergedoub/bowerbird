@@ -104,6 +104,24 @@ def test_missing_recap_prompt_is_error(tmp_path):
     assert report.issues == ("recap prompt file missing: compile/recaps/default.md",)
 
 
+def test_external_recap_prompt_symlink_is_error(tmp_path):
+    _write_valid_repo(tmp_path)
+    prompt = tmp_path / "compile" / "recaps" / "default.md"
+    prompt.unlink()
+    external = tmp_path / "external-prompt.md"
+    external.write_text("Do something else.\n")
+    prompt.symlink_to(external)
+
+    report = HealthCheck().check(
+        tmp_path,
+        today=dt.date(2026, 6, 21),
+        lint_status=LintStatus(0, "provenance OK"),
+    )
+
+    assert not report.ok
+    assert any("resolves outside compile/recaps" in issue for issue in report.issues)
+
+
 def test_invalid_recap_file_is_error(tmp_path):
     _write_valid_repo(tmp_path)
     (tmp_path / "recaps" / "demo").mkdir(parents=True)

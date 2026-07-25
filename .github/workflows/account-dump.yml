@@ -9,6 +9,9 @@ name: account-dump
 # Customization: set the DUMP_WINDOW_DAYS repository variable (default 3). Cron schedules
 # cannot read repository variables — edit the cron line below for your timezone; this is
 # the one accepted instance divergence (see docs/upgrading.md).
+#
+# Source-repo policy: this workflow stays disabled in sergedoub/bowerbird. It is
+# checked in so installed private instance repositories can enable it during setup.
 
 on:
   schedule:
@@ -33,7 +36,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: account-dump
+  # All instance workflows that push main share this lock to avoid non-fast-forward races.
+  group: bowerbird-repository-writer
   cancel-in-progress: false
 
 jobs:
@@ -41,11 +45,13 @@ jobs:
     if: ${{ github.repository != 'sergedoub/bowerbird' && vars.BOWERBIRD_LIVE_INSTANCE == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: "3.13"
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
 
       - name: Check account dump setup
         env:
@@ -73,13 +79,15 @@ jobs:
           python3 bin/dump_account.py "${args[@]}"
 
       - name: Commit any new raw files
+        env:
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "$(git status --porcelain raw/accounts)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add raw/accounts
             git commit -m "chore: dump new account posts"
-            git push
+            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
           else
             echo "No new posts."
           fi

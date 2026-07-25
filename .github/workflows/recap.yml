@@ -47,17 +47,19 @@ jobs:
           from bowerbird.model_config import parse_model_config
 
           path = Path("config/models.toml")
-          print(parse_model_config(path.read_text()).provider if path.exists() else "openai")
+          stage = parse_model_config(path.read_text()).recap
+          print("openrouter" if stage.route == "openrouter" else stage.provider)
           PY
           )"
           case "$provider" in
-            openai|anthropic|gemini) ;;
+            openai|anthropic|gemini|openrouter) ;;
             *) echo "Unknown recap provider: $provider" >&2; exit 64 ;;
           esac
           echo "name=$provider" >> "$GITHUB_OUTPUT"
 
       - name: Generate recap files with OpenAI
         if: ${{ steps.provider.outputs.name == 'openai' }}
+        timeout-minutes: 10
         env:
           BOWERBIRD_MODEL_PROVIDER: openai
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -65,6 +67,7 @@ jobs:
 
       - name: Generate recap files with Anthropic
         if: ${{ steps.provider.outputs.name == 'anthropic' }}
+        timeout-minutes: 10
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BOWERBIRD_MODEL_PROVIDER: anthropic
@@ -72,9 +75,16 @@ jobs:
 
       - name: Generate recap files with Gemini
         if: ${{ steps.provider.outputs.name == 'gemini' }}
+        timeout-minutes: 10
         env:
-          BOWERBIRD_MODEL_PROVIDER: gemini
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 bin/recap.py
+
+      - name: Generate recap files with OpenRouter
+        if: ${{ steps.provider.outputs.name == 'openrouter' }}
+        timeout-minutes: 10
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python3 bin/recap.py
 
       - name: Commit recap files

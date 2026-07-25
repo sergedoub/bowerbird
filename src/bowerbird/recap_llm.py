@@ -3,6 +3,7 @@
 This module is deliberately small and stdlib-only. The recap pipeline can inject
 `deterministic_body` in tests; production runs call this provider edge.
 """
+
 from __future__ import annotations
 
 import json
@@ -12,6 +13,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Mapping
 
+from .llm_gateway import ModelGatewayError, complete
 from .model_config import ModelConfig, provider_for
 
 
@@ -48,8 +50,21 @@ def generate_recap_body(
     *,
     env: Mapping[str, str] | None = None,
 ) -> str:
-    provider = provider_for(config.provider)
+    stage = config.recap
     runtime_env = os.environ if env is None else env
+    if stage.route == "openrouter":
+        try:
+            return complete(
+                stage,
+                system_prompt,
+                user_prompt,
+                env=runtime_env,
+                max_tokens=1200,
+            ).text
+        except ModelGatewayError as exc:
+            raise RecapModelError(str(exc)) from exc
+
+    provider = provider_for(stage.provider)
     api_key = runtime_env.get(provider.api_key_name, "").strip()
     if not api_key:
         raise RecapModelError(f"{provider.api_key_name} is required for recap generation")

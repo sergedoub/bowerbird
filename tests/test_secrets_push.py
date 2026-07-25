@@ -34,7 +34,8 @@ def test_pushes_staged_values_and_skips_missing():
         "CLAUDE_CODE_OAUTH_TOKEN",
         "CODEX_ACCESS_TOKEN",
         "GEMINI_API_KEY",
-        "OPENAI_API_KEY",
+            "OPENAI_API_KEY",
+            "OPENROUTER_API_KEY",
         "X_CLIENT_SECRET",
     ]
     assert result["failed"] == []
@@ -48,4 +49,4 @@ def test_failed_pushes_are_reported_not_silently_dropped():
 
 def test_empty_staging_is_all_skipped():
     result = push_secrets({}, "", lambda n, v: True)
-    assert result["set"] == [] and len(result["skipped"]) == 11
+    assert result["set"] == [] and len(result["skipped"]) == 12

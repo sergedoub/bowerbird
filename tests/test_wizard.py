@@ -137,8 +137,7 @@ def test_happy_path_writes_configs_and_secrets():
     assert parsed_recaps["recaps"][1]["accounts"] == ["account_one"]
 
     assert world.env["X_CLIENT_ID"] == "client-id"
-    assert world.env["COMPILE_RUNNER"] == "codex"
-    assert tomllib.loads(world.configs["models.toml"])["model"]["provider"] == "openai"
+    assert tomllib.loads(world.configs["models.toml"])["stages"]["compile"]["provider"] == "openai"
     assert world.oauth_runs == 1
     assert set(world.secrets) == {"X_CLIENT_ID", "X_CLIENT_SECRET", "X_BEARER_TOKEN",
                                   "X_TOKENS", "GH_PAT", "OPENAI_API_KEY"}

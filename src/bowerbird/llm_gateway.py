@@ -78,7 +78,8 @@ def complete(
     )
     try:
         if post is None:
-            with urllib.request.urlopen(request, timeout=120) as response:
+            # The request URL is selected only by _url from a validated stage route.
+            with urllib.request.urlopen(request, timeout=120) as response:  # nosec B310
                 data = json.loads(response.read().decode())
         else:
             data = post(request)

@@ -3,6 +3,7 @@
 This module is deliberately small and stdlib-only. The recap pipeline can inject
 `deterministic_body` in tests; production runs call this provider edge.
 """
+
 from __future__ import annotations
 
 import json
@@ -65,7 +66,8 @@ def generate_recap_body(
 
     provider = provider_for(stage.provider)
     api_key = runtime_env.get(provider.api_key_name, "").strip()
-    if not api_key: raise RecapModelError(f"{provider.api_key_name} is required for recap generation")
+    if not api_key:
+        raise RecapModelError(f"{provider.api_key_name} is required for recap generation")
 
     if provider.key == "openai":
         return _openai(config, api_key, system_prompt, user_prompt)

@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Execute a bounded, model-produced wiki write plan."""
+
 from __future__ import annotations
 import sys
 from pathlib import Path
-ROOT = Path(__file__).resolve().parent.parent; sys.path.insert(0, str(ROOT / "src"))
-from bowerbird.controlled_compile import CompileTools, apply_plan, build_compile_prompt
-from bowerbird.llm_gateway import complete
-from bowerbird.model_config import parse_model_config
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+from bowerbird.controlled_compile import CompileTools, apply_plan, build_compile_prompt  # noqa: E402
+from bowerbird.llm_gateway import complete  # noqa: E402
+from bowerbird.model_config import parse_model_config  # noqa: E402
+
 
 def main() -> None:
     config = parse_model_config((ROOT / "config/models.toml").read_text())
@@ -15,4 +19,6 @@ def main() -> None:
     apply_plan(CompileTools(ROOT), result.text)
     print("compile route=" + result.requested_route + " resolved=" + result.resolved_model)
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()
